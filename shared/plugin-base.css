@@ -4,17 +4,29 @@
    Philosophy:
      - Experience First: When implementation convenience conflicts with user delight, choose delight.
      - $unslop: Quiet chrome, rich content. 4px grid scale. Semantic theme variables.
-     - Native Integration: Seamlessly adapts to Dark, Light, and Sepia host themes.
+     - Native Integration: 100% mirrors LearnHarness tokens, No-Ring Law, and theme palette.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. Design Tokens & CSS Variables Reference
+   1. Design Tokens & CSS Variables Reference (Host Aligned)
    -------------------------------------------------------------------------- */
 :root {
-  --lh-radius-sm: 4px;
-  --lh-radius-md: 8px;
-  --lh-radius-lg: 12px;
-  --lh-radius-xl: 16px;
+  /* Radii ladder (multiples of 4px) */
+  --lh-radius-sm: var(--radius-sm, 4px);
+  --lh-radius-md: var(--radius, 8px);
+  --lh-radius-lg: var(--radius-lg, 12px);
+  --lh-radius-xl: var(--radius-xl, 16px);
+  
+  /* Modular type scale ladder */
+  --lh-text-xs: var(--text-xs, 11px);
+  --lh-text-sm: var(--text-sm, 12.5px);
+  --lh-text-base: var(--text-base, 14px);
+  --lh-text-lg: var(--lh-prose-size, 16px);
+  --lh-text-xl: var(--text-xl, 20px);
+  --lh-text-2xl: var(--text-2xl, 25px);
+  --lh-text-3xl: var(--text-3xl, 32px);
+
+  /* Toolbar height */
   --lh-toolbar-height: 48px;
 }
 
@@ -25,12 +37,13 @@
   box-sizing: border-box;
   color: var(--foreground, #e6e6e6);
   background-color: var(--background, #141414);
-  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: var(--font-sans, var(--font-prose, system-ui, sans-serif));
+  font-size: var(--lh-text-base, 14px);
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   width: 100%;
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -41,21 +54,55 @@
   box-sizing: border-box;
 }
 
+/* The No-Ring Law (owner brief): default focus outlines appear NOWHERE.
+   Surfaces provide their own clean hover/active/selected border affordances. */
+.lh-root *:focus,
+.lh-root *:focus-visible {
+  outline: none;
+}
+
+/* Thin dark native scrollbar (matches host) */
+.lh-root * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #434343) transparent;
+}
+
+.lh-root ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.lh-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lh-root ::-webkit-scrollbar-thumb {
+  background-color: var(--border, #434343);
+  border-radius: var(--radius-sm, 4px);
+}
+
 /* --------------------------------------------------------------------------
    3. Typography Utility Classes ($unslop)
    -------------------------------------------------------------------------- */
 .lh-title {
-  font-family: var(--font-title, "lh-cmu", Georgia, serif);
-  font-weight: 600;
+  font-family: var(--font-title, "lh-cmu", serif);
+  font-weight: var(--lh-heading-weight, 700);
   color: var(--foreground);
   margin: 0;
   line-height: 1.25;
 }
 
 .lh-mono {
-  font-family: var(--font-mono, ui-monospace, "JetBrains Mono", monospace);
+  font-family: var(--font-mono, var(--font-jetbrains, monospace));
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
+}
+
+.lh-prose {
+  font-family: var(--font-prose, var(--font-sans));
+  font-size: var(--lh-prose-size, 16px);
+  line-height: var(--lh-prose-leading, 1.5);
+  color: var(--foreground);
 }
 
 .lh-text-muted {
@@ -67,8 +114,10 @@
 }
 
 /* --------------------------------------------------------------------------
-   4. Top Toolbar (.lh-toolbar)
-   Quiet, neutral, dense control strip (48px height)
+   4. Action Toolbar (.lh-toolbar)
+   Quiet, neutral, dense control strip (48px height).
+   Note: The host TopBar already provides the main workspace title.
+   This toolbar hosts mode tabs, simulation controls, and secondary triggers.
    -------------------------------------------------------------------------- */
 .lh-toolbar {
   display: flex;
@@ -81,9 +130,10 @@
   gap: 12px;
   flex-wrap: wrap;
   z-index: 10;
+  flex-shrink: 0;
 }
 
-.lh-toolbar-title-group {
+.lh-toolbar-group {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -91,8 +141,8 @@
 
 .lh-toolbar-title {
   font-family: var(--font-title, "lh-cmu", serif);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--lh-text-sm, 12.5px);
+  font-weight: var(--lh-heading-weight, 700);
   color: var(--foreground);
   margin: 0;
 }
@@ -106,7 +156,7 @@
 
 /* --------------------------------------------------------------------------
    5. Buttons (.lh-btn)
-   Consistent height (32px/36px), 8px radius, quiet states
+   Multiples of 4px height (32px default, 24px xs), 8px radius, quiet states
    -------------------------------------------------------------------------- */
 .lh-btn {
   display: inline-flex;
@@ -117,7 +167,7 @@
   padding: 0 12px;
   border-radius: var(--radius, 8px);
   font-family: var(--font-sans, inherit);
-  font-size: 13px;
+  font-size: var(--lh-text-sm, 12.5px);
   font-weight: 500;
   line-height: 1;
   border: 1px solid transparent;
@@ -135,8 +185,7 @@
 
 .lh-btn:focus-visible {
   outline: none;
-  ring: 2px solid var(--primary);
-  border-color: var(--primary);
+  border-color: var(--primary, #e6e6e6);
 }
 
 /* Primary Button: Off-white on dark, dark on light */
@@ -176,7 +225,7 @@
   color: var(--foreground);
 }
 
-/* Icon Button (Square) */
+/* Icon Button (Square 32x32) */
 .lh-btn-icon {
   width: 32px;
   height: 32px;
@@ -192,6 +241,15 @@
   background-color: var(--muted);
   color: var(--foreground);
   border-color: var(--border);
+}
+
+/* Small Button (24px) */
+.lh-btn-sm,
+.lh-btn-xs {
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--lh-text-xs, 11px);
+  border-radius: var(--radius-sm, 4px);
 }
 
 /* --------------------------------------------------------------------------
@@ -218,14 +276,14 @@
 
 .lh-card-title {
   font-family: var(--font-title, "lh-cmu", serif);
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: var(--lh-text-base, 14px);
+  font-weight: var(--lh-heading-weight, 700);
   color: var(--foreground);
   margin: 0;
 }
 
 /* --------------------------------------------------------------------------
-   7. Badges & Keycaps (.lh-badge, .lh-keycap)
+   7. Badges, Keycaps & Dots (.lh-badge, .lh-keycap, .lh-dot)
    -------------------------------------------------------------------------- */
 .lh-badge {
   display: inline-flex;
@@ -233,9 +291,9 @@
   gap: 4px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 4px);
   font-family: var(--font-mono, monospace);
-  font-size: 11px;
+  font-size: var(--lh-text-xs, 11px);
   font-weight: 500;
   line-height: 1;
   background-color: color-mix(in srgb, var(--muted) 60%, transparent);
@@ -251,17 +309,16 @@
   min-width: 20px;
   height: 20px;
   padding: 0 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 4px);
   border: 1px solid var(--border);
   background-color: var(--muted);
   color: var(--muted-foreground);
   font-family: var(--font-mono, monospace);
-  font-size: 10px;
+  font-size: var(--lh-text-xs, 11px);
   line-height: 1;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
-/* Status Dots */
+/* Status Dots (using dynamic theme variables) */
 .lh-dot {
   width: 6px;
   height: 6px;
@@ -270,9 +327,9 @@
   background-color: var(--muted-foreground);
 }
 
-.lh-dot-success { background-color: #4ade80; }
-.lh-dot-warning { background-color: #fbbf24; }
-.lh-dot-error   { background-color: #f87171; }
+.lh-dot-success { background-color: var(--lh-success, #22c55e); }
+.lh-dot-warning { background-color: var(--lh-warning, #f59e0b); }
+.lh-dot-error   { background-color: var(--lh-error, var(--destructive, #ef4444)); }
 .lh-dot-primary { background-color: var(--primary); }
 
 /* --------------------------------------------------------------------------
@@ -287,7 +344,7 @@
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans, inherit);
-  font-size: 13px;
+  font-size: var(--lh-text-sm, 12.5px);
   outline: none;
   transition: border-color 0.15s ease;
 }
@@ -309,6 +366,7 @@
   display: flex;
   overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 .lh-canvas-container {
@@ -335,7 +393,9 @@
 }
 
 /* --------------------------------------------------------------------------
-   10. Modals & Dialogs (.lh-dialog)
+   10. In-Canvas Floating Dialogs & Panels (.lh-dialog)
+   Note: For full modal dialogs, prefer ctx.ui.openDialog(...) from the host!
+   Use .lh-dialog for embedded card panels or lightweight contextual surfaces.
    -------------------------------------------------------------------------- */
 .lh-dialog-overlay {
   position: fixed;
@@ -359,7 +419,7 @@
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg, 12px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -416,6 +476,9 @@
   overflow-x: auto;
   width: 100%;
   scrollbar-width: none;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .lh-copilot-chips::-webkit-scrollbar {
@@ -425,9 +488,9 @@
 .lh-copilot-chip {
   display: inline-flex;
   align-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--lh-text-xs, 11px);
   line-height: 1rem;
   font-family: var(--font-sans, inherit);
   border: 1px solid var(--border);
@@ -452,7 +515,7 @@
   width: 100%;
   min-height: 44px;
   padding: 8px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg, 12px);
   border: 1px solid var(--border);
   background-color: var(--card);
   transition: border-color 0.15s ease;
@@ -467,7 +530,7 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: 13px;
+  font-size: var(--lh-text-sm, 12.5px);
   color: var(--foreground);
   width: 100%;
   flex: 1;

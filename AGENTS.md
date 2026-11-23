@@ -16,58 +16,111 @@
 
 ---
 
-## 🎨 UI/UX Craft & The $unslop Standard
+## 🎨 Dual UI Model: Host Widgets vs Plugin Workbench
 
-Plugins render inside the LearnHarness desktop and web applications. A plugin must **never** look like a foreign, disjointed third-party app. It must feel 100% native to LearnHarness.
+Plugins render inside LearnHarness. A plugin must **never** feel like a foreign, disjointed third-party app with separate look-and-feel. It must be indistinguishable from native core screens.
 
-To achieve this, every plugin strictly implements the **$unslop** craft principles:
+LearnHarness uses a **Dual UI Model**:
 
-1. **Quiet Chrome, Rich Content**:
-   - The chrome (navigation, toolbar, cards, button containers) must stay quiet, neutral, and subdued.
-   - All visual richness belongs exclusively to the actual pedagogical subject: an interactive CPU Gantt chart, a virtual memory matrix, a thread interleaving diagram, or a physics canvas.
-2. **One Bright Element**:
-   - Every screen has at most one primary visual focus that carries accent color. Everything around it is quiet.
-3. **Strict Semantic Theme Variables**:
-   - **NEVER use hardcoded hex or rgb colors** (`#ffffff`, `#1a1a1a`, `#8b5cf6`).
-   - Use host CSS variables exclusively:
-     - `--background`: Page background
-     - `--card` / `--card-foreground`: Raised workbenches and panel surfaces
-     - `--border`: Hairline dividers and outlines (6%–12% opacity)
-     - `--primary` / `--primary-foreground`: Primary action button and selection indicators
-     - `--muted` / `--muted-foreground`: Secondary surfaces, pill containers, telemetry hints
-     - `--radius`, `--radius-lg`: Border curvature tokens
-4. **4px Grid Scale**:
-   - Spacing, paddings, gaps, and control heights are strictly multiples of 4:
-     - Controls: 32px or 36px height (`h-8` or `h-9`)
-     - Toolbars: 48px height
-     - Gaps: 8px, 12px, 16px, 24px
-     - Padding: 12px, 16px, 24px
-   - No one-off odd pixel nudges (`mt-[13px]`, `p-[17px]`).
-5. **No AI Tells (Zero Slop)**:
-   - 🚫 No purple/violet surface gradients (`bg-gradient-to-r from-purple-500 to-indigo-500`).
-   - 🚫 No gradient text in headings.
-   - 🚫 No glowing neon box shadows (`box-shadow: 0 0 20px rgba(...)`).
-   - 🚫 No floating blobs, orbs, or decorative AI sparkles (`✨`).
-   - 🚫 No emojis inside buttons or headers (`🚀 Launch`, `💡 Info`). Use host Lucide icon names.
-6. **Deliberate Typography Hierarchy**:
-   - `var(--font-title)` (`font-title`): Headings, view titles (CMU Serif).
-   - `var(--font-mono)` (`font-mono`): Memory addresses, PIDs, registers, metrics (`tabular-nums`).
-   - `var(--font-sans)`: Body text, buttons, option labels (Source Sans 3).
+### 1. Controlled Host UI (`ctx.ui`) — First Choice for Standard Elements
+The host application exposes **15 native controlled widgets** via `ctx.ui` (`PluginFrontendContext.ui`). Whenever your plugin needs these capabilities, **always prefer `ctx.ui`** over building custom HTML approximations:
+
+| Component Needed | Native Host Method | Why Use It |
+| :--- | :--- | :--- |
+| **Modal Dialogs** | `ctx.ui.openDialog(props, { signal })` | Host owns focus trap, Escape key, close button, title, backdrop blur, and nested dialogs. |
+| **Context Menus** | `ctx.ui.openMenu(anchor, props, { signal })` | Host owns auto-positioning, collision detection, and Escape dismissal. |
+| **Slide-over Surfaces** | `ctx.ui.openSurface(props, { signal })` | Host-level full-page overlay with dimmed/opaque backgrounds. |
+| **AI Model Selector** | `ctx.ui.mountModelPicker(container, props, { signal })` | Direct integration with host provider catalog and settings. |
+| **Thinking Level** | `ctx.ui.mountThinkingPicker(container, props, { signal })` | Linked to selected model's reasoning capabilities. |
+| **Knowledge Sources** | `ctx.ui.mountKnowledgePicker(container, props, { signal })` | Host knowledge collection selector. |
+| **Chat / Composer** | `ctx.ui.mountComposer` or `mountStandardComposer` | Native textarea, auto-grow, send/stop state, and dictation. |
+| **Markdown Display** | `ctx.ui.mountMarkdown(container, props, { signal })` | Prose styling, KaTeX math, Mermaid diagrams, and code highlighting. |
+| **Settings & Forms** | `ctx.ui.mountSettingsRows(container, props, { signal })` | Standard toggles, inputs, dropdowns, numbers, and sliders. |
+| **Directory Tree** | `ctx.ui.mountDirectoryTree(container, props, { signal })` | File explorer with indentation, expand/collapse, and icons. |
+| **Host Buttons** | `ctx.ui.mountButton(container, props, { signal })` | Standard button variants (`default`, `secondary`, `outline`, `ghost`, `destructive`). |
+
+Every `ctx.ui` call accepts `{ signal: AbortSignal }` and returns a `PluginWidgetHandle` with `.update(partialProps)` and `.dispose()`.
+
+### 2. Custom Plugin Workbench (`shared/plugin-base.css`) — For Canvas & Layout
+For plugin-specific pedagogical workspaces (CPU schedulers, memory matrices, thread DAGs, circuit boards), use the shared CSS classes:
+- **`.lh-root`**: Root container covering the workspace viewport.
+- **`.lh-toolbar`**: 48px action bar for mode tabs, simulation controls (`Step`, `Run`, `Reset`), speed sliders. *(Note: The top-level workspace title is already rendered by the host `<TopBar>`, so do not duplicate the workspace title here).*
+- **`.lh-workbench`**: Standard layout splitter containing the main canvas and lateral telemetry panel.
+- **`.lh-canvas-container`**: Interactive canvas/SVG area with dark background and native thin scrollbars.
+- **`.lh-telemetry-panel`**: 320px sidebar for live metrics, registers, queue states, and parameter cards.
+- **`.lh-card`**: Standard container card with hairline border (`var(--border)`) and 12px curvature.
+- **`.lh-copilot-container`, `.lh-copilot-pill`, `.lh-copilot-chips`**: Floating AI assistant pill with left-aligned, borderless suggestion chips.
 
 ---
 
-## 🧩 The Shared Design System (`shared/plugin-base.css`)
+## 📐 LearnHarness Mathematical Design System & Tokens
 
-All plugins must leverage the shared design system rather than inventing custom button or toolbar styles from scratch:
+To preserve complete harmony with LearnHarness, follow the exact system tokens:
 
-- **`.lh-root`**: Top-level container.
-- **`.lh-toolbar`**: Standard 48px top toolbar with title and action groups.
-- **`.lh-btn`**: Base button class (`.lh-btn-primary`, `.lh-btn-secondary`, `.lh-btn-ghost`, `.lh-btn-icon`).
-- **`.lh-card`**: Standard container card with hairline border.
-- **`.lh-badge`**: Compact status indicator with mono numbers.
-- **`.lh-workbench`**: Sdoppiatore standard per canvas principale + pannello telemetria/metriche laterale.
-- **`.lh-dialog-overlay` & `.lh-dialog`**: Modali centrate con backdrop blur pulito.
-- **`.lh-copilot-container`, `.lh-copilot-pill`, `.lh-copilot-chips`**: Standard AI assistant pill with left-aligned suggestions and docked drawer.
+### 1. 4px Rhythm Spacing Grid
+Every margin, padding, height, and gap must be a multiple of 4px:
+- Controls: 32px height (standard), 24px (compact/xs).
+- Toolbar: 48px minimum height.
+- Gaps: 4px, 8px, 12px, 16px, 20px, 24px.
+- Padding: 8px, 12px, 16px, 24px.
+- 🚫 **Never invent odd pixel values** (`padding: 13px; margin-top: 7px;`).
+
+### 2. The Modular Type Scale
+Never invent random `font-size` pixel values. Use the declared ladder:
+- **`--text-xs` (11px, line-height 1.4)**: Numbers, memory addresses, telemetry labels, keycaps, badges. *(Minimum legibility floor — never use 10px or 9px!)*
+- **`--text-sm` (12.5px, line-height 1.4)**: Secondary labels, button text, toolbar controls.
+- **`--text-base` (14px, line-height 1.45)**: Primary body text and form inputs.
+- **`--text-lg` (16px, line-height 1.5)**: Teaching reading prose (`--lh-prose-size: 16px; --lh-prose-leading: 1.5;`).
+- **`--text-xl` (20px)**, **`--text-2xl` (25px)**, **`--text-3xl` (32px)**: Section and modal headings.
+
+### 3. Font Stacks
+- **`var(--font-title)` (`lh-cmu`, Georgia, serif)**: Titles and card headings with `font-weight: var(--lh-heading-weight, 700)` or `900`.
+- **`var(--font-mono)` (`JetBrains Mono`, monospace)**: Code, memory offsets, PIDs, registers, metrics (`font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums`).
+- **`var(--font-sans)` / `var(--font-prose)` (`Source Sans 3`, sans-serif)**: Descriptive text, instructions, and standard labels.
+
+### 4. Radii Ladder
+- **`--radius-sm: 4px`**: Status dots, badges, keycaps, inner nested chips.
+- **`--radius` / `--radius-md: 8px`**: Buttons, inputs, suggestion chips, dropdown items.
+- **`--radius-lg: 12px`**: Cards, telemetry containers, copilot pill, dialogs.
+- **`--radius-xl: 16px`**: Major outer rounded frames.
+
+### 5. Semantic Color Palette
+**Never use hardcoded hex values** in plugin code:
+- `--background`: Primary canvas/viewport surface (`#141414` in dark).
+- `--card`: Raised containers, panels, toolbars (`#1C1C1C` in dark).
+- `--border`: Clean edges and dividers (`#434343` in dark).
+- `--accent`: Hover surface (`#2A2A2A` in dark).
+- `--primary`: Off-white on dark, dark on light (`#E6E6E6` in dark).
+- `--primary-foreground`: Contrast text on primary (`#141414` in dark).
+- `--muted-foreground`: Secondary text, metadata, telemetry hints (`#8D8D8D` in dark).
+- Status tokens: `--lh-success: #22c55e`, `--lh-warning: #f59e0b`, `--lh-error: #ef4444`.
+
+### 6. The No-Ring Law
+LearnHarness strictly enforces:
+```css
+*:focus, *:focus-visible { outline: none; }
+```
+Surfaces communicate focus through subtle border color changes (`border-color: var(--primary)`), never glowing outline rings or box-shadow halos.
+
+### 7. Thin Native Scrollbar
+Plugins inherit the host's dark thin scrollbar:
+```css
+scrollbar-width: thin;
+scrollbar-color: var(--border) transparent;
+```
+
+---
+
+## 🚫 The $unslop Anti-Pattern Checklist (Zero Slop)
+
+Before committing any UI code, verify:
+- [ ] **No purple/violet AI gradients**: No `linear-gradient(...)` across cards or backgrounds.
+- [ ] **No gradient text**: Text is solid `var(--foreground)` or `var(--primary)`.
+- [ ] **No glowing drop shadows**: No `box-shadow: 0 0 25px rgba(...)`.
+- [ ] **No decorative sparkles or emojis in buttons**: No `✨ Copilot`, `🚀 Run`. Use clean Lucide icons.
+- [ ] **No arbitrary border-radii**: Use 4px, 8px, or 12px.
+- [ ] **No redundant titles**: The host TopBar already shows the workspace title. Do not repeat it in `.lh-toolbar`.
+- [ ] **No hardcoded dark/light colors**: Always verify the plugin looks balanced in both dark and light modes by using CSS variables.
 
 ---
 
@@ -77,7 +130,7 @@ All plugins must leverage the shared design system rather than inventing custom 
    - 🚫 NEVER import from `@/...`, `@/components`, or `next/*`.
    - Runtime plugins run in an isolated sandbox. Only use standard Web APIs, Node built-ins (in `src/backend.ts`), and declarations from `learnharness-plugin-api` (`file:.sdk`).
 2. **Lifecycle Hygiene**:
-   - Every `mount` call in a frontend renderer (`registerView`, `registerModeRenderer`, `registerSettings`) **must** listen to `signal.addEventListener("abort", cleanup)` and remove all attached event listeners, intervals, and observers.
+   - Every `mount` call in a frontend renderer (`registerView`, `registerModeRenderer`, `registerSettings`) **must** listen to `signal.addEventListener("abort", cleanup)` and remove all attached event listeners, intervals, animation frames, and observers.
 3. **Deterministic Separation of Concerns**:
    - `src/core/`: Pure, framework-agnostic TypeScript simulation engines and state reducers. Zero DOM dependencies. 100% covered by unit tests.
    - `src/ui/`: DOM view rendering, event listeners, canvas/SVG manipulation.
@@ -87,27 +140,23 @@ All plugins must leverage the shared design system rather than inventing custom 
 
 ## 🚀 Standard Agent Workflow
 
-When asked to create or update a plugin, follow this exact sequence:
-
 ```bash
-# 1. Scaffold the plugin with the appropriate template archetype:
-#    Templates: lab (simulatore interattivo), library (raccolta a schede), tool (workbench singolo)
+# 1. Scaffold plugin with chosen archetype (lab | library | tool):
 node scripts/create-plugin.mjs <id> "<Display Name>" --template=lab
 
-# 2. Enter directory and install dependencies:
+# 2. Enter directory and run tests:
 cd <id>
-npm install
-
-# 3. Implement core logic in src/core/ and write pure tests in tests/:
 npm test
 
-# 4. Implement UI using shared/plugin-base.css (.lh-*) classes.
+# 3. Implement core engine in src/core/ with 100% test coverage.
 
-# 5. Typecheck and validate against anti-slop rules:
+# 4. Implement UI using ctx.ui (dialogs, menus, pickers) and shared/plugin-base.css (.lh-*).
+
+# 5. Validate against architecture, lifecycle cleanup, and $unslop rules:
 npm run typecheck
 npm run validate <id>
 
-# 6. Build the standalone bundle:
+# 6. Build standalone bundle:
 npm run build
 
 # 7. Install to local LearnHarness instance:

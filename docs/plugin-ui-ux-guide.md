@@ -16,22 +16,29 @@
 
 This guide defines the design, user experience, and visual standards for LearnHarness plugins. Plugins render inside the host application, which provides native dark and light themes, typographic hierarchy, and interaction layers. 
 
-AI coding agents authoring plugins **must** follow these principles and use the shared classes in [`shared/plugin-base.css`](../shared/plugin-base.css) to produce interfaces that look intentionally crafted rather than automatically generated ("vibecoded slop"). See also [`docs/ui-patterns.md`](./ui-patterns.md) for concrete copy-pasteable snippets.
+AI coding agents authoring plugins **must** follow these principles and use the shared classes in [`shared/plugin-base.css`](../shared/plugin-base.css) and the native host methods in `ctx.ui` to produce interfaces that look intentionally crafted rather than automatically generated ("vibecoded slop"). See also [`docs/ui-patterns.md`](./ui-patterns.md) for concrete copy-pasteable snippets.
 
 ---
 
-## 1. The Core Philosophy: Quiet Chrome, Rich Content
+## 1. Dual UI Model: Host Controlled Widgets vs Plugin Workbench
 
-The difference between AI slop and true craft is where richness lives:
-- **Slop** spreads neon gradients, glowing borders, floating emojis, and busy backgrounds across the chrome, navigation, and controls.
-- **Craft** keeps the chrome quiet, neutral, and unobtrusive, focusing all visual richness into the actual pedagogical content (an interactive graph, a crisp canvas, a visual algorithm, or a memory matrix).
+LearnHarness plugins operate across two distinct UI layers:
 
-### The Five Invariants
-1. **One Bright Element**: Each workspace mode has one primary visual focus that carries color and detail. Everything around it is quiet.
-2. **Quiet Surfaces**: Surfaces, cards, sidebars, and toolbars stay in neutral shades. Depth is created via subtle border hairlines (`border-border`) and surface steps (`bg-card`), never through loud colored drop-shadows.
-3. **No AI Tells**: Never use purple/violet gradients on surfaces, gradient text, glowing neon box-shadows, animated floating blobs, or emoji icons in headers and buttons.
-4. **Deliberate Typography**: Use the host's font hierarchy (`CMU Serif` for titles, `Source Sans 3` for prose, `JetBrains Mono` for code and telemetry).
-5. **Fluid, Non-Choppy Motion**: Transitions must be smooth (`transition-all duration-200 ease-out`), avoiding staggered delays or missing transition classes that cause 3-frame jarring jumps.
+### A. Controlled Host UI (`ctx.ui`) — First Choice for Common UI
+The host application exposes **15 native controlled widgets** via `ctx.ui` (`PluginFrontendContext.ui`). Whenever your plugin needs these capabilities, **always prefer `ctx.ui`** over building custom HTML approximations:
+- **Modal Dialogs**: `ctx.ui.openDialog(props, { signal })` — The host owns the modal backdrop, focus trapping, Escape key dismissal, title bar, and close button.
+- **Context Menus & Popovers**: `ctx.ui.openMenu(anchor, props, { signal })` — Clean popover menus with keyboard navigation and collision-safe positioning.
+- **Full-page Slide-over Surfaces**: `ctx.ui.openSurface(props, { signal })` — For non-modal workspace overlays.
+- **AI Model & Thinking Pickers**: `ctx.ui.mountModelPicker` and `ctx.ui.mountThinkingPicker` — Directly connected to the user's configured LLMs and reasoning settings.
+- **Composer & Prompt Bar**: `ctx.ui.mountComposer` and `ctx.ui.mountStandardComposer` — Standard prompt textarea with auto-grow, busy indicator, send/stop controls, and dictation.
+- **Settings Rows & Forms**: `ctx.ui.mountSettingsRows` — Native form controls (toggles, text inputs, dropdowns, number steppers, sliders).
+- **Markdown**: `ctx.ui.mountMarkdown` — Host prose styling, KaTeX formulas, Mermaid diagrams, and code highlighting.
+- **Directory Tree**: `ctx.ui.mountDirectoryTree` — File hierarchy browser.
+
+### B. Plugin Workbench & Canvas (`shared/plugin-base.css`) — For Pedagogical Subjects
+For custom subject-matter visualizers (CPU scheduling Gantt charts, virtual memory matrices, thread DAGs, circuit boards, drawing canvases):
+- Use `.lh-root`, `.lh-toolbar`, `.lh-workbench`, `.lh-canvas-container`, `.lh-telemetry-panel`, and `.lh-card`.
+- Adhere strictly to the host design tokens detailed below.
 
 ---
 
@@ -41,148 +48,76 @@ LearnHarness uses CSS variables that dynamically adapt to the active theme (Dark
 
 ### Available Theme Variables
 
-| CSS Variable | Tailwind Utility Equivalent | Purpose |
-| --- | --- | --- |
-| `--background` | `bg-background` | Page background |
-| `--foreground` | `text-foreground` | High-contrast primary text and icons |
-| `--muted` | `bg-muted` | Subdued surface (pills, secondary containers) |
-| `--muted-foreground` | `text-muted-foreground` | Secondary labels, timestamps, hints |
-| `--card` | `bg-card` | Raised containers, panels, and mode workbenches |
-| `--card-foreground` | `text-card-foreground` | Text rendered on top of card surfaces |
-| `--border` | `border-border` | Hairline dividers and container outlines |
-| `--primary` | `bg-primary`, `text-primary` | Primary action button, focused indicator |
-| `--primary-foreground`| `text-primary-foreground` | Text inside primary buttons |
-| `--accent` | `bg-accent` | Hover states and interactive highlights |
-| `--accent-foreground` | `text-accent-foreground` | Text on hover accents |
-| `--destructive` | `bg-destructive`, `text-destructive`| Destructive actions or severe errors |
-| `--radius` | `rounded-lg`, `rounded-xl` | Standard corner curvature |
-
-### Example: Slop vs Craft in Styling
-
-#### Bad (Vibecoded Slop)
-```html
-<!-- Broken in light theme, glowing neon purple, arbitrary margins, emoji title -->
-<div style="background: linear-gradient(135deg, #1e1b4b, #312e81); border: 2px solid #818cf8; box-shadow: 0 0 20px rgba(129,140,248,0.5); border-radius: 18px; margin-top: 13px; padding: 25px;">
-  <h2 style="background: linear-gradient(to right, #ec4899, #8b5cf6); -webkit-background-clip: text; color: transparent;">
-    ✨ Ultimate Quantum Lab AI ✨
-  </h2>
-  <button style="background: #a855f7; box-shadow: 0 0 10px #a855f7; border-radius: 9999px;">
-    🚀 Launch Simulation 🚀
-  </button>
-</div>
-```
-
-#### Good (LearnHarness Craft)
-```html
-<!-- Perfectly adapts to both dark and light modes, crisp 4px rhythm, Lucide icon -->
-<div class="rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm">
-  <div class="flex items-center justify-between pb-4 border-b border-border">
-    <div class="space-y-1">
-      <h2 class="font-title text-xl font-semibold tracking-tight text-foreground">
-        Quantum Simulation
-      </h2>
-      <p class="text-xs text-muted-foreground">
-        State vector visualization and superposition controls
-      </p>
-    </div>
-    <span class="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs font-mono text-muted-foreground">
-      128 states
-    </span>
-  </div>
-  <div class="pt-6">
-    <button type="button" class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer">
-      Start Simulation
-    </button>
-  </div>
-</div>
-```
+| CSS Variable | Role in LearnHarness | Typical Dark Theme Value |
+| :--- | :--- | :--- |
+| `--background` | Main page and canvas background | `#141414` |
+| `--foreground` | High-contrast primary text and icons | `#e6e6e6` |
+| `--card` | Raised containers, panels, toolbars | `#1c1c1c` |
+| `--card-foreground` | Text on card surfaces | `#e6e6e6` |
+| `--border` | Hairline dividers and container outlines | `#434343` |
+| `--primary` | Primary action button, focused indicator | `#e6e6e6` (off-white) |
+| `--primary-foreground`| Text inside primary buttons | `#141414` (dark) |
+| `--muted` | Subdued surface (pills, secondary containers) | `#1c1c1c` |
+| `--muted-foreground` | Secondary labels, timestamps, telemetry hints | `#8d8d8d` |
+| `--accent` | Hover states on clickable items | `#2a2a2a` |
+| `--accent-foreground` | Text on hover accents | `#e6e6e6` |
+| `--destructive` | Destructive actions or errors | `#ef4444` |
+| `--lh-success` | Success status dot and badge | `#22c55e` |
+| `--lh-warning` | Warning status dot and badge | `#f59e0b` |
+| `--lh-error` | Error status dot and badge | `#ef4444` |
+| `--radius-sm` | Small curvature (badges, dots, keycaps) | `4px` |
+| `--radius` | Standard curvature (buttons, inputs) | `8px` |
+| `--radius-lg` | Large curvature (cards, copilot pill, dialogs) | `12px` |
+| `--radius-xl` | Frame curvature | `16px` |
 
 ---
 
-## 3. Spacing, Rhythm, and Layout
+## 3. The Seven Invariants of LearnHarness Craft
 
-1. **4px Grid Scale**: Margins, paddings, gaps, and heights must be multiples of 4:
-   - Gaps: `gap-2` (8px), `gap-3` (12px), `gap-4` (16px), `gap-6` (24px).
-   - Padding: `p-3` (12px), `p-4` (16px), `p-6` (24px).
-   - Never use strange one-off pixel values like `mt-[13px]` or `p-[19px]`.
-2. **Alignment & Visual Lines**:
-   - Align labels to the left edge of containers.
-   - Align numbers, counts, and status timestamps to the right in data tables.
-   - Use fixed icon containers (e.g. `size-4` or `size-5`) so adjacent text lines up squarely.
-3. **Responsive Density**:
-   - Toolbars and control strips: dense (`h-9` or `h-10`, `gap-2`).
-   - Main workspace canvas: spacious (`p-6` or `p-8`).
+1. **Quiet Chrome, Rich Content**:
+   The chrome (toolbars, cards, sidebars) must stay quiet, neutral, and subdued. All visual richness belongs exclusively to the actual pedagogical subject: an interactive CPU Gantt chart, a virtual memory matrix, or a thread DAG.
+2. **One Bright Element**:
+   Each workspace mode has at most one primary visual focus carrying accent color. Everything around it is quiet.
+3. **The No-Ring Law**:
+   LearnHarness strictly enforces `*:focus, *:focus-visible { outline: none; }`. Never add glowing outline rings or box-shadow halos. Focus affordance is conveyed solely through clean border color changes (`border-color: var(--primary)`).
+4. **4px Grid Scale**:
+   Spacing, paddings, gaps, and heights are strictly multiples of 4:
+   - Controls: 32px height (standard), 24px (compact/xs).
+   - Toolbars: 48px height.
+   - Gaps: 8px, 12px, 16px, 24px.
+   - Padding: 8px, 12px, 16px, 24px.
+   - No one-off odd pixel nudges (`mt-[13px]`, `p-[17px]`).
+5. **Declared Modular Type Scale**:
+   - `11px` (`--text-xs`, line-height 1.4): Minimum legibility floor. Used for mono numbers, memory addresses, telemetry hints, and badges. Never use < 11px!
+   - `12.5px` (`--text-sm`, line-height 1.4): Secondary labels, button text, toolbar controls.
+   - `14px` (`--text-base`, line-height 1.45): Primary body text and form inputs.
+   - `16px` (`--text-lg`, line-height 1.5): Teaching reading prose (`--lh-prose-size: 16px`).
+   - `20px` (`--text-xl`), `25px` (`--text-2xl`), `32px` (`--text-3xl`): Headings.
+6. **No AI Tells (Zero Slop)**:
+   - 🚫 No purple/violet surface gradients (`linear-gradient(to right, #ec4899, #8b5cf6)`).
+   - 🚫 No gradient text in headings.
+   - 🚫 No glowing neon box shadows (`box-shadow: 0 0 20px rgba(...)`).
+   - 🚫 No floating blobs, orbs, or decorative AI sparkles (`✨`).
+   - 🚫 No emojis inside buttons or headers (`🚀 Launch`, `💡 Info`). Use host Lucide icon names.
+7. **No Redundant Workspace Titles**:
+   The host application's `<TopBar>` already renders the top-level back button, the large workspace title, and the identity pill (`mode · plugin`). The plugin's `.lh-toolbar` must sit directly below and host only sub-mode tabs and action controls (`Step`, `Run`, `Reset`), without repeating the workspace title.
 
 ---
 
 ## 4. Typography and Copywriting
 
 - **Font Pairing**:
-  - `font-title`: Titles and primary headers (uses CMU Serif in the host).
-  - `font-mono`: Code snippets, state IDs, step numbers, timestamps (`JetBrains Mono`).
-  - Default sans: Body text, UI labels, options (`Source Sans 3`).
+  - `var(--font-title)` (`font-title`): Headings, card titles (uses CMU Serif bold 700/900 in the host).
+  - `var(--font-mono)` (`font-mono`): Memory offsets, PIDs, registers, metrics (`JetBrains Mono`, `font-variant-numeric: tabular-nums`).
+  - `var(--font-sans)`: Body text, UI labels, options (`Source Sans 3`).
 - **Copywriting**:
-  - Keep button labels short and active: "Reset state", "Run step", "Export JSON" (never "Click here to execute action!").
+  - Keep button labels short and active: "Reset", "Step", "Run", "Export JSON" (never "Click here to execute action!").
   - Do not use exclamation points or marketing slogans.
   - Avoid emoji prefixes in button text, category names, or headings.
 
 ---
 
-## 5. Iconography
-
-- **Only Use Lucide Icons**: Choose from standard host Lucide icons.
-- **Consistent Size and Stroke**:
-  - Standard buttons / menus: `size-3.5` or `size-4` (14px–16px).
-  - Stat cards / section headers: `size-5` (20px).
-  - Stroke width: default 1.5–2px.
-- **Inherited Tone**: Icons should take the color of their text role (`text-muted-foreground` or `text-foreground`). Avoid giving every icon a different arbitrary color.
-
----
-
-## 6. Motion and Animations
-
-- **Duration and Easing**:
-  - Micro-interactions (hover, focus, toggles): `transition-colors duration-150`.
-  - Transform, drawer, or panel disclosures: `transition-all duration-200 ease-out`.
-  - Floating pills or indicators: `transition-all duration-300 ease-out`.
-- **Avoid Choppy Transitions**:
-  - Always declare complete transition properties (e.g. `transition-all` or explicit `transition-[transform,opacity]`).
-  - Never drop transition duration or timing curves, as browsers will default to abrupt stepping.
-- **Never Pulse or Spin Unnecessarily**:
-  - Spinners (`animate-spin`) belong strictly on active loading operations or refreshing indicators.
-  - Never add continuous pulsing (`animate-pulse`) to idle elements.
-
----
-
-## 7. State Handling: Loading, Error, and Empty States
-
-Every plugin workspace mode must handle three essential states gracefully:
-
-### A. Loading State
-While data is being fetched from `storage.get()`:
-- Do not render an empty white screen or a frozen UI.
-- Render skeleton placeholders with `bg-muted/40 animate-pulse rounded-md` that reflect the shape of the upcoming content.
-
-### B. Error State
-If a calculation or persistent storage operation fails:
-- Render a clear, recoverable error banner.
-- Always include an action button to retry the failed operation.
-- Example:
-  ```html
-  <div role="alert" class="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-    <span>Failed to save state: network timeout.</span>
-    <button type="button" class="font-medium underline hover:text-destructive/80 cursor-pointer">Retry</button>
-  </div>
-  ```
-
-### C. Empty State
-When the workspace has no user items or data yet:
-- Explain clearly what the mode does.
-- Provide a direct, single call-to-action button to create or load sample data.
-
----
-
-## 8. Lifecycle and Clean Unmount
+## 5. Lifecycle Hygiene and Clean Unmount
 
 When a workspace mode is closed, navigated away from, or disabled:
 - The host passes an `AbortSignal` (`context.signal`).
@@ -191,5 +126,5 @@ When a workspace mode is closed, navigated away from, or disabled:
   - Event listeners added to `window` or `document`.
   - Active `setInterval`, `setTimeout`, or `requestAnimationFrame`.
   - `ResizeObserver` or `MutationObserver` instances.
-  - React roots via `root.unmount()`.
+  - Child widget handles via `handle.dispose()`.
 - Failing to clean up causes memory leaks, duplicate event triggers, and degraded host performance.

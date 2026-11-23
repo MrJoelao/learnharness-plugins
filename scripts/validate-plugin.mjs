@@ -33,7 +33,8 @@ const SLOP_PATTERNS = [
   { pattern: /(?:background|color|border):\s*#(?:[0-9a-fA-F]{3,8})\b/, message: "Avoid hardcoded hex colors; use host theme CSS variables (e.g. var(--background), var(--card), var(--border), var(--primary))" },
   { pattern: /shadow-\[0_0_[0-9]+px|box-shadow:\s*0\s+0\s+(?:1[5-9]|[2-9][0-9])px/, message: "Avoid glowing neon box shadows (AI slop indicator); depth must come from hairlines and surface steps" },
   { pattern: /(?:bg-gradient-to|from-purple|to-pink|from-indigo|linear-gradient\(.*#8b5cf6)/, message: "Avoid purple/violet AI gradient tropes; prefer quiet neutral surfaces" },
-  { pattern: /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u, message: "Avoid emojis in buttons or headers; use standard Lucide icon names" }
+  { pattern: /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u, message: "Avoid emojis in buttons or headers; use standard Lucide icon names" },
+  { pattern: /font-size:\s*(?:[0-9]|10)px\b/, message: "Font size below 11px violates LearnHarness legibility floor; use var(--text-xs, 11px) minimum" }
 ];
 
 function log(status, msg) {

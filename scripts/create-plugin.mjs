@@ -207,16 +207,16 @@ export function activate(ctx: PluginFrontendContext): () => void {
       const root = document.createElement("div");
       root.className = "lh-root ${pluginId}-root";
 
-      // 1. Top Toolbar
+      // 1. Action Toolbar (Notice: host TopBar already shows the main workspace title)
       const toolbar = document.createElement("header");
       toolbar.className = "lh-toolbar";
       toolbar.innerHTML = \`
-        <div class="lh-toolbar-title-group">
-          <span class="lh-dot lh-dot-success"></span>
-          <h2 class="lh-toolbar-title">${pluginName}</h2>
-          <span class="lh-badge">v1.0.0</span>
+        <div class="lh-toolbar-group">
+          <span class="lh-dot lh-dot-success" title="Stato simulazione: Pronto"></span>
+          <span class="lh-badge">Simulazione</span>
         </div>
         <div class="lh-actions">
+          <button type="button" class="lh-btn lh-btn-secondary" id="btn-reset">Reset</button>
           <button type="button" class="lh-btn lh-btn-secondary" id="btn-step">Step</button>
           <button type="button" class="lh-btn lh-btn-primary" id="btn-run">Run</button>
         </div>
@@ -241,7 +241,7 @@ export function activate(ctx: PluginFrontendContext): () => void {
           <h3 class="lh-card-title">Telemetria & Parametri</h3>
         </div>
         <div class="lh-card">
-          <span class="lh-text-muted" style="font-size: 12px;">Stato Simulazione</span>
+          <span class="lh-text-muted" style="font-size: var(--lh-text-xs, 11px);">Stato Simulazione</span>
           <strong class="lh-mono">IDLE</strong>
         </div>
       \`;
