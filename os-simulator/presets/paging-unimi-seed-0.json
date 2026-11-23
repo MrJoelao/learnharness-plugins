@@ -1,0 +1,38 @@
+{
+  "id": "paging-unimi-seed-0",
+  "name": "Paging Lineare UNIMI (seed 0)",
+  "description": "Esercizio d'esame: spazio 16 KB (14 bit), pagine 4 KB (12 bit offset), memoria 64 KB. PT con MSB come VALID bit.",
+  "subsystem": "linear-paging",
+  "trace": [12841, 4969, 7808, 9558, 14878],
+  "linearPagingConfig": {
+    "addressSpaceBits": 14,
+    "pageSize": 4096,
+    "physicalMemorySize": 65536,
+    "pageTable": [
+      {
+        "vpn": 0,
+        "valid": true,
+        "pfn": 12,
+        "rawEntry": 2147483660
+      },
+      {
+        "vpn": 1,
+        "valid": false,
+        "pfn": 0,
+        "rawEntry": 0
+      },
+      {
+        "vpn": 2,
+        "valid": false,
+        "pfn": 0,
+        "rawEntry": 0
+      },
+      {
+        "vpn": 3,
+        "valid": true,
+        "pfn": 6,
+        "rawEntry": 2147483654
+      }
+    ]
+  }
+}

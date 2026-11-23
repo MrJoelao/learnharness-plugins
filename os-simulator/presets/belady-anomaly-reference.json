@@ -1,0 +1,17 @@
+{
+  "id": "belady-anomaly-reference",
+  "name": "Anomalia di Belàdy Reference",
+  "description": "Sequenza [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5] con confronto 3 frame (9 page fault) vs 4 frame (10 page fault).",
+  "subsystem": "replacement",
+  "trace": [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5],
+  "replacementConfig": {
+    "frameCount": 3,
+    "policy": "fifo",
+    "referenceString": [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5]
+  },
+  "comparisonConfig": {
+    "secondaryFrameCount": 4,
+    "expectedFrames3Faults": 9,
+    "expectedFrames4Faults": 10
+  }
+}
