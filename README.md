@@ -14,14 +14,15 @@ Questa repository contiene i sorgenti dei plugin modulari, la documentazione uff
 
 ---
 
-## 📚 Documentazione Plugin API
+## 📚 Documentazione & Design System
 
-Nella cartella [`docs/`](./docs/) è disponibile la documentazione completa per gli sviluppatori:
-
+- [**`AGENTS.md` (Istruzioni per Agenti AI)**](./AGENTS.md): Direttive ferree, filosofia *Experience First*, standard *$unslop*, guardrail architetturali e workflow sequenziale.
+- [**Design System Base (`shared/plugin-base.css`)**](./shared/plugin-base.css): Classi CSS universali (`.lh-toolbar`, `.lh-btn`, `.lh-card`, `.lh-badge`, `.lh-workbench`, `.lh-copilot-pill`) che garantiscono coerenza visiva al 100%.
+- [**Libreria di Pattern & Snippet (`docs/ui-patterns.md`)**](./docs/ui-patterns.md): Esempi di codice pronti per toolbar, telemetria, pillola assistente e modali.
 - [**Guida all'Architettura dei Plugin**](./docs/plugin-architecture.md): Concetti chiave, separazione Frontend (browser) / Backend (Node), ciclo di vita e sandboxing.
 - [**Guida all'Authoring di Plugin**](./docs/plugin-authoring.md): Guida passo-passo per creare un plugin da zero.
+- [**Plugin UI & UX Guide ($unslop)**](./docs/plugin-ui-ux-guide.md): Standard di design, palette semantica host, assenza di slop AI e accessibilità.
 - [**Specifiche Plugin API v1**](./docs/api/plugins.md): Contratti dettagliati di `PluginFrontendContext`, `PluginBackendContext`, storage e chiamate IPC.
-- [**Plugin UI & UX Guide**](./docs/plugin-ui-ux-guide.md): Standard di design, palette semantica host, assenza di slop AI e accessibilità.
 - [**Widget Host Controllati (`PluginUi`)**](./docs/api/plugin-ui.md): Dialog, menu contestuali, selettori modello, markdown renderer e tree view.
 - [**Modalità Study Hub**](./docs/plugin-mode-contract.md): Contratti per registrare workspace interattivi e laboratori.
 
@@ -31,12 +32,17 @@ Nella cartella [`docs/`](./docs/) è disponibile la documentazione completa per 
 
 Questa repository include utility dedicate nella cartella [`scripts/`](./scripts/) per automatizzare il workflow:
 
-### 1. Creare un nuovo plugin
-Scaffolda automaticamente la struttura completa del plugin (inclusi manifest, tsconfig, script di build, test unitari e SDK locale):
+### 1. Creare un nuovo plugin (con Archetipi)
+Scaffolda automaticamente la struttura completa del plugin integrando `shared/plugin-base.css`, manifest, tsconfig, script di build esbuild e test unitari:
 ```bash
-npm run create:plugin <id-plugin> "Nome del Plugin"
-# Esempio:
-npm run create:plugin math-grapher "Math Grapher"
+# Template default (laboratorio interattivo Study Hub con toolbar, telemetria e Copilot AI):
+npm run create:plugin <id-plugin> "Nome del Plugin" -- --template=lab
+
+# Template per collezioni o deck a schede (tipo flashcards):
+npm run create:plugin <id-plugin> "Nome del Plugin" -- --template=library
+
+# Template a vista singola / workbench tool:
+npm run create:plugin <id-plugin> "Nome del Plugin" -- --template=tool
 ```
 
 ### 2. Validare un plugin (Architettura & Anti-Slop)
