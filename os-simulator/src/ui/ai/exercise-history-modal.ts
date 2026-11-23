@@ -1,3 +1,4 @@
+import type { PluginUi, PluginWidgetHandle, PluginDialogProps } from "learnharness-plugin-api";
 import type { SavedExercise } from "../../types/ai.js";
 import { createIcon } from "../icons.js";
 
@@ -11,6 +12,7 @@ export interface ExerciseHistoryModalOptions {
   onDeleteExercise: (exerciseId: string) => void;
   targetContainer?: HTMLElement;
   signal?: AbortSignal;
+  ui?: PluginUi;
 }
 
 export function openExerciseHistoryModal(
@@ -18,6 +20,48 @@ export function openExerciseHistoryModal(
 ): () => void {
   let list = [...options.exercises];
   let editingId: string | null = null;
+
+  if (options.ui && typeof options.ui.openDialog === "function") {
+    let handle: PluginWidgetHandle<PluginDialogProps>;
+    const close = () => {
+      handle?.dispose();
+    };
+
+    handle = options.ui.openDialog(
+      {
+        title: "Cronologia Esercizi",
+        content(container: HTMLElement, dialogSignal: AbortSignal) {
+          const modal = document.createElement("div");
+          modal.className = "copilot-history-dialog-content";
+
+          function render() {
+            modal.innerHTML = "";
+            renderHistoryBody(modal, list, options, editingId, (id) => {
+              editingId = id;
+              render();
+            }, (updatedList) => {
+              list = updatedList;
+              render();
+            }, close);
+          }
+
+          render();
+          container.appendChild(modal);
+
+          dialogSignal.addEventListener("abort", () => {
+            modal.remove();
+          });
+
+          return () => {
+            modal.remove();
+          };
+        }
+      },
+      { signal: options.signal ?? new AbortController().signal }
+    );
+
+    return () => handle.dispose();
+  }
 
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay copilot-history-overlay";
@@ -79,6 +123,32 @@ export function openExerciseHistoryModal(
     header.append(titleContainer, closeBtn);
     modal.appendChild(header);
 
+    renderHistoryBody(modal, list, options, editingId, (id) => {
+      editingId = id;
+      render();
+    }, (updatedList) => {
+      list = updatedList;
+      render();
+    }, close);
+  }
+
+  render();
+  overlay.appendChild(modal);
+  (options.targetContainer ?? document.body).appendChild(overlay);
+
+  return close;
+}
+
+function renderHistoryBody(
+  container: HTMLElement,
+  list: SavedExercise[],
+  options: ExerciseHistoryModalOptions,
+  editingId: string | null,
+  setEditingId: (id: string | null) => void,
+  setList: (newList: SavedExercise[]) => void,
+  close: () => void
+) {
+
     const body = document.createElement("div");
     body.className = "modal-body copilot-history-body";
 
@@ -125,8 +195,7 @@ export function openExerciseHistoryModal(
           btnCancelEdit.className = "btn btn-outline btn-sm";
           btnCancelEdit.textContent = "Annulla";
           btnCancelEdit.addEventListener("click", () => {
-            editingId = null;
-            render();
+            setEditingId(null);
           });
 
           const btnSaveEdit = document.createElement("button");
@@ -139,8 +208,7 @@ export function openExerciseHistoryModal(
             options.onUpdateMetadata(ex.id, { title: newTitle, consegna: newConsegna });
             ex.title = newTitle;
             ex.consegna = newConsegna;
-            editingId = null;
-            render();
+            setEditingId(null);
           });
 
           editActions.append(btnCancelEdit, btnSaveEdit);
@@ -206,8 +274,7 @@ export function openExerciseHistoryModal(
           btnEdit.className = "btn btn-outline btn-sm btn-edit-metadata";
           btnEdit.append(createIcon("edit", "size-3.5"), document.createTextNode("Modifica Metadati"));
           btnEdit.addEventListener("click", () => {
-            editingId = ex.id;
-            render();
+            setEditingId(ex.id);
           });
 
           const btnDelete = document.createElement("button");
@@ -216,8 +283,7 @@ export function openExerciseHistoryModal(
           btnDelete.append(createIcon("trash", "size-3.5"), document.createTextNode("Elimina"));
           btnDelete.addEventListener("click", () => {
             options.onDeleteExercise(ex.id);
-            list = list.filter((item) => item.id !== ex.id);
-            render();
+            setList(list.filter((item) => item.id !== ex.id));
           });
 
           actionsRow.append(btnLoad, btnEdit, btnDelete);
@@ -229,12 +295,5 @@ export function openExerciseHistoryModal(
       body.appendChild(listContainer);
     }
 
-    modal.appendChild(body);
-  }
-
-  render();
-  overlay.appendChild(modal);
-  (options.targetContainer ?? document.body).appendChild(overlay);
-
-  return close;
+    container.appendChild(body);
 }

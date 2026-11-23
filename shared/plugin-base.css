@@ -84,7 +84,7 @@
 /* --------------------------------------------------------------------------
    3. Typography Utility Classes ($unslop)
    -------------------------------------------------------------------------- */
-.lh-title {
+.lh-root .lh-title {
   font-family: var(--font-title, "lh-cmu", serif);
   font-weight: var(--lh-heading-weight, 700);
   color: var(--foreground);
@@ -92,24 +92,24 @@
   line-height: 1.25;
 }
 
-.lh-mono {
+.lh-root .lh-mono {
   font-family: var(--font-mono, var(--font-jetbrains, monospace));
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
 }
 
-.lh-prose {
+.lh-root .lh-prose {
   font-family: var(--font-prose, var(--font-sans));
   font-size: var(--lh-prose-size, 16px);
   line-height: var(--lh-prose-leading, 1.5);
   color: var(--foreground);
 }
 
-.lh-text-muted {
+.lh-root .lh-text-muted {
   color: var(--muted-foreground, #8d8d8d);
 }
 
-.lh-text-primary {
+.lh-root .lh-text-primary {
   color: var(--primary, #e6e6e6);
 }
 
@@ -119,7 +119,7 @@
    Note: The host TopBar already provides the main workspace title.
    This toolbar hosts mode tabs, simulation controls, and secondary triggers.
    -------------------------------------------------------------------------- */
-.lh-toolbar {
+.lh-root .lh-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -133,13 +133,13 @@
   flex-shrink: 0;
 }
 
-.lh-toolbar-group {
+.lh-root .lh-toolbar-group {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.lh-toolbar-title {
+.lh-root .lh-toolbar-title {
   font-family: var(--font-title, "lh-cmu", serif);
   font-size: var(--lh-text-sm, 12.5px);
   font-weight: var(--lh-heading-weight, 700);
@@ -147,7 +147,7 @@
   margin: 0;
 }
 
-.lh-actions {
+.lh-root .lh-actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -158,7 +158,7 @@
    5. Buttons (.lh-btn)
    Multiples of 4px height (32px default, 24px xs), 8px radius, quiet states
    -------------------------------------------------------------------------- */
-.lh-btn {
+.lh-root .lh-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -177,56 +177,56 @@
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.lh-btn:disabled {
+.lh-root .lh-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-.lh-btn:focus-visible {
+.lh-root .lh-btn:focus-visible {
   outline: none;
   border-color: var(--primary, #e6e6e6);
 }
 
 /* Primary Button: Off-white on dark, dark on light */
-.lh-btn-primary {
+.lh-root .lh-btn-primary {
   background-color: var(--primary, #e6e6e6);
   color: var(--primary-foreground, #141414);
   border-color: var(--primary, #e6e6e6);
 }
 
-.lh-btn-primary:hover:not(:disabled) {
+.lh-root .lh-btn-primary:hover:not(:disabled) {
   opacity: 0.92;
 }
 
 /* Secondary / Outline Button */
-.lh-btn-secondary,
-.lh-btn-outline {
+.lh-root .lh-btn-secondary,
+.lh-root .lh-btn-outline {
   background-color: transparent;
   color: var(--foreground);
   border-color: var(--border);
 }
 
-.lh-btn-secondary:hover:not(:disabled),
-.lh-btn-outline:hover:not(:disabled) {
+.lh-root .lh-btn-secondary:hover:not(:disabled),
+.lh-root .lh-btn-outline:hover:not(:disabled) {
   background-color: var(--muted);
   border-color: var(--border);
 }
 
 /* Ghost Button */
-.lh-btn-ghost {
+.lh-root .lh-btn-ghost {
   background-color: transparent;
   color: var(--muted-foreground);
   border-color: transparent;
 }
 
-.lh-btn-ghost:hover:not(:disabled) {
+.lh-root .lh-btn-ghost:hover:not(:disabled) {
   background-color: var(--muted);
   color: var(--foreground);
 }
 
 /* Icon Button (Square 32x32) */
-.lh-btn-icon {
+.lh-root .lh-btn-icon {
   width: 32px;
   height: 32px;
   padding: 0;
@@ -237,15 +237,15 @@
   border-radius: var(--radius, 8px);
 }
 
-.lh-btn-icon:hover:not(:disabled) {
+.lh-root .lh-btn-icon:hover:not(:disabled) {
   background-color: var(--muted);
   color: var(--foreground);
   border-color: var(--border);
 }
 
 /* Small Button (24px) */
-.lh-btn-sm,
-.lh-btn-xs {
+.lh-root .lh-btn-sm,
+.lh-root .lh-btn-xs {
   height: 24px;
   padding: 0 8px;
   font-size: var(--lh-text-xs, 11px);
@@ -255,7 +255,7 @@
 /* --------------------------------------------------------------------------
    6. Cards & Containers (.lh-card)
    -------------------------------------------------------------------------- */
-.lh-card {
+.lh-root .lh-card {
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg, 12px);
@@ -265,7 +265,7 @@
   gap: 12px;
 }
 
-.lh-card-header {
+.lh-root .lh-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -274,7 +274,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.lh-card-title {
+.lh-root .lh-card-title {
   font-family: var(--font-title, "lh-cmu", serif);
   font-size: var(--lh-text-base, 14px);
   font-weight: var(--lh-heading-weight, 700);
@@ -285,7 +285,7 @@
 /* --------------------------------------------------------------------------
    7. Badges, Keycaps & Dots (.lh-badge, .lh-keycap, .lh-dot)
    -------------------------------------------------------------------------- */
-.lh-badge {
+.lh-root .lh-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -302,7 +302,7 @@
   white-space: nowrap;
 }
 
-.lh-keycap {
+.lh-root .lh-keycap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -319,7 +319,7 @@
 }
 
 /* Status Dots (using dynamic theme variables) */
-.lh-dot {
+.lh-root .lh-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -327,16 +327,16 @@
   background-color: var(--muted-foreground);
 }
 
-.lh-dot-success { background-color: var(--lh-success, #22c55e); }
-.lh-dot-warning { background-color: var(--lh-warning, #f59e0b); }
-.lh-dot-error   { background-color: var(--lh-error, var(--destructive, #ef4444)); }
-.lh-dot-primary { background-color: var(--primary); }
+.lh-root .lh-dot-success { background-color: var(--lh-success, #22c55e); }
+.lh-root .lh-dot-warning { background-color: var(--lh-warning, #f59e0b); }
+.lh-root .lh-dot-error   { background-color: var(--lh-error, var(--destructive, #ef4444)); }
+.lh-root .lh-dot-primary { background-color: var(--primary); }
 
 /* --------------------------------------------------------------------------
    8. Form Controls (.lh-input, .lh-select)
    -------------------------------------------------------------------------- */
-.lh-input,
-.lh-select {
+.lh-root .lh-input,
+.lh-root .lh-select {
   height: 32px;
   padding: 0 10px;
   border-radius: var(--radius, 8px);
@@ -349,19 +349,19 @@
   transition: border-color 0.15s ease;
 }
 
-.lh-input:focus,
-.lh-select:focus {
+.lh-root .lh-input:focus,
+.lh-root .lh-select:focus {
   border-color: var(--primary);
 }
 
-.lh-input::placeholder {
+.lh-root .lh-input::placeholder {
   color: var(--muted-foreground);
 }
 
 /* --------------------------------------------------------------------------
    9. Workbench & Layout Splits (.lh-workbench)
    -------------------------------------------------------------------------- */
-.lh-workbench {
+.lh-root .lh-workbench {
   flex: 1;
   display: flex;
   overflow: hidden;
@@ -369,7 +369,7 @@
   min-height: 0;
 }
 
-.lh-canvas-container {
+.lh-root .lh-canvas-container {
   flex: 1;
   overflow: auto;
   position: relative;
@@ -380,7 +380,7 @@
   gap: 16px;
 }
 
-.lh-telemetry-panel {
+.lh-root .lh-telemetry-panel {
   width: 320px;
   border-left: 1px solid var(--border);
   background-color: var(--card);
@@ -397,7 +397,7 @@
    Note: For full modal dialogs, prefer ctx.ui.openDialog(...) from the host!
    Use .lh-dialog for embedded card panels or lightweight contextual surfaces.
    -------------------------------------------------------------------------- */
-.lh-dialog-overlay {
+:is(.lh-root, body) .lh-dialog-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.6);
@@ -410,7 +410,7 @@
   padding: 16px;
 }
 
-.lh-dialog {
+:is(.lh-root, .lh-dialog-overlay) .lh-dialog {
   max-width: 560px;
   width: 100%;
   max-height: 85vh;
@@ -423,7 +423,7 @@
   overflow: hidden;
 }
 
-.lh-dialog-header {
+:is(.lh-root, .lh-dialog-overlay) .lh-dialog-header {
   padding: 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -431,7 +431,7 @@
   justify-content: space-between;
 }
 
-.lh-dialog-body {
+:is(.lh-root, .lh-dialog-overlay) .lh-dialog-body {
   padding: 16px;
   overflow-y: auto;
   display: flex;
@@ -439,7 +439,7 @@
   gap: 12px;
 }
 
-.lh-dialog-footer {
+:is(.lh-root, .lh-dialog-overlay) .lh-dialog-footer {
   padding: 12px 16px;
   border-top: 1px solid var(--border);
   display: flex;
@@ -452,23 +452,23 @@
 /* --------------------------------------------------------------------------
    11. Standard Copilot Pill & Suggestions Strip ($unslop)
    -------------------------------------------------------------------------- */
-.lh-copilot-container {
+.lh-root .lh-copilot-container {
   position: fixed;
-  bottom: 16px;
+  bottom: 20px;
   left: var(--quadro-center-x, 50%);
   transform: translateX(-50%);
   transition: left 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 40;
   width: 100%;
-  max-width: 44rem;
+  max-width: 46rem;
   padding: 0 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 8px;
 }
 
-.lh-copilot-chips {
+.lh-root .lh-copilot-chips {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -481,11 +481,11 @@
   padding: 0;
 }
 
-.lh-copilot-chips::-webkit-scrollbar {
+.lh-root .lh-copilot-chips::-webkit-scrollbar {
   display: none;
 }
 
-.lh-copilot-chip {
+.lh-root .lh-copilot-chip {
   display: inline-flex;
   align-items: center;
   border-radius: var(--radius, 8px);
@@ -502,31 +502,40 @@
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.lh-copilot-chip:hover {
-  background-color: var(--muted);
+.lh-root .lh-copilot-chip:hover {
+  background-color: var(--accent);
   color: var(--foreground);
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
 }
 
-.lh-copilot-pill {
+.lh-root .lh-copilot-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
-  border-radius: var(--radius-lg, 12px);
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 6px 14px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background-color: var(--card);
-  transition: border-color 0.15s ease;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease;
 }
 
-.lh-copilot-pill:hover,
-.lh-copilot-pill:focus-within {
-  border-color: var(--primary);
+.lh-root .lh-copilot-pill:hover {
+  border-color: var(--border);
+  box-shadow: var(--lh-shadow-lg, 0 12px 30px -10px rgba(0, 0, 0, 0.3));
 }
 
-.lh-copilot-input {
+.lh-root .lh-copilot-pill:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  box-shadow: var(--lh-shadow-lg, 0 12px 30px -10px rgba(0, 0, 0, 0.3));
+}
+
+.lh-root .lh-copilot-input {
   background: transparent;
   border: none;
   outline: none;
@@ -536,6 +545,54 @@
   flex: 1;
 }
 
-.lh-copilot-input::placeholder {
+.lh-root .lh-copilot-input::placeholder {
   color: var(--muted-foreground);
+}
+
+/* Copilot Drawer / Lateral Dock Workbench Tokens ($unslop) */
+.lh-root .lh-copilot-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  max-width: 100vw;
+  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card);
+  border-left: 1px solid var(--border);
+  box-shadow: none;
+  z-index: 55;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.lh-root .lh-copilot-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  height: 60px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--card);
+  box-sizing: border-box;
+}
+
+.lh-root .lh-copilot-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lh-root .lh-copilot-drawer-composer {
+  padding: 12px 16px 16px 16px;
+  background-color: var(--card);
+  border-top: 1px solid var(--border);
+  box-sizing: border-box;
 }

@@ -1,5 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import {
   createCopilotPill,
@@ -61,14 +67,23 @@ class MockDOMElement {
   disabled = false;
   scrollTop = 0;
   scrollHeight = 100;
+  clientHeight = 50;
   dataset: Record<string, string> = {};
   attributes: Record<string, string> = {};
   listeners: Record<string, Function[]> = {};
   private _styles: Record<string, string> = {};
 
-  style = {
+  setPointerCapture(_id: number) {}
+  releasePointerCapture(_id: number) {}
+
+  style: any = {
+    width: "",
+    height: "",
     setProperty: (name: string, val: string) => {
       this._styles[name] = val;
+    },
+    removeProperty: (name: string) => {
+      delete this._styles[name];
     },
     getPropertyValue: (name: string) => {
       return this._styles[name] ?? "";
@@ -257,7 +272,17 @@ class MockDOMElement {
 
 function setupMockDom() {
   const windowListeners: Record<string, Function[]> = {};
+  const mockStorage: Record<string, string> = {};
+  const mockLocalStorage = {
+    getItem: (k: string) => mockStorage[k] ?? null,
+    setItem: (k: string, v: string) => { mockStorage[k] = String(v); },
+    removeItem: (k: string) => { delete mockStorage[k]; },
+    clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; }
+  };
   const mockWindow = {
+    innerWidth: 1024,
+    innerHeight: 768,
+    localStorage: mockLocalStorage,
     addEventListener: (type: string, fn: Function) => {
       windowListeners[type] = windowListeners[type] || [];
       windowListeners[type]!.push(fn);
@@ -698,6 +723,287 @@ test("ExerciseHistoryModal: displays SavedExercise[] with distinct AI and Manual
       key: "Escape"
     });
     assert.equal(targetContainer.children.length, 0);
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: smooth morph animation between pill and sheet with carried input & seamless return", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "pill",
+      targetContainer: container as any
+    });
+
+    assert.equal(drawer.getState(), "pill");
+    const pillWrapper = container.querySelector(".copilot-container-pill")!;
+    assert.ok(pillWrapper);
+
+    const pillInput = container.querySelector(".copilot-pill-input")!;
+    assert.ok(pillInput);
+    pillInput.value = "Cos'è la paginazione?";
+    pillInput.focus();
+
+    assert.equal(drawer.getState(), "sheet");
+    const sheetPanel = container.querySelector(".copilot-container-sheet")!;
+    assert.ok(sheetPanel);
+    assert.ok(sheetPanel.classList.contains("is-morphing-open"));
+
+    const composerInput = container.querySelector(".copilot-composer-input")!;
+    assert.ok(composerInput);
+    assert.equal(composerInput.value, "Cos'è la paginazione?");
+
+    // User types in composer
+    composerInput.value = "Spiega il working set in dettaglio";
+
+    // Collapse sheet back to pill
+    const btnCollapse = container.querySelector(".copilot-btn-collapse")!;
+    assert.ok(btnCollapse);
+    btnCollapse.click();
+
+    const closingSheet = container.querySelector(".copilot-container-sheet.is-closing");
+    assert.ok(closingSheet, "Sheet gains .is-closing class upon collapse");
+    (closingSheet as unknown as MockDOMElement).dispatchEvent({ type: "animationend" });
+
+    assert.equal(drawer.getState(), "pill");
+    const returnedPillWrapper = container.querySelector(".copilot-container-pill.is-morphed")!;
+    assert.ok(returnedPillWrapper, "Returned pill gains .is-morphed to suppress entrance jump");
+
+    const returnedPillInput = container.querySelector(".copilot-pill-input")!;
+    assert.ok(returnedPillInput);
+    assert.equal(returnedPillInput.value, "Spiega il working set in dettaglio", "Carries input back from composer to pill");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("Copilot UX: subtle hub-style focus and hover borders adhering to LearnHarness tokens", () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  // Verify Hub-style focus-within color-mix tokens
+  assert.ok(
+    stylesContent.includes("border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));"),
+    "Should include subtle color-mix highlight for focus-within"
+  );
+
+  // Verify Hub-style hover shadow
+  assert.ok(
+    stylesContent.includes("box-shadow: var(--lh-shadow-lg, 0 12px 30px -10px rgba(0, 0, 0, 0.3));"),
+    "Should include Hub-style shadow elevation on hover"
+  );
+
+  // Verify transition curve
+  assert.ok(
+    stylesContent.includes("cubic-bezier(0.16, 1, 0.3, 1)"),
+    "Should use the standard LearnHarness smooth cubic-bezier curve"
+  );
+
+  // Verify morph keyframes geometry: 52px starting and ending heights with opacity: 1
+  assert.ok(
+    /@keyframes copilot-card-open\s*\{[\s\S]*?0%\s*\{[\s\S]*?height:\s*52px[\s\S]*?opacity:\s*1/.test(stylesContent),
+    "copilot-card-open must morph upwards from 52px height at opacity 1"
+  );
+  assert.ok(
+    /@keyframes copilot-card-close\s*\{[\s\S]*?100%\s*\{[\s\S]*?height:\s*52px[\s\S]*?opacity:\s*1/.test(stylesContent),
+    "copilot-card-close must contract down to 52px height at opacity 1"
+  );
+
+  // Verify no harsh primary white on copilot interactive elements
+  const copilotPillFocusMatch = stylesContent.match(/\.copilot-pill:focus-within\s*\{([^}]+)\}/);
+  assert.ok(copilotPillFocusMatch);
+  assert.ok(!copilotPillFocusFocusHasPrimary(copilotPillFocusMatch[1]!));
+
+  const composerSurfaceFocusMatch = stylesContent.match(/\.copilot-composer-surface:focus-within\s*\{([^}]+)\}/);
+  assert.ok(composerSurfaceFocusMatch);
+  assert.ok(!copilotPillFocusFocusHasPrimary(composerSurfaceFocusMatch[1]!));
+});
+
+function copilotPillFocusFocusHasPrimary(block: string): boolean {
+  return /border-color:\s*var\(--primary\)/.test(block);
+}
+
+test("CopilotDrawer: organic sheet height progression - scroll expansion and reverse contraction", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const panel = container.querySelector(".copilot-container-sheet") as unknown as MockDOMElement;
+    assert.ok(panel);
+    assert.ok(!panel.classList.contains("is-fullscreen"));
+    assert.ok(!panel.classList.contains("is-expanded"));
+
+    const chatBody = panel.querySelector(".copilot-chat-body") as unknown as MockDOMElement;
+    assert.ok(chatBody);
+
+    const btnExpand = panel.querySelector(".copilot-btn-expand") as unknown as MockDOMElement;
+    assert.ok(btnExpand);
+    assert.equal(btnExpand.title, "Espandi a schermo intero");
+
+    // 1. Simulate scroll down in chat body when content overflows
+    chatBody.scrollHeight = 500;
+    chatBody.clientHeight = 200;
+    chatBody.scrollTop = 45;
+    chatBody.dispatchEvent({ type: "scroll" });
+
+    // Should smoothly expand to tall state
+    assert.ok(panel.classList.contains("is-fullscreen"), "Panel should gain .is-fullscreen on scroll down");
+    assert.ok(panel.classList.contains("is-expanded"), "Panel should gain .is-expanded on scroll down");
+    assert.equal(btnExpand.title, "Riduci dimensione");
+
+    // 2. Simulate organic reverse contraction when scrolling back up to top (scrollTop <= 10)
+    chatBody.scrollTop = 5;
+    chatBody.dispatchEvent({ type: "scroll" });
+
+    assert.ok(!panel.classList.contains("is-fullscreen"), "Panel should lose .is-fullscreen on scroll to top");
+    assert.ok(!panel.classList.contains("is-expanded"), "Panel should lose .is-expanded on scroll to top");
+    assert.equal(btnExpand.title, "Espandi a schermo intero");
+
+    // 3. Wheel down expansion
+    chatBody.scrollTop = 0;
+    chatBody.dispatchEvent({ type: "wheel", deltaY: 25 });
+    assert.ok(panel.classList.contains("is-fullscreen"), "Wheel down should expand sheet");
+
+    // 4. Wheel up contraction when at the top
+    chatBody.scrollTop = 0;
+    chatBody.dispatchEvent({ type: "wheel", deltaY: -15 });
+    assert.ok(!panel.classList.contains("is-fullscreen"), "Wheel up at top should contract sheet");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: header maximize/minimize toggle button and Escape multi-step collapse", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const panel = container.querySelector(".copilot-container-sheet") as unknown as MockDOMElement;
+    assert.ok(panel);
+    assert.ok(!panel.classList.contains("is-fullscreen"));
+
+    const btnExpand = panel.querySelector(".copilot-btn-expand") as unknown as MockDOMElement;
+    assert.ok(btnExpand);
+
+    // Click to maximize
+    btnExpand.click();
+    assert.ok(panel.classList.contains("is-fullscreen"));
+    assert.equal(btnExpand.title, "Riduci dimensione");
+
+    // Click to minimize back to medium sheet
+    btnExpand.click();
+    assert.ok(!panel.classList.contains("is-fullscreen"));
+    assert.equal(btnExpand.title, "Espandi a schermo intero");
+
+    // Maximize again
+    btnExpand.click();
+    assert.ok(panel.classList.contains("is-fullscreen"));
+
+    // First Escape shrinks back to medium sheet (does NOT close to pill)
+    env.mockWindow.dispatchEvent({
+      type: "keydown",
+      key: "Escape",
+      preventDefault: () => {}
+    });
+
+    assert.ok(!panel.classList.contains("is-fullscreen"), "First Escape should contract from expanded to medium");
+    assert.equal(drawer.getState(), "sheet", "First Escape keeps drawer in sheet mode");
+
+    // Second Escape closes back to pill with animation
+    env.mockWindow.dispatchEvent({
+      type: "keydown",
+      key: "Escape",
+      preventDefault: () => {}
+    });
+
+    const closingSheet = container.querySelector(".copilot-container-sheet.is-closing") as unknown as MockDOMElement;
+    assert.ok(closingSheet, "Second Escape closes sheet to pill");
+    closingSheet.dispatchEvent({ type: "animationend" });
+    assert.equal(drawer.getState(), "pill");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: composer input generous sizing and auto-grow fallback", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "concurrency-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const composerInput = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
+    assert.ok(composerInput);
+    assert.ok(composerInput.classList.contains("copilot-composer-input"));
+
+    // Simulate user typing and auto-grow event
+    composerInput.scrollHeight = 88;
+    composerInput.value = "Riga 1\nRiga 2\nRiga 3";
+    composerInput.dispatchEvent({ type: "input" });
+
+    assert.equal(composerInput.style.height, "88px", "Auto-grow fallback updates textarea style.height");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: auto-expands when multiple messages accumulate in sheet", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const panel = container.querySelector(".copilot-container-sheet") as unknown as MockDOMElement;
+    assert.ok(panel);
+    assert.ok(!panel.classList.contains("is-fullscreen"));
+
+    // Add 1st message - remains medium
+    drawer.addMessage({ role: "user", text: "Primo messaggio" });
+    assert.ok(!panel.classList.contains("is-fullscreen"), "1 message keeps sheet at medium height");
+
+    // Add 2nd message - remains medium
+    drawer.addMessage({ role: "assistant", text: "Prima risposta dell'assistente" });
+    assert.ok(!panel.classList.contains("is-fullscreen"), "2 messages keep sheet at medium height");
+
+    // Add 3rd message - messages have accumulated, smoothly expands
+    drawer.addMessage({ role: "user", text: "Secondo messaggio di approfondimento" });
+    assert.ok(panel.classList.contains("is-fullscreen"), "Accumulated messages expand sheet to tall state");
+
+    // Reverse contraction still works when scrolling to top
+    const chatBody = panel.querySelector(".copilot-chat-body") as unknown as MockDOMElement;
+    chatBody.scrollTop = 5;
+    chatBody.dispatchEvent({ type: "scroll" });
+    assert.ok(!panel.classList.contains("is-fullscreen"), "Scrolling to top contracts accumulated sheet back to medium");
+
+    drawer.destroy();
   } finally {
     env.restore();
   }

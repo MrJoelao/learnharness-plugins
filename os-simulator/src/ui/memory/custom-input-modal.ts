@@ -1,3 +1,4 @@
+import type { PluginUi, PluginWidgetHandle, PluginDialogProps } from "learnharness-plugin-api";
 import type {
   MemoryLabState,
   SegmentationSystemConfig,
@@ -15,8 +16,39 @@ export function openCustomInputModal(
   state: MemoryLabState,
   onSave: (updates: Partial<MemoryLabState>) => void,
   targetContainer?: HTMLElement,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  ui?: PluginUi
 ): () => void {
+  if (ui && typeof ui.openDialog === "function") {
+    let handle: PluginWidgetHandle<PluginDialogProps>;
+    const close = () => {
+      handle?.dispose();
+    };
+
+    handle = ui.openDialog(
+      {
+        title: "Configurazione Parametrica Personalizzata",
+        content(container: HTMLElement, dialogSignal: AbortSignal) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "custom-input-modal-form";
+          const { body, footer } = buildCustomInputBodyAndFooter(state, onSave, close);
+          wrapper.append(body, footer);
+          container.appendChild(wrapper);
+
+          dialogSignal.addEventListener("abort", () => {
+            wrapper.remove();
+          });
+          return () => {
+            wrapper.remove();
+          };
+        }
+      },
+      { signal: signal ?? new AbortController().signal }
+    );
+
+    return () => handle.dispose();
+  }
+
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
 
@@ -59,6 +91,19 @@ export function openCustomInputModal(
   closeBtn.addEventListener("click", () => close());
   header.appendChild(closeBtn);
   modal.appendChild(header);
+
+  const { body, footer } = buildCustomInputBodyAndFooter(state, onSave, close);
+  modal.append(body, footer);
+  overlay.appendChild(modal);
+  (targetContainer ?? document.body).appendChild(overlay);
+  return close;
+}
+
+function buildCustomInputBodyAndFooter(
+  state: MemoryLabState,
+  onSave: (updates: Partial<MemoryLabState>) => void,
+  close: () => void
+): { body: HTMLElement; footer: HTMLElement } {
 
   const body = document.createElement("div");
   body.className = "modal-body";
@@ -147,8 +192,6 @@ export function openCustomInputModal(
     `;
   }
 
-  modal.appendChild(body);
-
   const footer = document.createElement("div");
   footer.className = "modal-footer";
 
@@ -163,29 +206,29 @@ export function openCustomInputModal(
   btnSave.addEventListener("click", () => {
     try {
       if (state.subsystem === "segmentation") {
-        const asBitsRes = parseNumberInRange((modal.querySelector("#seg-as-bits") as HTMLInputElement).value, 8, 32, "Bit spazio virtuale");
+        const asBitsRes = parseNumberInRange((body.querySelector("#seg-as-bits") as HTMLInputElement).value, 8, 32, "Bit spazio virtuale");
         if (!asBitsRes.success || asBitsRes.data === undefined) return showError(asBitsRes.error || "Errore");
 
-        const segBitsRes = parseNumberInRange((modal.querySelector("#seg-bits") as HTMLInputElement).value, 1, 4, "Bit selettore segmento");
+        const segBitsRes = parseNumberInRange((body.querySelector("#seg-bits") as HTMLInputElement).value, 1, 4, "Bit selettore segmento");
         if (!segBitsRes.success || segBitsRes.data === undefined) return showError(segBitsRes.error || "Errore");
 
-        const physMemRes = parseNumberInRange((modal.querySelector("#seg-phys-mem") as HTMLInputElement).value, 256, 1073741824, "Memoria fisica");
+        const physMemRes = parseNumberInRange((body.querySelector("#seg-phys-mem") as HTMLInputElement).value, 256, 1073741824, "Memoria fisica");
         if (!physMemRes.success || physMemRes.data === undefined) return showError(physMemRes.error || "Errore");
 
-        const base0Res = parseNumberInRange((modal.querySelector("#seg0-base") as HTMLInputElement).value, 0, physMemRes.data, "Base Segmento 0");
+        const base0Res = parseNumberInRange((body.querySelector("#seg0-base") as HTMLInputElement).value, 0, physMemRes.data, "Base Segmento 0");
         if (!base0Res.success || base0Res.data === undefined) return showError(base0Res.error || "Errore Base Segmento 0");
 
-        const limit0Res = parseNumberInRange((modal.querySelector("#seg0-limit") as HTMLInputElement).value, 1, physMemRes.data, "Limite Segmento 0");
+        const limit0Res = parseNumberInRange((body.querySelector("#seg0-limit") as HTMLInputElement).value, 1, physMemRes.data, "Limite Segmento 0");
         if (!limit0Res.success || limit0Res.data === undefined) return showError(limit0Res.error || "Errore Limite Segmento 0");
 
         if (base0Res.data + limit0Res.data > physMemRes.data) {
           return showError(`Segmento 0: Base (${base0Res.data}) + Limite (${limit0Res.data}) supera la memoria fisica (${physMemRes.data} B).`);
         }
 
-        const base1Res = parseNumberInRange((modal.querySelector("#seg1-base") as HTMLInputElement).value, 0, physMemRes.data, "Base Segmento 1");
+        const base1Res = parseNumberInRange((body.querySelector("#seg1-base") as HTMLInputElement).value, 0, physMemRes.data, "Base Segmento 1");
         if (!base1Res.success || base1Res.data === undefined) return showError(base1Res.error || "Errore Base Segmento 1");
 
-        const limit1Res = parseNumberInRange((modal.querySelector("#seg1-limit") as HTMLInputElement).value, 1, physMemRes.data, "Limite Segmento 1");
+        const limit1Res = parseNumberInRange((body.querySelector("#seg1-limit") as HTMLInputElement).value, 1, physMemRes.data, "Limite Segmento 1");
         if (!limit1Res.success || limit1Res.data === undefined) return showError(limit1Res.error || "Errore Limite Segmento 1");
 
         if (base1Res.data + limit1Res.data > physMemRes.data) {
@@ -196,7 +239,7 @@ export function openCustomInputModal(
           return showError(`Segmento 1 (stack decrescente): Base (${base1Res.data}) non può essere inferiore al limite (${limit1Res.data}).`);
         }
 
-        const traceStr = (modal.querySelector("#seg-trace") as HTMLInputElement).value;
+        const traceStr = (body.querySelector("#seg-trace") as HTMLInputElement).value;
         const traceRes = parseReferenceString(traceStr);
         if (!traceRes.success || !traceRes.data) return showError(traceRes.error || "Traccia non valida");
 
@@ -231,16 +274,16 @@ export function openCustomInputModal(
         });
         close();
       } else if (state.subsystem === "linear-paging") {
-        const asBitsRes = parseNumberInRange((modal.querySelector("#page-as-bits") as HTMLInputElement).value, 8, 32, "Bit spazio virtuale");
+        const asBitsRes = parseNumberInRange((body.querySelector("#page-as-bits") as HTMLInputElement).value, 8, 32, "Bit spazio virtuale");
         if (!asBitsRes.success || asBitsRes.data === undefined) return showError(asBitsRes.error || "Errore");
 
-        const pageSizeRes = parseNumberInRange((modal.querySelector("#page-size") as HTMLInputElement).value, 16, 1048576, "Dimensione pagina");
+        const pageSizeRes = parseNumberInRange((body.querySelector("#page-size") as HTMLInputElement).value, 16, 1048576, "Dimensione pagina");
         if (!pageSizeRes.success || pageSizeRes.data === undefined) return showError(pageSizeRes.error || "Errore");
 
-        const physMemRes = parseNumberInRange((modal.querySelector("#page-phys-mem") as HTMLInputElement).value, 256, 1073741824, "Memoria fisica");
+        const physMemRes = parseNumberInRange((body.querySelector("#page-phys-mem") as HTMLInputElement).value, 256, 1073741824, "Memoria fisica");
         if (!physMemRes.success || physMemRes.data === undefined) return showError(physMemRes.error || "Errore");
 
-        const traceStr = (modal.querySelector("#page-trace") as HTMLInputElement).value;
+        const traceStr = (body.querySelector("#page-trace") as HTMLInputElement).value;
         const traceRes = parseReferenceString(traceStr);
         if (!traceRes.success || !traceRes.data) return showError(traceRes.error || "Traccia non valida");
 
@@ -260,10 +303,10 @@ export function openCustomInputModal(
         });
         close();
       } else if (state.subsystem === "replacement") {
-        const frameCountRes = parseNumberInRange((modal.querySelector("#rep-frame-count") as HTMLInputElement).value, 1, 16, "Frame count");
+        const frameCountRes = parseNumberInRange((body.querySelector("#rep-frame-count") as HTMLInputElement).value, 1, 16, "Frame count");
         if (!frameCountRes.success || frameCountRes.data === undefined) return showError(frameCountRes.error || "Errore");
 
-        const refStr = (modal.querySelector("#rep-ref-string") as HTMLInputElement).value;
+        const refStr = (body.querySelector("#rep-ref-string") as HTMLInputElement).value;
         const refRes = parseReferenceString(refStr);
         if (!refRes.success || !refRes.data) return showError(refRes.error || "Stringa di riferimento non valida");
 
@@ -279,7 +322,7 @@ export function openCustomInputModal(
         });
         close();
       } else {
-        const traceStr = (modal.querySelector("#generic-trace") as HTMLInputElement).value;
+        const traceStr = (body.querySelector("#generic-trace") as HTMLInputElement).value;
         const traceRes = parseReferenceString(traceStr);
         if (!traceRes.success || !traceRes.data) return showError(traceRes.error || "Traccia non valida");
 
@@ -297,8 +340,5 @@ export function openCustomInputModal(
   });
 
   footer.append(btnCancel, btnSave);
-  modal.appendChild(footer);
-  overlay.appendChild(modal);
-  (targetContainer ?? document.body).appendChild(overlay);
-  return close;
+  return { body, footer };
 }

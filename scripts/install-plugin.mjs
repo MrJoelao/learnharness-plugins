@@ -9,27 +9,33 @@
  *   node scripts/install-plugin.mjs os-simulator /path/to/learnharness/data/plugins
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
-function findDefaultPluginsDirectory() {
+function findDefaultPluginsDirectories() {
+  const dirs = [];
   if (process.env.LEARNHARNESS_PLUGINS_DIR && fs.existsSync(process.env.LEARNHARNESS_PLUGINS_DIR)) {
-    return process.env.LEARNHARNESS_PLUGINS_DIR;
+    dirs.push(process.env.LEARNHARNESS_PLUGINS_DIR);
+  }
+  const configDir = path.join(os.homedir(), ".config", "LearnHarness", "data", "plugins");
+  if (fs.existsSync(configDir)) {
+    dirs.push(configDir);
   }
   if (process.env.LEARNHARNESS_PATH) {
     const candidate = path.join(process.env.LEARNHARNESS_PATH, "data", "plugins");
-    if (fs.existsSync(candidate)) return candidate;
+    if (fs.existsSync(candidate) && !dirs.includes(candidate)) dirs.push(candidate);
   }
   const relativeSibling = path.resolve(repoRoot, "..", "learnharness", "data", "plugins");
-  if (fs.existsSync(relativeSibling)) return relativeSibling;
+  if (fs.existsSync(relativeSibling) && !dirs.includes(relativeSibling)) dirs.push(relativeSibling);
 
   const defaultJoel = "/home/joel/Documents/learnharness/data/plugins";
-  if (fs.existsSync(defaultJoel)) return defaultJoel;
+  if (fs.existsSync(defaultJoel) && !dirs.includes(defaultJoel)) dirs.push(defaultJoel);
 
-  return null;
+  return dirs;
 }
 
 function resolvePluginDir(input) {
@@ -160,9 +166,9 @@ if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
 }
 
 const pluginArg = args[0];
-const targetDir = args[1] || findDefaultPluginsDirectory();
+const targetDirs = args[1] ? [args[1]] : findDefaultPluginsDirectories();
 
-if (!targetDir) {
+if (targetDirs.length === 0) {
   console.error("Error: Could not automatically locate LearnHarness 'data/plugins' directory.");
   console.error("Please supply it as the second argument, e.g.:");
   console.error("  node scripts/install-plugin.mjs os-simulator /path/to/learnharness/data/plugins");
@@ -170,7 +176,9 @@ if (!targetDir) {
 }
 
 try {
-  installPlugin(pluginArg, targetDir);
+  for (const dir of targetDirs) {
+    installPlugin(pluginArg, dir);
+  }
 } catch (err) {
   console.error(`✖ [install error] ${err.message}`);
   process.exit(1);

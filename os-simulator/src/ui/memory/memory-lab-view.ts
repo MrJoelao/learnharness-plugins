@@ -30,7 +30,6 @@ import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
-import { handleAiTurn } from "../../backend/ai-service.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
 
 export function getInitialMemoryLabState(workspaceId: string): MemoryLabState {
@@ -74,7 +73,7 @@ export function createMemoryLabView(
   let activeUndoBannerCleanup: (() => void) | null = null;
 
   const rootEl = document.createElement("div");
-  rootEl.className = "memory-lab-root";
+  rootEl.className = "lh-root memory-lab-root";
   container.appendChild(rootEl);
 
   const labContent = document.createElement("div");
@@ -340,18 +339,9 @@ export function createMemoryLabView(
   function render() {
     labContent.innerHTML = "";
 
-    // View Header
-    const viewHeader = document.createElement("div");
-    viewHeader.className = "view-header";
-    const viewTitle = document.createElement("h2");
-    viewTitle.className = "view-title font-title";
-    viewTitle.textContent = "Memory Virtualization Lab";
-    viewHeader.appendChild(viewTitle);
-    labContent.appendChild(viewHeader);
-
     // Toolbar
     const toolbar = document.createElement("div");
-    toolbar.className = "memory-lab-toolbar";
+    toolbar.className = "lh-toolbar memory-lab-toolbar";
 
     // Subsystem Tabs
     const tabs = document.createElement("div");
@@ -442,7 +432,9 @@ export function createMemoryLabView(
           markActiveExerciseManual();
           update(updates);
         },
-        rootEl
+        rootEl,
+        signal,
+        ctx?.ui
       );
     });
     actions.appendChild(customBtn);
@@ -692,8 +684,7 @@ export function createMemoryLabView(
       if (ctx && typeof ctx.call === "function") {
         return ctx.call<AiTurnResponse>("ai-turn", request);
       }
-      const dummyBackendCtx = {} as PluginBackendContext;
-      return handleAiTurn(dummyBackendCtx, request);
+      throw new Error("Backend IPC (ctx.call) not available");
     },
     loadSuggestions: ctx && typeof ctx.call === "function"
       ? (mode) => ctx.call("get-suggestions", { mode })
@@ -703,7 +694,8 @@ export function createMemoryLabView(
           if (event.topic === "settings-changed") listener();
         })
       : undefined,
-    signal
+    signal,
+    ui: ctx?.ui
   });
 
   // Close preset popover when clicking outside

@@ -135,6 +135,19 @@ Before committing any UI code, verify:
    - `src/core/`: Pure, framework-agnostic TypeScript simulation engines and state reducers. Zero DOM dependencies. 100% covered by unit tests.
    - `src/ui/`: DOM view rendering, event listeners, canvas/SVG manipulation.
    - `src/backend.ts`: Server-side registrations, IPC handlers (`ctx.handle(...)`), persistent file storage.
+4. **Zero Host CSS Leakage (Isolation Guarantee)**:
+   - 🚫 NEVER declare global, unscoped CSS selectors in plugin stylesheets. Plugin stylesheets are loaded into the host `<head>` and apply across the entire application.
+   - Every CSS class (including `.lh-*` workbench utilities, buttons, inputs, cards) MUST be scoped to the plugin's root container (`.lh-root` or `:is(.lh-root, ...)`) so they never bleed into host surfaces.
+   - Specifically, NEVER declare an unscoped `.lh-input` selector: `.lh-input` is an internal LearnHarness host class for textareas and path-inputs (such as the home screen composer pill and chat inputs). An unscoped `.lh-input` rule breaks host components.
+5. **Electron Window Drag Hygiene (`.lh-no-drag`)**:
+   - The top 60px of the window carries `-webkit-app-region: drag` for window titlebar movement.
+   - Any custom interactive buttons, resizer handles, or inputs rendered within the top 60px (including floating actions and drawer headers) MUST have `.lh-no-drag` and `-webkit-app-region: no-drag;`, otherwise Chromium swallows clicks as window drag events.
+   - Use `.lh-wco-gutter` on lateral drawers to avoid overlapping native OS minimize/maximize/close window control buttons on Linux and Windows.
+6. **No CSS Keyframe `forwards` Specificity Lock**:
+   - Never use `animation: ... forwards` on properties that later transition dynamically (such as `height`, `max-width`, or `transform`). In CSS cascade rules, active animation layers override normal class declarations, locking element dimensions.
+7. **Study Hub Floating Action Pattern**:
+   - Prefer quiet floating circular buttons (`width: 32px; border-radius: 9999px; backdrop-filter: blur(8px);`) over redundant secondary headers.
+   - Never use stark pure-white focus borders (`border-color: var(--primary)` in dark theme); use subtle `color-mix(in srgb, var(--foreground) 25%, var(--border))` adhering to the No-Ring Law.
 
 ---
 

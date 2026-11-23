@@ -128,3 +128,42 @@ When a workspace mode is closed, navigated away from, or disabled:
   - `ResizeObserver` or `MutationObserver` instances.
   - Child widget handles via `handle.dispose()`.
 - Failing to clean up causes memory leaks, duplicate event triggers, and degraded host performance.
+
+---
+
+## 6. The Study Hub Aesthetic: Lessons Learned (Before vs After)
+
+The Study Hub interface in LearnHarness represents the gold standard of native craft: quiet chrome, subtle tactile feedback, frosted floating actions, and fluid organic transitions. 
+
+When redesigning the OS Simulator Copilot assistant to match Study Hub, seven critical architectural and UX lessons were learned:
+
+### Comparative Analysis: Before vs After
+
+| UX Dimension | "Before" (AI Slop / Naive Implementation) | "After" (Study Hub Craft Standard) |
+| :--- | :--- | :--- |
+| **Focus & Hover Borders** | Stark jump to `border-color: var(--primary)` (`#E6E6E6`), flashing harsh pure-white on dark backgrounds. | Restrained `color-mix(in srgb, var(--foreground) 25%, var(--border))` with subtle elevation (`0.2s cubic-bezier(0.16, 1, 0.3, 1)`). |
+| **Pill-to-Sheet Animation** | `rootEl.innerHTML = ""` destroyed DOM; unmounted and remounted with `opacity: 0`, causing a jarring blink/flash. | Continuous physical container morphing upwards from `52px` pill geometry with opacity 1 and user text preservation. |
+| **CSS Animation Specificity** | `@keyframes ... forwards` permanently locked container `height`, preventing subsequent CSS class transitions. | Opening keyframes omit `forwards` (or clear via `animation: none;`), enabling dynamic multi-step height expansion. |
+| **Sidebar Header & Actions** | Heavy 60px header repeating workspace titles, truncating mode badges, and wasting vertical screen space. | Removed top header clutter; converted actions to elegant `32px` circular floating pills with frosted glass backdrop. |
+| **Sidebar Resizing** | Static hardcoded 320px sidebar width; unable to adjust for wide simulation logs or narrow displays. | Left-edge drag handle with native `setPointerCapture`, 60fps tracking (`.is-resizing`), keyboard access, and `localStorage` persistence. |
+| **Composer Textarea Area** | Fixed 36px single-line input squeezed between headers and chips; text clipped and cramped on multi-line input. | Generous auto-growing textarea (`field-sizing: content; min-height: 44px; max-height: 160px; line-height: 1.5`). |
+| **Electron Drag Region Hygiene** | Top 60px clicks swallowed by Chromium `-webkit-app-region: drag`, causing top header buttons to silently fail. | Explicit `-webkit-app-region: no-drag;` (`.lh-no-drag`) and `.lh-wco-gutter` on all interactive buttons in top window strips. |
+
+### Core Architectural Principles Extracted
+
+1. **Quiet Floating Actions Over Heavy Headers**:
+   When a tool or lateral panel renders in a workspace that already has a host title bar, adding a secondary title bar (`Assistente OS · concurrency-lab`) creates noisy visual repetition. Floating circular buttons (`width: 32px; border-radius: 9999px; backdrop-filter: blur(8px)`) provide instant access to actions while letting the content scroll cleanly to the top.
+
+2. **The "No-Ring" and "No-Stark-White" Laws**:
+   Focus indicators in dark mode must never be stark white `#E6E6E6` or glowing violet rings. Using CSS `color-mix(in srgb, var(--foreground) 25%, var(--border))` creates a tactile, layered highlight that feels engraved into the dark theme surface.
+
+3. **Avoid the Keyframe `forwards` Trap in Dynamic Layouts**:
+   CSS animations using `animation-fill-mode: forwards` override normal CSS rules in the cascade. When creating elements whose dimensions change dynamically based on user interaction (such as scroll expansion or fullscreen toggling), never leave a `forwards` animation active on the element. Use transitional modifier classes or remove the animation once completed (`animationend`).
+
+4. **Bi-directional Organic Height Progression**:
+   A modal or assistant surface should adapt to the conversational state:
+   - *State 0 (Idle)*: Compact 52px floating pill.
+   - *State 1 (Opened)*: Medium floating card (`min(50vh, 460px)`) giving comfortable space for chips and composer.
+   - *State 2 (Active Chat)*: Expands to full-height view (`calc(100vh - 40px)`) when messages accumulate or on scroll down.
+   - *State 3 (Reverse)*: Fluidly contracts back to medium when the user scrolls back to the top.
+

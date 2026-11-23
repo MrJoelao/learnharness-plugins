@@ -38,7 +38,14 @@ for (const file of ["manifest.json", "README.md", "LICENSE"]) {
     fs.copyFileSync(path.join(root, file), path.join(output, file));
   }
 }
-fs.copyFileSync(path.join(root, "src/styles.css"), path.join(output, "styles.css"));
+
+const baseCssPath = path.join(root, "../shared/plugin-base.css");
+let stylesContent = "";
+if (fs.existsSync(baseCssPath)) {
+  stylesContent += fs.readFileSync(baseCssPath, "utf8") + "\n\n";
+}
+stylesContent += fs.readFileSync(path.join(root, "src/styles.css"), "utf8");
+fs.writeFileSync(path.join(output, "styles.css"), stylesContent, "utf8");
 
 const presetsSrc = path.join(root, "presets");
 if (fs.existsSync(presetsSrc)) {

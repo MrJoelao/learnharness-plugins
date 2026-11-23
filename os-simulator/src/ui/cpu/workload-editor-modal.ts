@@ -1,3 +1,4 @@
+import type { PluginUi, PluginWidgetHandle, PluginDialogProps } from "learnharness-plugin-api";
 import type { ProcessBurst, ProcessWorkload } from "../../core/cpu/types.js";
 import { parseWorkloadInput } from "../../core/cpu/types.js";
 import { createIcon } from "../icons.js";
@@ -26,10 +27,41 @@ export function openWorkloadEditorModal(
   onSave: (newWorkload: ProcessWorkload[]) => void,
   onClose: () => void,
   targetContainer?: HTMLElement,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  ui?: PluginUi
 ): () => void {
-  let workload: ProcessWorkload[] = JSON.parse(JSON.stringify(currentWorkload));
-  let isJsonMode = false;
+  if (ui && typeof ui.openDialog === "function") {
+    let handle: PluginWidgetHandle<PluginDialogProps>;
+    const close = () => {
+      handle?.dispose();
+      onClose();
+    };
+
+    handle = ui.openDialog(
+      {
+        title: "Editor Workload Processi (Zero Constant Cablate)",
+        content(container: HTMLElement, dialogSignal: AbortSignal) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "cpu-workload-modal-form";
+          setupWorkloadEditor(wrapper, currentWorkload, onSave, close);
+          container.appendChild(wrapper);
+
+          dialogSignal.addEventListener("abort", () => {
+            wrapper.remove();
+          });
+          return () => {
+            wrapper.remove();
+          };
+        },
+        onClose() {
+          onClose();
+        }
+      },
+      { signal: signal ?? new AbortController().signal }
+    );
+
+    return () => handle.dispose();
+  }
 
   const backdrop = document.createElement("div");
   backdrop.className = "cpu-modal-backdrop";
@@ -79,26 +111,45 @@ export function openWorkloadEditorModal(
     }
   });
 
-  function renderModal() {
-    modal.innerHTML = "";
+  const header = document.createElement("div");
+  header.className = "cpu-modal-header";
 
-    // Header
-    const header = document.createElement("div");
-    header.className = "cpu-modal-header";
+  const title = document.createElement("h3");
+  title.className = "cpu-modal-title font-title";
+  title.textContent = "Editor Workload Processi (Zero Constant Cablate)";
 
-    const title = document.createElement("h3");
-    title.className = "cpu-modal-title font-title";
-    title.textContent = "Editor Workload Processi (Zero Constant Cablate)";
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn-icon";
+  closeBtn.appendChild(createIcon("x", "size-4"));
+  closeBtn.addEventListener("click", () => {
+    close();
+  });
 
-    const closeBtn = document.createElement("button");
-    closeBtn.className = "btn-icon";
-    closeBtn.appendChild(createIcon("x", "size-4"));
-    closeBtn.addEventListener("click", () => {
-      close();
-    });
+  header.append(title, closeBtn);
+  modal.appendChild(header);
 
-    header.append(title, closeBtn);
-    modal.appendChild(header);
+  const contentWrapper = document.createElement("div");
+  modal.appendChild(contentWrapper);
+  setupWorkloadEditor(contentWrapper, currentWorkload, onSave, close);
+
+  backdrop.appendChild(modal);
+  const mountTarget = targetContainer ?? document.body;
+  mountTarget.appendChild(backdrop);
+
+  return close;
+}
+
+function setupWorkloadEditor(
+  container: HTMLElement,
+  initialWorkload: ProcessWorkload[],
+  onSave: (newWorkload: ProcessWorkload[]) => void,
+  close: () => void
+) {
+  let workload: ProcessWorkload[] = JSON.parse(JSON.stringify(initialWorkload));
+  let isJsonMode = false;
+
+  function renderView() {
+    container.innerHTML = "";
 
     // Mode switch: Tabella Form vs JSON Raw
     const navBar = document.createElement("div");
@@ -109,7 +160,7 @@ export function openWorkloadEditorModal(
     tableTab.textContent = "Editor Tabellare";
     tableTab.addEventListener("click", () => {
       isJsonMode = false;
-      renderModal();
+      renderView();
     });
 
     const jsonTab = document.createElement("button");
@@ -117,17 +168,17 @@ export function openWorkloadEditorModal(
     jsonTab.textContent = "Import/Export JSON";
     jsonTab.addEventListener("click", () => {
       isJsonMode = true;
-      renderModal();
+      renderView();
     });
 
     navBar.append(tableTab, jsonTab);
-    modal.appendChild(navBar);
+    container.appendChild(navBar);
 
     // Error Alert Box
     const errorBox = document.createElement("div");
     errorBox.className = "cpu-modal-error";
     errorBox.style.display = "none";
-    modal.appendChild(errorBox);
+    container.appendChild(errorBox);
 
     function showError(msg: string) {
       errorBox.textContent = msg;
@@ -199,7 +250,7 @@ export function openWorkloadEditorModal(
         delBtn.appendChild(createIcon("trash", "size-4"));
         delBtn.addEventListener("click", () => {
           workload.splice(idx, 1);
-          renderModal();
+          renderView();
         });
         tdDel.appendChild(delBtn);
 
@@ -224,7 +275,7 @@ export function openWorkloadEditorModal(
           arrivalTime: 0,
           bursts: [{ type: "cpu", duration: 10 }]
         });
-        renderModal();
+        renderView();
       });
       body.appendChild(addRowBtn);
     } else {
@@ -249,7 +300,7 @@ export function openWorkloadEditorModal(
       body.appendChild(jsonArea);
     }
 
-    modal.appendChild(body);
+    container.appendChild(body);
 
     // Footer
     const footer = document.createElement("div");
@@ -276,13 +327,8 @@ export function openWorkloadEditorModal(
     });
 
     footer.append(cancelBtn, saveBtn);
-    modal.appendChild(footer);
+    container.appendChild(footer);
   }
 
-  renderModal();
-  backdrop.appendChild(modal);
-  const mountTarget = targetContainer ?? document.body;
-  mountTarget.appendChild(backdrop);
-
-  return close;
+  renderView();
 }

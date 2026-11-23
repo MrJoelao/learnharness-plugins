@@ -21,7 +21,6 @@ import { renderRagGraph } from "./rag-graph.js";
 import { renderThreadInspector } from "./thread-inspector.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
-import { handleAiTurn } from "../../backend/ai-service.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
 
 export function getInitialConcurrencyLabState(workspaceId: string): ConcurrencyLabState {
@@ -62,7 +61,7 @@ export function createConcurrencyLabView(
   let activeUndoBannerCleanup: (() => void) | null = null;
 
   const rootEl = document.createElement("div");
-  rootEl.className = "concurrency-lab-root";
+  rootEl.className = "lh-root concurrency-lab-root";
   container.appendChild(rootEl);
 
   const labContent = document.createElement("div");
@@ -254,17 +253,8 @@ export function createConcurrencyLabView(
   function render() {
     labContent.innerHTML = "";
 
-    // View Header
-    const viewHeader = document.createElement("div");
-    viewHeader.className = "view-header";
-    const viewTitle = document.createElement("h2");
-    viewTitle.className = "view-title font-title";
-    viewTitle.textContent = "Concurrency & Deadlock Lab";
-    viewHeader.appendChild(viewTitle);
-    labContent.appendChild(viewHeader);
-
     const toolbar = document.createElement("div");
-    toolbar.className = "concurrency-toolbar";
+    toolbar.className = "lh-toolbar concurrency-toolbar";
 
     const leftToolbar = document.createElement("div");
     leftToolbar.className = "toolbar-group-left";
@@ -339,7 +329,8 @@ export function createConcurrencyLabView(
           applyScenario(newScenario, "custom");
         },
         container,
-        signal
+        signal,
+        ctx?.ui
       );
     });
     leftToolbar.appendChild(customBtn);
@@ -567,8 +558,7 @@ export function createConcurrencyLabView(
       if (ctx && typeof ctx.call === "function") {
         return ctx.call<AiTurnResponse>("ai-turn", request);
       }
-      const dummyBackendCtx = {} as PluginBackendContext;
-      return handleAiTurn(dummyBackendCtx, request);
+      throw new Error("Backend IPC (ctx.call) not available");
     },
     loadSuggestions: ctx && typeof ctx.call === "function"
       ? (mode) => ctx.call("get-suggestions", { mode })
@@ -578,7 +568,8 @@ export function createConcurrencyLabView(
           if (event.topic === "settings-changed") listener();
         })
       : undefined,
-    signal
+    signal,
+    ui: ctx?.ui
   });
 
   const onWindowClick = () => {

@@ -9,8 +9,34 @@ import { createCopilotPill, type CopilotPillHandle, getRandomGraphPlaceholder } 
 import { openExerciseHistoryModal } from "./exercise-history-modal.js";
 import { createIcon } from "../icons.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse } from "../../types/ai.js";
-import { handleAiTurn } from "../../backend/ai-service.js";
-import type { PluginBackendContext } from "learnharness-plugin-api";
+
+export const COPILOT_DRAWER_WIDTH_STORAGE_KEY = "lh-os-copilot-width";
+export const COPILOT_DRAWER_DEFAULT_WIDTH = 400;
+export const COPILOT_DRAWER_MIN_WIDTH = 280;
+export const COPILOT_DRAWER_MAX_WIDTH = 720;
+
+export function clampDrawerWidth(width: number, viewportWidth?: number): number {
+  const vpWidth =
+    typeof viewportWidth === "number" && viewportWidth > 0
+      ? viewportWidth
+      : typeof window !== "undefined" && typeof window.innerWidth === "number" && window.innerWidth > 0
+      ? window.innerWidth
+      : 1024;
+  const minWidth = COPILOT_DRAWER_MIN_WIDTH;
+  const maxBound = Math.min(COPILOT_DRAWER_MAX_WIDTH, vpWidth - 80);
+  const maxWidth = Math.max(minWidth, maxBound);
+  return Math.min(Math.max(Math.round(width), minWidth), maxWidth);
+}
+
+function getSafeLocalStorage(): { getItem(k: string): string | null; setItem(k: string, v: string): void } | null {
+  try {
+    if (typeof window !== "undefined" && (window as any).localStorage) {
+      return (window as any).localStorage;
+    }
+  } catch {
+  }
+  return null;
+}
 
 function formatInlineMarkdown(str: string): string {
   const escaped = str
@@ -25,13 +51,39 @@ function formatInlineMarkdown(str: string): string {
 
 function formatMarkdown(text: string): HTMLElement {
   const container = document.createElement("div");
-  container.className = "copilot-markdown-content";
+  container.className = "copilot-markdown-content font-sans";
 
   const lines = text.split("\n");
   let currentList: HTMLUListElement | null = null;
+  let inCodeBlock = false;
+  let codeBlockLines: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
+    if (trimmed.startsWith("```")) {
+      if (inCodeBlock) {
+        const pre = document.createElement("pre");
+        pre.className = "copilot-pre font-mono";
+        const code = document.createElement("code");
+        code.className = "copilot-code-block font-mono tabular-nums";
+        code.textContent = codeBlockLines.join("\n");
+        pre.appendChild(code);
+        container.appendChild(pre);
+        inCodeBlock = false;
+        codeBlockLines = [];
+      } else {
+        inCodeBlock = true;
+        currentList = null;
+        codeBlockLines = [];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(line);
+      continue;
+    }
+
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
       if (!currentList) {
         currentList = document.createElement("ul");
@@ -53,6 +105,16 @@ function formatMarkdown(text: string): HTMLElement {
     }
   }
 
+  if (inCodeBlock && codeBlockLines.length > 0) {
+    const pre = document.createElement("pre");
+    pre.className = "copilot-pre font-mono";
+    const code = document.createElement("code");
+    code.className = "copilot-code-block font-mono tabular-nums";
+    code.textContent = codeBlockLines.join("\n");
+    pre.appendChild(code);
+    container.appendChild(pre);
+  }
+
   return container;
 }
 
@@ -69,16 +131,37 @@ export interface CopilotDrawerHandle {
 
 export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawerHandle {
   let currentState: CopilotUiMode = options.initialState ?? "pill";
+  let previousState: CopilotUiMode = currentState;
   let lastExpandedState: "sheet" | "drawer" = "sheet";
   let exercises: SavedExercise[] = options.initialExercises ? [...options.initialExercises] : [];
   let messages: CopilotMessage[] = [];
   let isThinking = false;
   let isClosing = false;
   let activePillHandle: CopilotPillHandle | null = null;
+  let activeDrawerCleanup: (() => void) | null = null;
   let historyModalCloseFn: (() => void) | null = null;
   let suggestionsEnabled = true;
   let activePromptChips: readonly CopilotPromptChip[] = getOstepPromptChips(options.mode);
   let isDestroyed = false;
+  let isFullscreen = false;
+  let setFullscreen: (enabled: boolean) => void = () => {};
+
+  let drawerWidth: number = (() => {
+    try {
+      const storage = getSafeLocalStorage();
+      if (storage) {
+        const stored = storage.getItem(COPILOT_DRAWER_WIDTH_STORAGE_KEY);
+        if (stored) {
+          const parsed = parseInt(stored, 10);
+          if (!Number.isNaN(parsed)) {
+            return clampDrawerWidth(parsed);
+          }
+        }
+      }
+    } catch {
+    }
+    return COPILOT_DRAWER_DEFAULT_WIDTH;
+  })();
 
   async function refreshSuggestions(): Promise<void> {
     if (!options.loadSuggestions) return;
@@ -154,22 +237,33 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     isClosing = true;
     panel.classList.add("is-closing");
 
+    const carriedInput = composerInputEl?.value?.trim() ? composerInputEl.value : undefined;
+
     let finished = false;
     const onDone = () => {
       if (finished) return;
       finished = true;
       panel.removeEventListener("animationend", onDone);
+      panel.removeEventListener("transitionend", onDone);
       isClosing = false;
-      transitionTo(nextMode);
+      transitionTo(nextMode, carriedInput);
     };
 
     panel.addEventListener("animationend", onDone, { once: true });
-    setTimeout(onDone, 200);
+    panel.addEventListener("transitionend", onDone, { once: true });
+    setTimeout(onDone, 240);
   }
 
   const globalKeyDownHandler = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
-      if (currentState === "sheet" || currentState === "drawer") {
+      if (currentState === "sheet") {
+        e.preventDefault();
+        if (isFullscreen) {
+          setFullscreen(false);
+          return;
+        }
+        closeWithAnimation("pill");
+      } else if (currentState === "drawer") {
         e.preventDefault();
         closeWithAnimation("pill");
       }
@@ -179,9 +273,13 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   function transitionTo(nextState: CopilotUiMode, carriedInput?: string) {
     if (nextState === currentState && !carriedInput) return;
+    if (nextState !== "sheet") {
+      isFullscreen = false;
+    }
     if (currentState === "sheet" || currentState === "drawer") {
       lastExpandedState = currentState;
     }
+    previousState = currentState;
     currentState = nextState;
     render(carriedInput);
   }
@@ -201,6 +299,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     if (currentState === "pill" || currentState === "minimized") {
       transitionTo("sheet");
     } else {
+      if (messages.length >= 3 && !isFullscreen && currentState === "sheet") {
+        setFullscreen(true);
+      }
       renderChatBody();
     }
 
@@ -224,8 +325,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       if (options.backendCall) {
         response = await options.backendCall(turnRequest);
       } else {
-        const dummyCtx = {} as PluginBackendContext;
-        response = await handleAiTurn(dummyCtx, turnRequest);
+        throw new Error("Backend IPC (options.backendCall) not configured");
       }
 
       const assistantMessage: CopilotMessage = {
@@ -239,6 +339,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         error: response.error
       };
       messages.push(assistantMessage);
+      if (messages.length >= 3 && !isFullscreen && currentState === "sheet") {
+        setFullscreen(true);
+      }
 
       if (response.generatedExercise) {
         exercises = [response.generatedExercise, ...exercises];
@@ -265,6 +368,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         error: errorMsg
       };
       messages.push(assistantMessage);
+      if (messages.length >= 3 && !isFullscreen && currentState === "sheet") {
+        setFullscreen(true);
+      }
     } finally {
       isThinking = false;
       renderChatBody();
@@ -292,11 +398,16 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         options.onHistoryChange?.(exercises);
       },
       targetContainer: options.targetContainer,
-      signal: options.signal
+      signal: options.signal,
+      ui: options.ui
     });
   }
 
   function render(carriedInput?: string) {
+    if (activeDrawerCleanup) {
+      activeDrawerCleanup();
+      activeDrawerCleanup = null;
+    }
     if (activePillHandle) {
       activePillHandle.destroy();
       activePillHandle = null;
@@ -305,8 +416,15 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
     if (currentState === "drawer") {
       options.targetContainer?.classList.add("has-copilot-drawer");
+      if (options.targetContainer?.style && typeof options.targetContainer.style.setProperty === "function") {
+        options.targetContainer.style.setProperty("--copilot-drawer-width", `${drawerWidth + 10}px`);
+      }
     } else {
       options.targetContainer?.classList.remove("has-copilot-drawer");
+      options.targetContainer?.classList.remove("is-resizing");
+      if (options.targetContainer?.style && typeof options.targetContainer.style.removeProperty === "function") {
+        options.targetContainer.style.removeProperty("--copilot-drawer-width");
+      }
     }
 
     switch (currentState) {
@@ -335,7 +453,10 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   function renderPillState(initialText?: string) {
     const pillWrapper = document.createElement("div");
-    pillWrapper.className = "copilot-container-pill";
+    pillWrapper.className =
+      previousState === "sheet"
+        ? "copilot-container-pill is-morphed"
+        : "copilot-container-pill";
 
     activePillHandle = createCopilotPill({
       initialValue: initialText,
@@ -411,76 +532,323 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   let composerSendBtn: HTMLButtonElement | null = null;
 
   function renderSheetOrDrawerState(layoutMode: "sheet" | "drawer", carriedInput?: string) {
+    const isMorphing = layoutMode === "sheet" && previousState === "pill";
     const panel = document.createElement("div");
     panel.className =
-      layoutMode === "sheet" ? "copilot-container-sheet" : "copilot-container-drawer";
+      layoutMode === "sheet"
+        ? isFullscreen
+          ? "copilot-container-sheet is-fullscreen is-expanded"
+          : isMorphing
+          ? "copilot-container-sheet is-morphing-open"
+          : "copilot-container-sheet"
+        : "copilot-container-drawer";
 
-    const header = document.createElement("div");
-    header.className = "copilot-panel-header";
+    if (isMorphing) {
+      panel.addEventListener(
+        "animationend",
+        () => {
+          panel.classList.remove("is-morphing-open");
+        },
+        { once: true }
+      );
+    }
 
-    const titleGroup = document.createElement("div");
-    titleGroup.className = "copilot-header-title-group";
+    if (layoutMode === "drawer") {
+      panel.style.width = `${drawerWidth}px`;
 
-    const botIcon = createIcon("bot", "size-4 text-primary shrink-0");
-    const titleText = document.createElement("span");
-    titleText.className = "copilot-header-title font-title font-semibold";
-    titleText.textContent = "Assistente OS";
+      const resizer = document.createElement("div");
+      resizer.className = "copilot-drawer-resizer copilot-resizer lh-no-drag";
+      resizer.setAttribute("role", "separator");
+      resizer.setAttribute("aria-orientation", "vertical");
+      resizer.setAttribute("aria-valuenow", String(drawerWidth));
+      resizer.setAttribute("aria-valuemin", String(COPILOT_DRAWER_MIN_WIDTH));
+      resizer.setAttribute("aria-valuemax", String(COPILOT_DRAWER_MAX_WIDTH));
+      resizer.setAttribute("aria-label", "Resize Copilot sidebar");
+      resizer.tabIndex = 0;
 
-    const modeBadge = document.createElement("span");
-    modeBadge.className = "copilot-badge copilot-badge-mode font-mono text-xs";
-    modeBadge.textContent = options.mode;
+      let isDragging = false;
+      let startX = 0;
+      let startWidth = drawerWidth;
 
-    titleGroup.append(botIcon, titleText, modeBadge);
+      const setWidth = (newWidth: number) => {
+        drawerWidth = clampDrawerWidth(newWidth);
+        panel.style.width = `${drawerWidth}px`;
+        resizer.setAttribute("aria-valuenow", String(drawerWidth));
+        if (options.targetContainer?.style && typeof options.targetContainer.style.setProperty === "function") {
+          options.targetContainer.style.setProperty("--copilot-drawer-width", `${drawerWidth + 10}px`);
+        }
+      };
 
-    const actionsGroup = document.createElement("div");
-    actionsGroup.className = "copilot-header-actions";
+      const persistWidth = () => {
+        try {
+          const storage = getSafeLocalStorage();
+          if (storage) {
+            storage.setItem(COPILOT_DRAWER_WIDTH_STORAGE_KEY, String(drawerWidth));
+          }
+        } catch {
+        }
+      };
 
-    const btnHistory = document.createElement("button");
-    btnHistory.type = "button";
-    btnHistory.className = "btn-icon copilot-btn-history";
-    btnHistory.title = "Cronologia Esercizi";
-    btnHistory.setAttribute("aria-label", "Cronologia Esercizi");
-    btnHistory.appendChild(createIcon("history", "size-4 text-muted-foreground"));
-    btnHistory.addEventListener("click", () => openHistory());
+      const onWindowPointerMove = (e: PointerEvent) => {
+        if (!isDragging) return;
+        const delta = startX - e.clientX;
+        setWidth(startWidth + delta);
+      };
 
-    const btnDockToggle = document.createElement("button");
-    btnDockToggle.type = "button";
-    btnDockToggle.className = "btn-icon copilot-btn-dock";
+      const stopDragging = (e?: PointerEvent) => {
+        if (!isDragging) return;
+        isDragging = false;
+        panel.classList.remove("is-resizing");
+        options.targetContainer?.classList.remove("is-resizing");
+        if (e && typeof resizer.releasePointerCapture === "function") {
+          try {
+            resizer.releasePointerCapture(e.pointerId);
+          } catch {
+          }
+        }
+        window.removeEventListener("pointermove", onWindowPointerMove as EventListener);
+        window.removeEventListener("pointerup", onWindowPointerUp as EventListener);
+        window.removeEventListener("pointercancel", onWindowPointerUp as EventListener);
+        persistWidth();
+      };
+
+      const onWindowPointerUp = (e: PointerEvent) => {
+        stopDragging(e);
+      };
+
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX;
+        startWidth = drawerWidth;
+        panel.classList.add("is-resizing");
+        options.targetContainer?.classList.add("is-resizing");
+        if (typeof resizer.setPointerCapture === "function") {
+          try {
+            resizer.setPointerCapture(e.pointerId);
+          } catch {
+          }
+        }
+        window.addEventListener("pointermove", onWindowPointerMove as EventListener);
+        window.addEventListener("pointerup", onWindowPointerUp as EventListener);
+        window.addEventListener("pointercancel", onWindowPointerUp as EventListener);
+      };
+
+      const onDblClick = () => {
+        setWidth(COPILOT_DRAWER_DEFAULT_WIDTH);
+        persistWidth();
+      };
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          setWidth(drawerWidth + 16);
+          persistWidth();
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          setWidth(drawerWidth - 16);
+          persistWidth();
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          setWidth(COPILOT_DRAWER_MIN_WIDTH);
+          persistWidth();
+        } else if (e.key === "End") {
+          e.preventDefault();
+          setWidth(COPILOT_DRAWER_MAX_WIDTH);
+          persistWidth();
+        }
+      };
+
+      resizer.addEventListener("pointerdown", onPointerDown as EventListener);
+      resizer.addEventListener("pointermove", onWindowPointerMove as EventListener);
+      resizer.addEventListener("pointerup", onWindowPointerUp as EventListener);
+      resizer.addEventListener("pointercancel", onWindowPointerUp as EventListener);
+      resizer.addEventListener("dblclick", onDblClick);
+      resizer.addEventListener("keydown", onKeyDown as EventListener);
+
+      activeDrawerCleanup = () => {
+        stopDragging();
+      };
+
+      panel.appendChild(resizer);
+    }
+
     if (layoutMode === "sheet") {
+      const header = document.createElement("div");
+      header.className = "copilot-panel-header lh-no-drag";
+
+      const titleGroup = document.createElement("div");
+      titleGroup.className = "copilot-header-title-group";
+
+      const botIcon = createIcon("bot", "size-4 text-primary shrink-0");
+      const titleText = document.createElement("span");
+      titleText.className = "copilot-header-title font-title font-semibold";
+      titleText.textContent = "Assistente OS";
+
+      const modeBadge = document.createElement("span");
+      modeBadge.className = "copilot-badge copilot-badge-mode font-mono text-xs";
+      modeBadge.textContent = options.mode;
+
+      titleGroup.append(botIcon, titleText, modeBadge);
+
+      const actionsGroup = document.createElement("div");
+      actionsGroup.className = "copilot-header-actions lh-no-drag";
+
+      const btnHistory = document.createElement("button");
+      btnHistory.type = "button";
+      btnHistory.className = "btn-icon copilot-btn-history lh-no-drag";
+      btnHistory.title = "Cronologia Esercizi";
+      btnHistory.setAttribute("aria-label", "Cronologia Esercizi");
+      btnHistory.appendChild(createIcon("history", "size-4 text-muted-foreground"));
+      btnHistory.addEventListener("click", () => openHistory());
+
+      const btnDockToggle = document.createElement("button");
+      btnDockToggle.type = "button";
+      btnDockToggle.className = "btn-icon copilot-btn-dock lh-no-drag";
       btnDockToggle.title = "Aggancia a destra (Drawer)";
       btnDockToggle.setAttribute("aria-label", "Aggancia a destra");
       btnDockToggle.appendChild(createIcon("panel-right", "size-4 text-muted-foreground"));
       btnDockToggle.addEventListener("click", () => transitionTo("drawer"));
+
+      const btnExpandToggle = document.createElement("button");
+      btnExpandToggle.type = "button";
+      btnExpandToggle.className = "btn-icon copilot-btn-expand lh-no-drag";
+      btnExpandToggle.title = isFullscreen ? "Riduci dimensione" : "Espandi a schermo intero";
+      btnExpandToggle.setAttribute("aria-label", btnExpandToggle.title);
+      btnExpandToggle.appendChild(
+        createIcon(isFullscreen ? "minimize-2" : "maximize-2", "size-4 text-muted-foreground")
+      );
+      btnExpandToggle.addEventListener("click", () => {
+        setFullscreen(!isFullscreen);
+      });
+
+      const btnClose = document.createElement("button");
+      btnClose.type = "button";
+      btnClose.className = "btn-icon copilot-btn-close copilot-btn-collapse lh-no-drag";
+      btnClose.title = "Minimizza [Esc]";
+      btnClose.setAttribute("aria-label", "Minimizza assistente");
+      btnClose.appendChild(createIcon("x", "size-4 text-muted-foreground"));
+      btnClose.addEventListener("click", () => closeWithAnimation("pill"));
+
+      actionsGroup.append(btnHistory, btnDockToggle, btnExpandToggle, btnClose);
+      header.append(titleGroup, actionsGroup);
+      panel.appendChild(header);
+
+      setFullscreen = (enabled: boolean) => {
+        if (layoutMode !== "sheet" || isFullscreen === enabled) return;
+        isFullscreen = enabled;
+        if (isFullscreen) {
+          panel.classList.add("is-fullscreen");
+          panel.classList.add("is-expanded");
+          btnExpandToggle.title = "Riduci dimensione";
+          btnExpandToggle.setAttribute("aria-label", "Riduci dimensione");
+          btnExpandToggle.innerHTML = "";
+          btnExpandToggle.appendChild(createIcon("minimize-2", "size-4 text-muted-foreground"));
+        } else {
+          panel.classList.remove("is-fullscreen");
+          panel.classList.remove("is-expanded");
+          btnExpandToggle.title = "Espandi a schermo intero";
+          btnExpandToggle.setAttribute("aria-label", "Espandi a schermo intero");
+          btnExpandToggle.innerHTML = "";
+          btnExpandToggle.appendChild(createIcon("maximize-2", "size-4 text-muted-foreground"));
+        }
+      };
     } else {
+      setFullscreen = () => {};
+
+      const floatingActions = document.createElement("div");
+      floatingActions.className = "copilot-floating-actions lh-no-drag";
+      floatingActions.style.setProperty("-webkit-app-region", "no-drag");
+
+      const btnHistory = document.createElement("button");
+      btnHistory.type = "button";
+      btnHistory.className = "copilot-floating-btn btn-icon copilot-btn-history lh-no-drag";
+      btnHistory.title = "Cronologia Esercizi";
+      btnHistory.setAttribute("aria-label", "Cronologia Esercizi");
+      btnHistory.style.setProperty("-webkit-app-region", "no-drag");
+      btnHistory.appendChild(createIcon("history", "size-4 text-muted-foreground"));
+      btnHistory.addEventListener("click", () => openHistory());
+
+      const btnDockToggle = document.createElement("button");
+      btnDockToggle.type = "button";
+      btnDockToggle.className = "copilot-floating-btn btn-icon copilot-btn-dock lh-no-drag";
       btnDockToggle.title = "Aggancia in basso (Sheet)";
       btnDockToggle.setAttribute("aria-label", "Aggancia in basso");
+      btnDockToggle.style.setProperty("-webkit-app-region", "no-drag");
       btnDockToggle.appendChild(createIcon("chevron-down", "size-4 text-muted-foreground"));
       btnDockToggle.addEventListener("click", () => transitionTo("sheet"));
+
+      const btnClose = document.createElement("button");
+      btnClose.type = "button";
+      btnClose.className = "copilot-floating-btn btn-icon copilot-btn-close copilot-btn-collapse lh-no-drag";
+      btnClose.title = "Minimizza [Esc]";
+      btnClose.setAttribute("aria-label", "Minimizza assistente");
+      btnClose.style.setProperty("-webkit-app-region", "no-drag");
+      btnClose.appendChild(createIcon("x", "size-4 text-muted-foreground"));
+      btnClose.addEventListener("click", () => closeWithAnimation("pill"));
+
+      floatingActions.append(btnHistory, btnDockToggle, btnClose);
+      panel.appendChild(floatingActions);
     }
-
-    const btnCollapse = document.createElement("button");
-    btnCollapse.type = "button";
-    btnCollapse.className = "btn-icon copilot-btn-collapse";
-    btnCollapse.title = "Riduci a pillola";
-    btnCollapse.setAttribute("aria-label", "Riduci a pillola");
-    btnCollapse.appendChild(createIcon("minimize-2", "size-4 text-muted-foreground"));
-    btnCollapse.addEventListener("click", () => closeWithAnimation("pill"));
-
-    const btnClose = document.createElement("button");
-    btnClose.type = "button";
-    btnClose.className = "btn-icon copilot-btn-close";
-    btnClose.title = "Minimizza";
-    btnClose.setAttribute("aria-label", "Minimizza assistente");
-    btnClose.appendChild(createIcon("x", "size-4 text-muted-foreground"));
-    btnClose.addEventListener("click", () => closeWithAnimation("pill"));
-
-    actionsGroup.append(btnHistory, btnDockToggle, btnCollapse, btnClose);
-    header.append(titleGroup, actionsGroup);
-    panel.appendChild(header);
 
     chatBodyEl = document.createElement("div");
     chatBodyEl.className = "copilot-chat-body";
+    if (layoutMode === "drawer") {
+      chatBodyEl.style.paddingTop = "52px";
+    }
+
+    if (layoutMode === "sheet") {
+      let lastScrollTop = 0;
+
+      chatBodyEl.addEventListener("scroll", () => {
+        if (!chatBodyEl) return;
+        const currentScrollTop = chatBodyEl.scrollTop;
+        const scrollHeight = chatBodyEl.scrollHeight;
+        const clientHeight = chatBodyEl.clientHeight || 0;
+        const isScrollable = scrollHeight > clientHeight + 15;
+
+        if (!isFullscreen) {
+          if ((isScrollable && currentScrollTop > 20) || currentScrollTop > 30) {
+            setFullscreen(true);
+          }
+        } else {
+          if (currentScrollTop <= 10) {
+            setFullscreen(false);
+          }
+        }
+        lastScrollTop = currentScrollTop;
+      });
+
+      chatBodyEl.addEventListener(
+        "wheel",
+        (e: WheelEvent) => {
+          if (!chatBodyEl) return;
+          const scrollHeight = chatBodyEl.scrollHeight;
+          const clientHeight = chatBodyEl.clientHeight || 0;
+          const isScrollable = scrollHeight > clientHeight + 15;
+
+          if (!isFullscreen) {
+            if (isScrollable && e.deltaY > 0) {
+              setFullscreen(true);
+            }
+          } else {
+            if (chatBodyEl.scrollTop <= 10 && e.deltaY < 0) {
+              setFullscreen(false);
+            }
+          }
+        },
+        { passive: true }
+      );
+    }
+
     panel.appendChild(chatBodyEl);
+
+    const autoGrow = () => {
+      if (!composerInputEl) return;
+      composerInputEl.style.height = "auto";
+      composerInputEl.style.height = `${composerInputEl.scrollHeight}px`;
+    };
 
     if (suggestionsEnabled && activePromptChips.length > 0) {
       const chipsStrip = document.createElement("div");
@@ -495,6 +863,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         chipBtn.addEventListener("click", () => {
           if (composerInputEl) {
             composerInputEl.value = chip.prompt;
+            autoGrow();
             composerInputEl.focus();
           }
         });
@@ -506,22 +875,32 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     const composer = document.createElement("div");
     composer.className = "copilot-composer";
 
+    const composerSurface = document.createElement("div");
+    composerSurface.className = "copilot-composer-surface";
+
     composerInputEl = document.createElement("textarea");
     composerInputEl.className = "copilot-composer-input font-sans";
-    composerInputEl.placeholder = "Fai una domanda o chiedi un esercizio... [Invio per inviare]";
-    composerInputEl.rows = 2;
+    composerInputEl.placeholder = "Fai una domanda o chiedi un esercizio... [Invio]";
+    composerInputEl.rows = 1;
+    composerInputEl.addEventListener("input", autoGrow);
     if (carriedInput) {
       composerInputEl.value = carriedInput;
+      autoGrow();
     }
+
+    const submitComposerText = () => {
+      const text = composerInputEl?.value ?? "";
+      if (composerInputEl) {
+        composerInputEl.value = "";
+        autoGrow();
+      }
+      handleSendPrompt(text);
+    };
 
     composerInputEl.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        const text = composerInputEl?.value ?? "";
-        if (composerInputEl) {
-          composerInputEl.value = "";
-        }
-        handleSendPrompt(text);
+        submitComposerText();
       }
     });
 
@@ -530,19 +909,17 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
     composerSendBtn = document.createElement("button");
     composerSendBtn.type = "button";
-    composerSendBtn.className = "btn btn-primary btn-sm copilot-btn-send";
+    composerSendBtn.className = "btn copilot-btn-send";
     composerSendBtn.setAttribute("aria-label", "Invia");
-    composerSendBtn.append(createIcon("send", "size-4"), document.createTextNode("Invia"));
+    composerSendBtn.title = "Invia [Invio]";
+    composerSendBtn.appendChild(createIcon("corner-down-left", "size-4"));
     composerSendBtn.addEventListener("click", () => {
-      const text = composerInputEl?.value ?? "";
-      if (composerInputEl) {
-        composerInputEl.value = "";
-      }
-      handleSendPrompt(text);
+      submitComposerText();
     });
 
     composerActions.appendChild(composerSendBtn);
-    composer.append(composerInputEl, composerActions);
+    composerSurface.append(composerInputEl, composerActions);
+    composer.appendChild(composerSurface);
     panel.appendChild(composer);
 
     rootEl.appendChild(panel);
@@ -551,6 +928,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     renderComposerState();
 
     setTimeout(() => {
+      autoGrow();
       composerInputEl?.focus();
     }, 50);
   }
@@ -563,8 +941,18 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       const emptyNotice = document.createElement("div");
       emptyNotice.className = "copilot-chat-empty text-muted-foreground";
       emptyNotice.innerHTML = `
-        <p class="font-semibold text-foreground">Assistente Didattico basato su OSTEP</p>
-        <p class="text-xs mt-1">Seleziona un prompt consigliato qui sopra oppure fai una domanda sulla teoria e simulazione attiva.</p>
+        <div class="copilot-empty-icon-wrap">
+          <svg class="size-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8V4H8"></path>
+            <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+            <path d="M2 14h2"></path>
+            <path d="M20 14h2"></path>
+            <path d="M15 13v2"></path>
+            <path d="M9 13v2"></path>
+          </svg>
+        </div>
+        <p class="font-semibold text-foreground text-sm mt-2">Assistente Didattico basato su OSTEP</p>
+        <p class="text-xs mt-1 text-muted-foreground">Seleziona uno dei prompt consigliati qui sotto oppure fai una domanda sulla teoria e simulazione attiva.</p>
       `;
       chatBodyEl.appendChild(emptyNotice);
       return;
@@ -648,7 +1036,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       const thinkingBubble = document.createElement("div");
       thinkingBubble.className = "copilot-bubble-message copilot-bubble-assistant copilot-thinking-bubble";
 
-      const sparklesIcon = createIcon("sparkles", "size-4 text-primary animate-spin");
+      const sparklesIcon = createIcon("loader-2", "size-3.5 text-primary shrink-0 animate-spin");
       const thinkingText = document.createElement("span");
       thinkingText.className = "text-xs text-muted-foreground font-sans";
       thinkingText.textContent = "Elaborazione risposta OSTEP...";
@@ -667,11 +1055,13 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
     if (composerSendBtn) {
       composerSendBtn.disabled = isThinking;
+      composerSendBtn.innerHTML = "";
       if (isThinking) {
-        composerSendBtn.textContent = "Elaborazione...";
+        composerSendBtn.title = "Elaborazione in corso...";
+        composerSendBtn.appendChild(createIcon("loader-2", "size-4 animate-spin shrink-0"));
       } else {
-        composerSendBtn.innerHTML = "";
-        composerSendBtn.append(createIcon("send", "size-4"), document.createTextNode("Invia"));
+        composerSendBtn.title = "Invia [Invio]";
+        composerSendBtn.appendChild(createIcon("corner-down-left", "size-4 shrink-0"));
       }
     }
   }
@@ -681,6 +1071,11 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   const destroy = () => {
     isDestroyed = true;
+    setFullscreen = () => {};
+    if (activeDrawerCleanup) {
+      activeDrawerCleanup();
+      activeDrawerCleanup = null;
+    }
     unsubscribeSettings?.();
     window.removeEventListener("keydown", globalKeyDownHandler);
     window.removeEventListener("resize", updateQuadroCenter);
@@ -689,6 +1084,10 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       resizeObserver = null;
     }
     options.targetContainer?.classList.remove("has-copilot-drawer");
+    options.targetContainer?.classList.remove("is-resizing");
+    if (options.targetContainer?.style && typeof options.targetContainer.style.removeProperty === "function") {
+      options.targetContainer.style.removeProperty("--copilot-drawer-width");
+    }
     if (activePillHandle) {
       activePillHandle.destroy();
       activePillHandle = null;
@@ -716,6 +1115,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         timestamp: new Date().toISOString(),
         ...msg
       });
+      if (messages.length >= 3 && !isFullscreen && currentState === "sheet") {
+        setFullscreen(true);
+      }
       renderChatBody();
     },
     sendPrompt: handleSendPrompt,

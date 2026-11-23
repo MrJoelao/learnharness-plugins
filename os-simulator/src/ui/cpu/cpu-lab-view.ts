@@ -16,7 +16,6 @@ import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
-import { handleAiTurn } from "../../backend/ai-service.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
 
 export function getInitialCpuLabState(workspaceId: string): CpuLabState {
@@ -60,7 +59,7 @@ export function createCpuLabView(
   let activeUndoBannerCleanup: (() => void) | null = null;
 
   const rootEl = document.createElement("div");
-  rootEl.className = "cpu-lab-root";
+  rootEl.className = "lh-root cpu-lab-root";
   container.appendChild(rootEl);
 
   const labContent = document.createElement("div");
@@ -200,18 +199,9 @@ export function createCpuLabView(
   function render() {
     labContent.innerHTML = "";
 
-    // View Header
-    const viewHeader = document.createElement("div");
-    viewHeader.className = "view-header";
-    const viewTitle = document.createElement("h2");
-    viewTitle.className = "view-title font-title";
-    viewTitle.textContent = "CPU Scheduling & Hardware Lab";
-    viewHeader.appendChild(viewTitle);
-    labContent.appendChild(viewHeader);
-
     // Toolbar
     const toolbar = document.createElement("div");
-    toolbar.className = "cpu-lab-toolbar";
+    toolbar.className = "lh-toolbar cpu-lab-toolbar";
 
     // Subsystems / Algorithms Tabs
     const tabsContainer = document.createElement("div");
@@ -337,7 +327,8 @@ export function createCpuLabView(
             activeModalCleanup = null;
           },
           rootEl,
-          abortController.signal
+          abortController.signal,
+          ctx?.ui
         );
       });
       actionsContainer.appendChild(editBtn);
@@ -575,8 +566,7 @@ export function createCpuLabView(
       if (ctx && typeof ctx.call === "function") {
         return ctx.call<AiTurnResponse>("ai-turn", request);
       }
-      const dummyBackendCtx = {} as PluginBackendContext;
-      return handleAiTurn(dummyBackendCtx, request);
+      throw new Error("Backend IPC (ctx.call) not available");
     },
     loadSuggestions: ctx && typeof ctx.call === "function"
       ? (mode) => ctx.call("get-suggestions", { mode })
@@ -586,7 +576,8 @@ export function createCpuLabView(
           if (event.topic === "settings-changed") listener();
         })
       : undefined,
-    signal
+    signal,
+    ui: ctx?.ui
   });
 
   const documentClickHandler = () => {

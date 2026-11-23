@@ -322,6 +322,22 @@ export function createIcon(name: string, className = "size-4"): SVGSVGElement {
       svg.append(p1, p2);
       break;
     }
+    case "corner-down-left":
+    case "cornerDownLeft": {
+      const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      poly.setAttribute("points", "9 10 4 15 9 20");
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", "M20 4v7a4 4 0 0 1-4 4H4");
+      svg.append(poly, p);
+      break;
+    }
+    case "loader-2":
+    case "loader2": {
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", "M21 12a9 9 0 1 1-6.219-8.56");
+      svg.appendChild(p);
+      break;
+    }
     case "history": {
       const p1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
       p1.setAttribute("d", "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8");

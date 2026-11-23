@@ -1,3 +1,4 @@
+import type { PluginUi, PluginWidgetHandle, PluginDialogProps } from "learnharness-plugin-api";
 import { parseScenarioConfig } from "../../core/concurrency/types.js";
 import type { ConcurrencyScenarioState } from "../../core/concurrency/types.js";
 import { createIcon } from "../icons.js";
@@ -47,10 +48,40 @@ export function openCustomScenarioModal(
   currentScenario: ConcurrencyScenarioState,
   onApply: (scenario: ConcurrencyScenarioState) => void,
   targetContainer?: HTMLElement,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  ui?: PluginUi
 ): () => void {
   if (signal?.aborted) {
     return () => {};
+  }
+
+  if (ui && typeof ui.openDialog === "function") {
+    let handle: PluginWidgetHandle<PluginDialogProps>;
+    const close = () => {
+      handle?.dispose();
+    };
+
+    handle = ui.openDialog(
+      {
+        title: "Configura Scenario Concorrente Personalizzato",
+        content(container: HTMLElement, dialogSignal: AbortSignal) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "custom-scenario-dialog-content";
+          setupCustomScenarioForm(wrapper, currentScenario, onApply, close);
+          container.appendChild(wrapper);
+
+          dialogSignal.addEventListener("abort", () => {
+            wrapper.remove();
+          });
+          return () => {
+            wrapper.remove();
+          };
+        }
+      },
+      { signal: signal ?? new AbortController().signal }
+    );
+
+    return () => handle.dispose();
   }
 
   const overlay = document.createElement("div");
@@ -74,6 +105,48 @@ export function openCustomScenarioModal(
   header.append(title, closeBtn);
   modal.appendChild(header);
 
+  setupCustomScenarioForm(modal, currentScenario, onApply, cleanup);
+
+  overlay.appendChild(modal);
+  const parent = targetContainer ?? document.body;
+  parent.appendChild(overlay);
+
+  let isCleanedUp = false;
+  const abortHandler = () => {
+    cleanup();
+  };
+  if (signal) {
+    signal.addEventListener("abort", abortHandler, { once: true });
+  }
+
+  const keyHandler = (e: KeyboardEvent) => {
+    if (e.key === "Escape") cleanup();
+  };
+  window.addEventListener("keydown", keyHandler);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) cleanup();
+  });
+
+  function cleanup() {
+    if (isCleanedUp) return;
+    isCleanedUp = true;
+    if (signal) {
+      signal.removeEventListener("abort", abortHandler);
+    }
+    window.removeEventListener("keydown", keyHandler);
+    overlay.remove();
+  }
+
+  return cleanup;
+}
+
+function setupCustomScenarioForm(
+  container: HTMLElement,
+  currentScenario: ConcurrencyScenarioState,
+  onApply: (scenario: ConcurrencyScenarioState) => void,
+  close: () => void
+): () => void {
   const body = document.createElement("div");
   body.className = "modal-body";
 
@@ -108,7 +181,7 @@ export function openCustomScenarioModal(
   errorEl.className = "modal-error-message hidden text-destructive text-xs font-mono mt-2";
   body.appendChild(errorEl);
 
-  modal.appendChild(body);
+  container.appendChild(body);
 
   const footer = document.createElement("div");
   footer.className = "modal-footer";
@@ -127,7 +200,7 @@ export function openCustomScenarioModal(
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "btn btn-outline btn-sm";
   cancelBtn.textContent = "Annulla";
-  cancelBtn.addEventListener("click", () => cleanup());
+  cancelBtn.addEventListener("click", () => close());
 
   const applyBtn = document.createElement("button");
   applyBtn.className = "btn btn-primary btn-sm";
@@ -150,43 +223,15 @@ export function openCustomScenarioModal(
     }
 
     onApply(validation.data);
-    cleanup();
+    close();
   });
 
   btnGroup.append(cancelBtn, applyBtn);
   footer.append(resetBtn, btnGroup);
-  modal.appendChild(footer);
+  container.appendChild(footer);
 
-  overlay.appendChild(modal);
-  const parent = targetContainer ?? document.body;
-  parent.appendChild(overlay);
-
-  let isCleanedUp = false;
-  const abortHandler = () => {
-    cleanup();
+  return () => {
+    body.remove();
+    footer.remove();
   };
-  if (signal) {
-    signal.addEventListener("abort", abortHandler, { once: true });
-  }
-
-  const keyHandler = (e: KeyboardEvent) => {
-    if (e.key === "Escape") cleanup();
-  };
-  window.addEventListener("keydown", keyHandler);
-
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) cleanup();
-  });
-
-  function cleanup() {
-    if (isCleanedUp) return;
-    isCleanedUp = true;
-    if (signal) {
-      signal.removeEventListener("abort", abortHandler);
-    }
-    window.removeEventListener("keydown", keyHandler);
-    overlay.remove();
-  }
-
-  return cleanup;
 }
