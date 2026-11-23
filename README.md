@@ -1,8 +1,8 @@
 # LearnHarness Plugins
 
-Raccolta centralizzata dei plugin esterni e community per [LearnHarness](https://github.com/MrJoelao/learnharness).
+Raccolta centralizzata e kit di sviluppo (SDK & Tools) per i plugin esterni di [LearnHarness](https://github.com/MrJoelao/learnharness).
 
-Questa repository contiene i sorgenti e la documentazione dei plugin modulari sviluppati al di fuori del core di LearnHarness, pronti per essere compilati, testati e installati nell'applicazione.
+Questa repository contiene i sorgenti dei plugin modulari, la documentazione ufficiale della **Plugin API v1** e gli strumenti per sviluppare, validare, compilare ed installare estensioni in LearnHarness in modo completamente autonomo.
 
 ---
 
@@ -14,96 +14,85 @@ Questa repository contiene i sorgenti e la documentazione dei plugin modulari sv
 
 ---
 
-## 📁 Struttura della Repository
+## 📚 Documentazione Plugin API
 
-Ogni plugin è una cartella autonoma conforme alle specifiche **Plugin API v1** di LearnHarness:
+Nella cartella [`docs/`](./docs/) è disponibile la documentazione completa per gli sviluppatori:
+
+- [**Guida all'Architettura dei Plugin**](./docs/plugin-architecture.md): Concetti chiave, separazione Frontend (browser) / Backend (Node), ciclo di vita e sandboxing.
+- [**Guida all'Authoring di Plugin**](./docs/plugin-authoring.md): Guida passo-passo per creare un plugin da zero.
+- [**Specifiche Plugin API v1**](./docs/api/plugins.md): Contratti dettagliati di `PluginFrontendContext`, `PluginBackendContext`, storage e chiamate IPC.
+- [**Plugin UI & UX Guide**](./docs/plugin-ui-ux-guide.md): Standard di design, palette semantica host, assenza di slop AI e accessibilità.
+- [**Widget Host Controllati (`PluginUi`)**](./docs/api/plugin-ui.md): Dialog, menu contestuali, selettori modello, markdown renderer e tree view.
+- [**Modalità Study Hub**](./docs/plugin-mode-contract.md): Contratti per registrare workspace interattivi e laboratori.
+
+---
+
+## 🛠️ Strumenti di Sviluppo (`scripts/`)
+
+Questa repository include utility dedicate nella cartella [`scripts/`](./scripts/) per automatizzare il workflow:
+
+### 1. Creare un nuovo plugin
+Scaffolda automaticamente la struttura completa del plugin (inclusi manifest, tsconfig, script di build, test unitari e SDK locale):
+```bash
+npm run create:plugin <id-plugin> "Nome del Plugin"
+# Esempio:
+npm run create:plugin math-grapher "Math Grapher"
+```
+
+### 2. Validare un plugin (Architettura & Anti-Slop)
+Verifica la correttezza del manifest, l'assenza di import proibiti e il rispetto delle linee guida di stile UI:
+```bash
+npm run validate os-simulator
+# Oppure per tutti:
+npm run validate:all
+```
+
+### 3. Compilare e testare
+Grazie agli npm workspaces, puoi lanciare i comandi su tutti i plugin dalla radice della repository:
+```bash
+npm run typecheck    # Verifica i tipi TypeScript su tutti i plugin
+npm run test         # Esegue tutte le suite di test
+npm run build        # Compila tutti i plugin nelle rispettive cartelle dist/
+```
+
+### 4. Installare un plugin in LearnHarness
+Installa in modo atomico il plugin compilato nella cartella `data/plugins/` di LearnHarness:
+```bash
+# Se la cartella learnharness si trova allo stesso livello (default):
+npm run install:plugin os-simulator
+
+# Oppure specificando il percorso personalizzato:
+node scripts/install-plugin.mjs os-simulator /percorso/a/learnharness/data/plugins
+```
+
+---
+
+## 📁 Struttura della Repository
 
 ```text
 learnharness-plugins/
+├── package.json            # Root workspace e comandi aggregati
 ├── README.md               # Panoramica generale e guida allo sviluppo
-├── .gitignore              # Ignora artefatti di build globali
+├── docs/                   # Documentazione ufficiale Plugin API e linee guida UX
+│   ├── plugin-architecture.md
+│   ├── plugin-authoring.md
+│   ├── plugin-ui-ux-guide.md
+│   ├── plugin-mode-contract.md
+│   └── api/                # Contratti e definizioni API v1 dettagliate
+├── scripts/                # Strumenti di scaffolding, validazione e installazione
+│   ├── create-plugin.mjs   # Scaffolding per nuovi plugin
+│   ├── validate-plugin.mjs # Validatore statico e anti-slop
+│   └── install-plugin.mjs  # Installer atomico per LearnHarness
 └── os-simulator/           # Plugin OS Simulator
-    ├── manifest.json       # Metadata, entrypoint e permessi del plugin
-    ├── package.json        # Script npm e dipendenze
-    ├── tsconfig.json       # Configurazione TypeScript strict
-    ├── README.md           # Documentazione specifica del plugin
-    ├── LICENSE             # Licenza (AGPL-3.0)
+    ├── manifest.json
+    ├── package.json
+    ├── tsconfig.json
     ├── .sdk/               # Definizioni TypeScript portabili di learnharness-plugin-api
-    ├── scripts/
-    │   └── build.mjs       # Script di bundling con esbuild
-    ├── presets/            # Preset JSON iniziali per le simulazioni
+    ├── scripts/build.mjs
+    ├── presets/
     ├── src/
-    │   ├── main.ts         # Entry point Frontend (browser ES module)
-    │   ├── backend.ts      # Entry point Backend (Node CommonJS module)
-    │   ├── styles.css      # Stili CSS del plugin
-    │   ├── core/           # Motori deterministici di simulazione (CPU, Memoria, Concorrenza)
-    │   └── ui/             # Viste interattive, diagrammi e componenti UI
-    ├── tests/              # Suite completa di test unitari e di integrazione (Node test runner)
-    └── docs/               # Specifiche architetturali e contratti di fase
+    └── tests/
 ```
-
----
-
-## 🛠️ Sviluppo e Compilazione
-
-### 1. Prerequisiti
-- **Node.js** v20 o superiore
-- **npm** v10 o superiore
-
-### 2. Lavorare su un plugin (es. `os-simulator`)
-Entra nella cartella del plugin desiderato ed installa le dipendenze:
-
-```bash
-cd os-simulator
-npm install
-```
-
-### 3. Comandi disponibili
-All'interno di ciascun plugin:
-
-- **Typecheck:** verifica la correttezza dei tipi TypeScript:
-  ```bash
-  npm run typecheck
-  ```
-- **Test:** esegue i test con il test runner nativo di Node e `tsx`:
-  ```bash
-  npm test
-  ```
-- **Build:** compila il bundle frontend (`dist/main.js`), il backend (`dist/backend.cjs`) e copia asset/preset in `dist/`:
-  ```bash
-  npm run build
-  ```
-
----
-
-## 🚀 Installazione Locale in LearnHarness
-
-I plugin compilati possono essere installati direttamente nella directory `data/plugins/` della propria istanza locale di LearnHarness tramite lo script di installazione fornito dal core di LearnHarness:
-
-```bash
-# Esempio: dalla cartella del plugin compilato (es. os-simulator):
-node /percorso/a/learnharness/scripts/install-plugin-local.mjs /percorso/a/learnharness/data/plugins
-```
-
-Lo script installerà in modo atomico il bundle in:
-```text
-learnharness/data/plugins/<plugin-id>/dist/
-```
-
-Successivamente, avviare o ricaricare LearnHarness e abilitare il plugin dalle **Impostazioni → Plugin** o tramite `data/plugins-state.json`.
-
----
-
-## ➕ Aggiungere un Nuovo Plugin
-
-Per aggiungere un nuovo plugin a questa repository:
-
-1. Crea una nuova cartella con il nome identificativo del plugin (es. `my-awesome-plugin/`).
-2. Definisci il `manifest.json` rispettando `apiVersion: 1`.
-3. Configura `package.json` con dipendenza locale `"learnharness-plugin-api": "file:.sdk"`.
-4. Implementa il frontend (`src/main.ts`) e opzionalmente il backend (`src/backend.ts`).
-5. Aggiungi i test nella cartella `tests/`.
-6. Aggiorna la tabella in questo README con il nuovo plugin.
 
 ---
 
