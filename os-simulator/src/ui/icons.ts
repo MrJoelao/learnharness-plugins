@@ -357,6 +357,19 @@ export function createIcon(name: string, className = "size-4"): SVGSVGElement {
       svg.append(p1, p2);
       break;
     }
+    case "mic": {
+      const p1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p1.setAttribute("d", "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z");
+      const p2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p2.setAttribute("d", "M19 10v2a7 7 0 0 1-14 0v-2");
+      const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      l.setAttribute("x1", "12");
+      l.setAttribute("x2", "12");
+      l.setAttribute("y1", "19");
+      l.setAttribute("y2", "22");
+      svg.append(p1, p2, l);
+      break;
+    }
     default: {
       const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       c.setAttribute("cx", "12");

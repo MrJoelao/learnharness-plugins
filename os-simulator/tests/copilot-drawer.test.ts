@@ -413,7 +413,11 @@ test("CopilotDrawer: both sheet and drawer modes use floating actions with lh-no
 
     const sheetChatBody = container.querySelector(".copilot-chat-body")!;
     assert.ok(sheetChatBody);
-    assert.equal(sheetChatBody.style.paddingTop, "52px", "Chat body in sheet mode should have padding-top: 52px");
+    assert.equal(
+      sheetChatBody.style.paddingTop,
+      undefined,
+      "Chat body should rely on CSS padding-top: 52px rather than inline style so morph animations can collapse it"
+    );
 
     // Transition to Drawer mode
     drawer.setState("drawer");
@@ -445,10 +449,14 @@ test("CopilotDrawer: both sheet and drawer modes use floating actions with lh-no
     assert.ok(drawerBtnClose, "Floating actions must contain Close button");
     assert.ok(drawerBtnClose.classList.contains("lh-no-drag"), "Drawer close btn must have lh-no-drag");
 
-    // Chat body in drawer mode must have top padding (padding-top: 52px)
+    // Chat body in drawer mode relies on CSS padding-top: 52px
     const chatBody = container.querySelector(".copilot-chat-body")!;
     assert.ok(chatBody);
-    assert.equal(chatBody.style.paddingTop, "52px", "Chat body in drawer mode should have padding-top: 52px");
+    assert.equal(
+      chatBody.style.paddingTop,
+      undefined,
+      "Chat body in drawer mode should rely on CSS padding-top: 52px rather than inline style"
+    );
 
     drawer.destroy();
   } finally {
@@ -527,7 +535,7 @@ test("CopilotDrawer: drag resizing with pointer capture, transitions disabled, a
 
     // Drag to the LEFT: clientX moves from 624 to 524 (delta = +100px)
     // New width = 400 + (624 - 524) = 500px
-    resizer.dispatchEvent({
+    (globalThis as any).window.dispatchEvent({
       type: "pointermove",
       pointerId: 42,
       clientX: 524
@@ -539,7 +547,7 @@ test("CopilotDrawer: drag resizing with pointer capture, transitions disabled, a
 
     // Drag further to test clamping to max (720px)
     // clientX moves to 100 (delta = 524 -> 400 + 524 = 924 -> clamped to 720)
-    resizer.dispatchEvent({
+    (globalThis as any).window.dispatchEvent({
       type: "pointermove",
       pointerId: 42,
       clientX: 100
@@ -550,7 +558,7 @@ test("CopilotDrawer: drag resizing with pointer capture, transitions disabled, a
 
     // Drag to the RIGHT to test clamping to min (280px)
     // clientX moves to 900 (delta = 624 - 900 = -276 -> 400 - 276 = 124 -> clamped to 280)
-    resizer.dispatchEvent({
+    (globalThis as any).window.dispatchEvent({
       type: "pointermove",
       pointerId: 42,
       clientX: 900
@@ -560,7 +568,7 @@ test("CopilotDrawer: drag resizing with pointer capture, transitions disabled, a
     assert.equal(resizer.getAttribute("aria-valuenow"), "280");
 
     // PointerUp releases drag and persists to localStorage
-    resizer.dispatchEvent({
+    (globalThis as any).window.dispatchEvent({
       type: "pointerup",
       button: 0,
       pointerId: 42,
@@ -690,8 +698,9 @@ test("CopilotDrawer: dock mode styling and borders match LearnHarness Hub aesthe
     "Floating buttons should have rounded pill shape (border-radius: 9999px)"
   );
   assert.ok(
-    /\.copilot-container-drawer \.copilot-chat-body\s*\{[^}]*padding-top:\s*52px;/.test(stylesContent),
-    "Chat body in drawer mode should have padding-top: 52px"
+    /\.copilot-chat-body::before\s*\{[^}]*height:\s*52px;/.test(stylesContent) &&
+      /\.copilot-container-drawer \.copilot-chat-body\s*\{[^}]*padding:\s*0 16px 12px 16px;/.test(stylesContent),
+    "Chat body in drawer mode should use static padding with ::before 52px top spacer"
   );
   assert.ok(
     stylesContent.includes(".copilot-badge-mode"),

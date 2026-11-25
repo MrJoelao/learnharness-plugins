@@ -56,10 +56,10 @@ export function createCopilotPill(options: CopilotPillOptions = {}): CopilotPill
 
   const btnMinimize = document.createElement("button");
   btnMinimize.type = "button";
-  btnMinimize.className = "copilot-pill-btn";
+  btnMinimize.className = "copilot-pill-btn copilot-btn-hide";
   btnMinimize.title = "Minimizza assistente";
   btnMinimize.setAttribute("aria-label", "Minimizza assistente");
-  btnMinimize.appendChild(createIcon("minimize-2", "size-4 text-muted-foreground"));
+  btnMinimize.appendChild(createIcon("chevron-down", "size-4 text-muted-foreground"));
 
   actionsGroup.append(btnDrawer, btnMinimize);
   container.appendChild(actionsGroup);

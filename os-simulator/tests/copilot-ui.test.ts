@@ -414,8 +414,9 @@ test("CopilotDrawer: mounts cleanly in all 4 states ('pill', 'sheet', 'drawer', 
     });
 
     assert.equal(drawer.getState(), "pill");
+    assert.ok(container.querySelector(".copilot-surface"));
     assert.ok(container.querySelector(".copilot-container-pill"));
-    assert.ok(container.querySelector(".copilot-pill"));
+    assert.ok(container.querySelector(".copilot-composer-input"));
     assert.ok(!container.classList.contains("has-copilot-drawer"));
 
     drawer.setState("sheet");
@@ -452,7 +453,7 @@ test("CopilotDrawer: transitions fluidly between states through interactive clic
       targetContainer: container as any
     });
 
-    const pillInput = container.querySelector(".copilot-pill-input")!;
+    const pillInput = container.querySelector(".copilot-composer-input")!;
     assert.ok(pillInput);
     pillInput.focus();
     assert.equal(drawer.getState(), "sheet");
@@ -478,7 +479,7 @@ test("CopilotDrawer: transitions fluidly between states through interactive clic
     (closingSheet as unknown as MockDOMElement).dispatchEvent({ type: "animationend" });
     assert.equal(drawer.getState(), "pill");
 
-    const btnMin = container.querySelector(".copilot-pill-btn[aria-label='Minimizza assistente']")!;
+    const btnMin = container.querySelector(".copilot-btn-close[aria-label='Minimizza assistente']")!;
     assert.ok(btnMin);
     btnMin.click();
     assert.equal(drawer.getState(), "minimized");
@@ -733,25 +734,28 @@ test("CopilotDrawer: smooth morph animation between pill and sheet with carried 
     });
 
     assert.equal(drawer.getState(), "pill");
-    const pillWrapper = container.querySelector(".copilot-container-pill")!;
-    assert.ok(pillWrapper);
-
-    const pillInput = container.querySelector(".copilot-pill-input")!;
-    assert.ok(pillInput);
-    pillInput.value = "Cos'è la paginazione?";
-    pillInput.focus();
-
-    assert.equal(drawer.getState(), "sheet");
-    const sheetPanel = container.querySelector(".copilot-container-sheet")!;
-    assert.ok(sheetPanel);
-    assert.ok(sheetPanel.classList.contains("is-morphing-open"));
+    const surface = container.querySelector(".copilot-surface")!;
+    assert.ok(surface);
+    assert.equal(surface.getAttribute("data-mode"), "pill");
 
     const composerInput = container.querySelector(".copilot-composer-input")!;
     assert.ok(composerInput);
-    assert.equal(composerInput.value, "Cos'è la paginazione?");
+    assert.equal(composerInput.style.height, "40px");
+    composerInput.value = "Cos'è la paginazione?\nSeconda riga";
+    composerInput.scrollHeight = 88;
+    composerInput.focus();
 
-    // User types in composer
-    composerInput.value = "Spiega il working set in dettaglio";
+    assert.equal(drawer.getState(), "sheet");
+    const sheetPanel = container.querySelector(".copilot-container-sheet")!;
+    assert.equal(sheetPanel, surface, "Persistent .copilot-surface must not be destroyed on pill -> sheet");
+    assert.equal(surface.getAttribute("data-mode"), "sheet");
+    assert.ok(sheetPanel.classList.contains("is-morphing-open"));
+    assert.equal(container.querySelector(".copilot-composer-input"), composerInput, "Textarea must be persistent");
+    assert.equal(composerInput.value, "Cos'è la paginazione?\nSeconda riga");
+    assert.equal(composerInput.style.height, "88px", "autoGrow runs synchronously on pill -> sheet");
+
+    // User edits in composer
+    composerInput.value = "Spiega il working set in dettaglio\nCon esempio";
 
     // Collapse sheet back to pill
     const btnCollapse = container.querySelector(".copilot-btn-collapse")!;
@@ -765,10 +769,12 @@ test("CopilotDrawer: smooth morph animation between pill and sheet with carried 
     assert.equal(drawer.getState(), "pill");
     const returnedPillWrapper = container.querySelector(".copilot-container-pill.is-morphed")!;
     assert.ok(returnedPillWrapper, "Returned pill gains .is-morphed to suppress entrance jump");
+    assert.equal(returnedPillWrapper, surface);
 
-    const returnedPillInput = container.querySelector(".copilot-pill-input")!;
-    assert.ok(returnedPillInput);
-    assert.equal(returnedPillInput.value, "Spiega il working set in dettaglio", "Carries input back from composer to pill");
+    const returnedInput = container.querySelector(".copilot-composer-input")!;
+    assert.equal(returnedInput, composerInput);
+    assert.equal(returnedInput.value, "Spiega il working set in dettaglio\nCon esempio", "Preserves full multiline text across sheet -> pill");
+    assert.equal(returnedInput.style.height, "40px", "Clamps height to 40px in pill mode");
 
     drawer.destroy();
   } finally {
@@ -788,8 +794,8 @@ test("Copilot UX: subtle hub-style focus and hover borders adhering to LearnHarn
 
   // Verify Hub-style hover shadow
   assert.ok(
-    stylesContent.includes("box-shadow: var(--lh-shadow-lg, 0 12px 30px -10px rgba(0, 0, 0, 0.3));"),
-    "Should include Hub-style shadow elevation on hover"
+    stylesContent.includes("box-shadow: var(--lh-shadow-lg, 0 8px 24px -8px rgba(0, 0, 0, 0.25));"),
+    "Should include subtle Hub-style shadow elevation on hover"
   );
 
   // Verify transition curve
@@ -798,14 +804,42 @@ test("Copilot UX: subtle hub-style focus and hover borders adhering to LearnHarn
     "Should use the standard LearnHarness smooth cubic-bezier curve"
   );
 
-  // Verify morph keyframes geometry: 52px starting and ending heights with opacity: 1
+  // Verify morph keyframes geometry: 52px starting and ending heights, 16px radius, and --quadro-width clamped max-width
   assert.ok(
-    /@keyframes copilot-card-open\s*\{[\s\S]*?0%\s*\{[\s\S]*?height:\s*52px[\s\S]*?opacity:\s*1/.test(stylesContent),
-    "copilot-card-open must morph upwards from 52px height at opacity 1"
+    /@keyframes copilot-card-open\s*\{[\s\S]*?0%\s*\{[\s\S]*?height:\s*52px;[\s\S]*?max-width:\s*min\(calc\(46rem - 32px\),\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);[\s\S]*?border-radius:\s*var\(--radius-xl,\s*16px\);[\s\S]*?opacity:\s*1/.test(stylesContent),
+    "copilot-card-open 0% must morph upwards from 52px height, clamped max-width, and 16px radius at opacity 1"
   );
   assert.ok(
-    /@keyframes copilot-card-close\s*\{[\s\S]*?100%\s*\{[\s\S]*?height:\s*52px[\s\S]*?opacity:\s*1/.test(stylesContent),
-    "copilot-card-close must contract down to 52px height at opacity 1"
+    /@keyframes copilot-card-open\s*\{[\s\S]*?100%\s*\{[\s\S]*?max-width:\s*min\(58rem,\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);[\s\S]*?border-radius:\s*var\(--radius-xl,\s*16px\);/.test(stylesContent),
+    "copilot-card-open 100% must expand to clamped 58rem max-width with 16px radius"
+  );
+  assert.ok(
+    /@keyframes copilot-card-close\s*\{[\s\S]*?0%\s*\{[\s\S]*?max-width:\s*min\(58rem,\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);[\s\S]*?border-radius:\s*var\(--radius-xl,\s*16px\);[\s\S]*?100%\s*\{[\s\S]*?height:\s*52px;[\s\S]*?max-width:\s*min\(calc\(46rem - 32px\),\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);[\s\S]*?border-radius:\s*var\(--radius-xl,\s*16px\);[\s\S]*?opacity:\s*1/.test(stylesContent),
+    "copilot-card-close must contract from clamped 58rem down to 52px height, clamped pill max-width, and 16px radius at opacity 1"
+  );
+  assert.ok(
+    /@keyframes copilot-card-fullscreen-close\s*\{[\s\S]*?100%\s*\{[\s\S]*?width:\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\);[\s\S]*?max-width:\s*min\(calc\(46rem - 32px\),\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);[\s\S]*?border-radius:\s*var\(--radius-xl,\s*16px\);/.test(stylesContent),
+    "copilot-card-fullscreen-close 100% must end with clamped --quadro-width and 16px radius"
+  );
+  assert.ok(
+    /\.copilot-container-sheet\s*\{[^}]*width:\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\);[^}]*max-width:\s*min\(58rem,\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);/s.test(stylesContent),
+    "Sheet container must clamp width and max-width against --quadro-width"
+  );
+  assert.ok(
+    /\.copilot-container-sheet\s+\.copilot-composer\s*\{[^}]*max-width:\s*58rem;/s.test(stylesContent),
+    "Sheet composer must span the wider 58rem sheet"
+  );
+
+  // Verify symmetrical open/close morph animations (GPU-composited reveal/hide without padding-top reflow)
+  assert.ok(
+    /\.copilot-container-sheet\.is-closing\s*\{[^}]*animation:\s*copilot-card-close\s+0\.28s\s+cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/.test(stylesContent),
+    "is-closing must use the exact same 0.28s cubic-bezier(0.16, 1, 0.3, 1) timing as is-morphing-open"
+  );
+  assert.ok(
+    /@keyframes copilot-sheet-content-reveal\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?transform:\s*translateY\(8px\);/.test(stylesContent) &&
+      /@keyframes copilot-sheet-content-hide\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?transform:\s*translateY\(8px\);/.test(stylesContent) &&
+      !/padding-top/.test(stylesContent.match(/@keyframes copilot-sheet-content-reveal\s*\{[\s\S]*?\}\s*\}/)?.[0] ?? ""),
+    "chat body reveal and hide keyframes must use GPU-composited opacity and transform without padding-top reflow"
   );
 
   // Verify no harsh primary white on copilot interactive elements
@@ -865,23 +899,35 @@ test("CopilotDrawer: organic sheet height progression - scroll expansion and rev
     assert.ok(panel.classList.contains("is-expanded"), "Panel should gain .is-expanded on scroll down");
     assert.equal(btnExpand.title, "Riduci dimensione");
 
-    // 2. Simulate organic reverse contraction when scrolling back up to top (scrollTop <= 10)
+    // Cooldown prevents immediate ping-pong during height transition
+    chatBody.scrollTop = 5;
+    chatBody.dispatchEvent({ type: "scroll" });
+    assert.ok(panel.classList.contains("is-fullscreen"), "Cooldown should block scroll collapse during transition");
+    panel.dispatchEvent({ type: "transitionend", propertyName: "height" });
+
+    // 2. Simulate organic reverse contraction when scrolling back up to top (scrollTop <= 10) while still scrollable
     chatBody.scrollTop = 5;
     chatBody.dispatchEvent({ type: "scroll" });
 
     assert.ok(!panel.classList.contains("is-fullscreen"), "Panel should lose .is-fullscreen on scroll to top");
     assert.ok(!panel.classList.contains("is-expanded"), "Panel should lose .is-expanded on scroll to top");
     assert.equal(btnExpand.title, "Espandi a schermo intero");
+    panel.dispatchEvent({ type: "transitionend", propertyName: "height" });
 
     // 3. Wheel down expansion
     chatBody.scrollTop = 0;
     chatBody.dispatchEvent({ type: "wheel", deltaY: 25 });
     assert.ok(panel.classList.contains("is-fullscreen"), "Wheel down should expand sheet");
+    panel.dispatchEvent({ type: "transitionend", propertyName: "height" });
 
-    // 4. Wheel up contraction when at the top
+    // 4. Wheel up contraction when at the top (even when content no longer overflows in fullscreen)
+    chatBody.scrollHeight = 200;
+    chatBody.clientHeight = 200;
     chatBody.scrollTop = 0;
+    chatBody.dispatchEvent({ type: "scroll" });
+    assert.ok(panel.classList.contains("is-fullscreen"), "Non-scrollable scroll event must not collapse fullscreen");
     chatBody.dispatchEvent({ type: "wheel", deltaY: -15 });
-    assert.ok(!panel.classList.contains("is-fullscreen"), "Wheel up at top should contract sheet");
+    assert.ok(!panel.classList.contains("is-fullscreen"), "Wheel up at top should contract sheet even when not overflowing");
 
     drawer.destroy();
   } finally {
@@ -1000,12 +1046,458 @@ test("CopilotDrawer: auto-expands when multiple messages accumulate in sheet", (
     // Add 3rd message - messages have accumulated, smoothly expands
     drawer.addMessage({ role: "user", text: "Secondo messaggio di approfondimento" });
     assert.ok(panel.classList.contains("is-fullscreen"), "Accumulated messages expand sheet to tall state");
+    panel.dispatchEvent({ type: "transitionend", propertyName: "height" });
 
     // Reverse contraction still works when scrolling to top
     const chatBody = panel.querySelector(".copilot-chat-body") as unknown as MockDOMElement;
     chatBody.scrollTop = 5;
     chatBody.dispatchEvent({ type: "scroll" });
     assert.ok(!panel.classList.contains("is-fullscreen"), "Scrolling to top contracts accumulated sheet back to medium");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: pill -> sheet with existing messages does NOT snap to fullscreen during morph", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "pill",
+      targetContainer: container as any
+    });
+
+    drawer.addMessage({ role: "user", text: "Messaggio precedente" });
+    drawer.addMessage({ role: "assistant", text: "Risposta precedente" });
+
+    const surface = container.querySelector(".copilot-surface") as unknown as MockDOMElement;
+    const chatBody = container.querySelector(".copilot-chat-body") as unknown as MockDOMElement;
+    const composerInput = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
+
+    chatBody.scrollHeight = 600;
+    chatBody.clientHeight = 200;
+
+    composerInput.focus();
+    assert.equal(drawer.getState(), "sheet");
+    assert.ok(surface.classList.contains("is-morphing-open"));
+    assert.ok(!surface.classList.contains("is-fullscreen"), "Opening sheet with messages must not snap to fullscreen");
+    assert.equal(surface.getAttribute("data-fullscreen"), "false");
+
+    // Simulate scroll event fired during morphing animation
+    chatBody.scrollTop = 400;
+    chatBody.dispatchEvent({ type: "scroll" });
+    assert.ok(!surface.classList.contains("is-fullscreen"), "Scroll during morphing must not trigger fullscreen");
+
+    // After morphing ends, user scroll works normally
+    surface.dispatchEvent({ type: "animationend" });
+    chatBody.dispatchEvent({ type: "scroll" });
+    assert.ok(surface.classList.contains("is-fullscreen"), "Scroll after morphing ends expands to fullscreen");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: empty state uses unslopped copy and preserves persistent floating actions", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const emptyNotice = container.querySelector(".copilot-chat-empty")!;
+    assert.ok(emptyNotice);
+    assert.ok(!emptyNotice.textContent.includes("Assistente Didattico basato su OSTEP"));
+    assert.ok(emptyNotice.textContent.includes("Fai una domanda sulla simulazione attiva o genera un esercizio."));
+
+    const floatingActions = container.querySelector(".copilot-floating-actions")!;
+    drawer.setState("drawer");
+    assert.equal(container.querySelector(".copilot-floating-actions"), floatingActions, "Floating actions persist across sheet -> drawer");
+    drawer.setState("pill");
+    assert.equal(container.querySelector(".copilot-floating-actions"), floatingActions, "Floating actions persist across drawer -> pill");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: fullscreen close animation is not blocked by animation: none !important", () => {
+  const cssPath = path.join(__dirname, "../src/styles.css");
+  const css = fs.readFileSync(cssPath, "utf8");
+  const fullscreenMatch = css.match(/\.copilot-container-sheet\.is-fullscreen,\s*\.copilot-container-sheet\.is-expanded\s*\{([^}]+)\}/);
+  assert.ok(fullscreenMatch, "Fullscreen rule must exist");
+  assert.ok(
+    !fullscreenMatch[1]!.includes("animation: none !important"),
+    "Fullscreen rule must not use animation: none !important"
+  );
+  assert.ok(
+    css.includes("copilot-card-fullscreen-close"),
+    "Fullscreen close animation keyframe must be present"
+  );
+});
+
+test("CopilotDrawer: rapid setState('drawer') mid-close cancels .is-closing", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const surface = container.querySelector(".copilot-surface") as unknown as MockDOMElement;
+    const btnClose = container.querySelector(".copilot-btn-close") as unknown as MockDOMElement;
+
+    btnClose.click();
+    assert.ok(surface.classList.contains("is-closing"), "Closing animation should add is-closing");
+
+    drawer.setState("drawer");
+    assert.equal(drawer.getState(), "drawer");
+    assert.ok(!surface.classList.contains("is-closing"), "Transitioning mid-close must clear .is-closing");
+
+    // Subsequent close should not be stuck by stale isClosing
+    btnClose.click();
+    assert.ok(surface.classList.contains("is-closing"), "Subsequent close should animate normally");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: setExercises() updates minimized bubble badge", () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "minimized",
+      targetContainer: container as any
+    });
+
+    assert.equal(container.querySelector(".copilot-bubble-badge"), null);
+
+    const ex: SavedExercise = {
+      id: "ex-1",
+      title: "Test Exercise",
+      date: new Date().toISOString(),
+      consegna: "Test",
+      sourceTag: "ai",
+      mode: "cpu-lab",
+      config: {}
+    };
+
+    drawer.setExercises?.([ex]);
+    const badge = container.querySelector(".copilot-bubble-badge");
+    assert.ok(badge, "Badge should appear when exercises are added while minimized");
+    assert.equal(badge!.textContent, "1");
+
+    drawer.setExercises?.([]);
+    assert.equal(container.querySelector(".copilot-bubble-badge"), null, "Badge should be removed when exercises cleared");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotPill & Surface: Study Hub 16px radius, no resting shadow, and chevron-down hide icon without background", () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  assert.ok(
+    /\.copilot-surface\.copilot-container-pill\s*\{[^}]*min-height:\s*54px;[^}]*height:\s*54px;[^}]*border-radius:\s*var\(--radius-xl,\s*16px\);/s.test(stylesContent),
+    "Surface in pill mode must have 54px height (matching home pill) and border-radius: var(--radius-xl, 16px)"
+  );
+  assert.ok(
+    /\.copilot-pill\s*\{[^}]*border-radius:\s*var\(--radius-xl,\s*16px\);[^}]*box-shadow:\s*none;/s.test(stylesContent),
+    "Standalone .copilot-pill must have border-radius: var(--radius-xl, 16px) and box-shadow: none at rest"
+  );
+  assert.ok(
+    /\.copilot-surface\s+\.copilot-floating-actions\s+\.copilot-btn-close[\s\S]*?background:\s*transparent;\s*border:\s*none;/.test(stylesContent),
+    "Hide/close button must have transparent background and no border"
+  );
+
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "pill",
+      targetContainer: container as any
+    });
+
+    const btnClose = container.querySelector(".copilot-btn-close") as unknown as MockDOMElement;
+    assert.ok(btnClose, "Pill mode should render .copilot-btn-close");
+    const closeSvg = btnClose.children[0] as unknown as MockDOMElement;
+    assert.ok(closeSvg, "Close button should contain an SVG icon");
+    const chevronPath = closeSvg.children[0] as unknown as MockDOMElement;
+    assert.equal(chevronPath.getAttribute("d"), "m6 9 6 6 6-6", "Pill hide button should use chevron-down icon");
+
+    const pill = createCopilotPill();
+    const pillHideBtn = pill.element.querySelector(".copilot-btn-hide") as unknown as MockDOMElement;
+    assert.ok(pillHideBtn, "Standalone pill should render .copilot-btn-hide");
+    const pillChevronPath = (pillHideBtn.children[0] as unknown as MockDOMElement).children[0] as unknown as MockDOMElement;
+    assert.equal(pillChevronPath.getAttribute("d"), "m6 9 6 6 6-6", "Standalone pill hide button should use chevron-down icon");
+
+    pill.destroy();
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: Model, Thinking, and Dictate UI controls in composer footer", () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  assert.ok(
+    /\.copilot-surface\.copilot-container-pill\s+\.copilot-composer-footer\s*\{[^}]*display:\s*none;/.test(stylesContent),
+    "Composer footer must be hidden in pill mode"
+  );
+
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const footer = container.querySelector(".copilot-composer-footer") as unknown as MockDOMElement;
+    assert.ok(footer, "Composer footer should exist in sheet mode");
+
+    const btnDictate = footer.querySelector(".copilot-btn-dictate") as unknown as MockDOMElement;
+    const btnModel = footer.querySelector(".copilot-btn-model") as unknown as MockDOMElement;
+    const btnThinking = footer.querySelector(".copilot-btn-thinking") as unknown as MockDOMElement;
+    assert.ok(btnDictate && btnModel && btnThinking, "Dictate, Model, and Thinking controls must be present");
+
+    assert.equal(btnDictate.getAttribute("aria-pressed"), "false");
+    btnDictate.click();
+    assert.equal(btnDictate.getAttribute("aria-pressed"), "true");
+    assert.ok(btnDictate.classList.contains("is-active"));
+    btnDictate.click();
+    assert.equal(btnDictate.getAttribute("aria-pressed"), "false");
+
+    assert.equal(btnModel.getAttribute("data-model"), "gemini-4-hydrogen");
+    btnModel.click();
+    assert.equal(btnModel.getAttribute("data-model"), "gpt-6-luna");
+    btnModel.click();
+    assert.equal(btnModel.getAttribute("data-model"), "gemini-4-hydrogen");
+
+    assert.equal(btnThinking.getAttribute("data-thinking"), "medium");
+    btnThinking.click();
+    assert.equal(btnThinking.getAttribute("data-thinking"), "high");
+    btnThinking.click();
+    assert.equal(btnThinking.getAttribute("data-thinking"), "low");
+
+    drawer.setState("drawer");
+    assert.ok(container.querySelector(".copilot-composer-footer"), "Composer footer should exist in drawer mode");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: GPU-composited animations and stable floating button widths (no width: 0 squish)", () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  assert.ok(
+    /\.copilot-chat-body\s*\{[^}]*contain:\s*layout style;/.test(stylesContent),
+    "Chat body should use contain: layout style for smooth scroll/fullscreen transitions"
+  );
+  assert.ok(
+    !/\.copilot-surface\.copilot-container-pill\s+\.copilot-floating-actions\s+\.copilot-btn-history[^{]*\{[^}]*width:\s*0;/.test(stylesContent),
+    "Hidden floating buttons must not animate width: 0 (prevents horizontal button jumping)"
+  );
+});
+
+test("CopilotDrawer: AUDIT-3 CSS & scroll/wheel hardening regressions", () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  assert.ok(
+    /\.copilot-composer\s*\{[^}]*padding:\s*4px 16px;/.test(stylesContent),
+    ".copilot-composer must use consistent 4px vertical rhythm padding"
+  );
+  assert.ok(
+    /\.copilot-container-sheet\.is-closing\s+\.copilot-composer\s*\{[^}]*padding:\s*6px 6px 6px 16px;/.test(stylesContent),
+    ".copilot-container-sheet.is-closing .copilot-composer must match pill padding to prevent bounce"
+  );
+  assert.ok(
+    /\.copilot-composer-footer\s*\{[^}]*max-height:\s*36px;[^}]*transition:\s*max-height 0\.22s cubic-bezier\(0\.16, 1, 0\.3, 1\),\s*opacity 0\.14s ease,\s*padding-top 0\.22s cubic-bezier\(0\.16, 1, 0\.3, 1\);/s.test(stylesContent),
+    ".copilot-composer-footer must smoothly transition max-height, opacity, and padding-top"
+  );
+  assert.ok(
+    /\.copilot-chat-empty\s*\{[^}]*flex:\s*1;\s*min-height:\s*0;/.test(stylesContent),
+    ".copilot-chat-empty must use flex: 1; min-height: 0; instead of height: 100%"
+  );
+  assert.ok(
+    /\.copilot-container-sheet\.is-closing\s+\.copilot-composer-footer\s*\{[^}]*opacity:\s*0;[^}]*max-height:\s*0;[^}]*padding-top:\s*0;/s.test(stylesContent),
+    ".copilot-container-sheet.is-closing .copilot-composer-footer must collapse smoothly during close"
+  );
+  assert.ok(
+    /\.copilot-surface\s+\.copilot-floating-actions[\s\S]*?pointer-events:\s*none;/.test(stylesContent),
+    ".copilot-floating-actions must pass through pointer events over pill input"
+  );
+  assert.ok(
+    /\.copilot-surface\s+\.copilot-floating-actions\s+\.copilot-floating-btn[\s\S]*?pointer-events:\s*auto;/.test(stylesContent),
+    ".copilot-floating-btn must re-enable pointer events"
+  );
+  assert.ok(
+    /\.copilot-composer-chip\s*\{[^}]*white-space:\s*nowrap;\s*flex-shrink:\s*0;/.test(stylesContent),
+    ".copilot-composer-chip must prevent wrapping"
+  );
+  assert.ok(
+    /\.copilot-container-drawer\s+\.copilot-btn-model\s+\.copilot-chip-label\s*\{[^}]*max-width:\s*112px;/.test(stylesContent),
+    "Drawer model chip label must truncate cleanly at narrow widths"
+  );
+
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "sheet",
+      targetContainer: container as any
+    });
+
+    const panel = container.querySelector(".copilot-container-sheet") as unknown as MockDOMElement;
+    const chatBody = panel.querySelector(".copilot-chat-body") as unknown as MockDOMElement;
+    chatBody.scrollHeight = 500;
+    chatBody.clientHeight = 200;
+
+    // Closing state guards scroll and wheel
+    const btnClose = panel.querySelector(".copilot-btn-close") as unknown as MockDOMElement;
+    btnClose.click();
+    assert.ok(panel.classList.contains("is-closing"));
+    chatBody.scrollTop = 50;
+    chatBody.dispatchEvent({ type: "scroll" });
+    chatBody.dispatchEvent({ type: "wheel", deltaY: 25 });
+    assert.ok(!panel.classList.contains("is-fullscreen"), "Closing state must guard scroll/wheel from triggering fullscreen");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: FIX-3 close bounce elimination, textarea clamp, action collapse, and --quadro-width clamping", () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  // 1. .copilot-chat-body & ::before collapse in .is-closing
+  assert.ok(
+    /\.copilot-container-sheet\.is-closing\s+\.copilot-chat-body\s*\{[^}]*padding:\s*0;/s.test(stylesContent),
+    ".copilot-container-sheet.is-closing .copilot-chat-body must collapse padding to 0"
+  );
+  assert.ok(
+    /\.copilot-container-sheet\.is-closing\s+\.copilot-chat-body::before\s*\{[^}]*height:\s*0;/s.test(stylesContent),
+    ".copilot-container-sheet.is-closing .copilot-chat-body::before must collapse height to 0"
+  );
+
+  // 2. Multiline textarea height clamped during .is-closing
+  assert.ok(
+    /\.copilot-container-sheet\.is-closing\s+\.copilot-composer-input\s*\{[^}]*height:\s*40px\s*!important;[^}]*max-height:\s*40px;[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;/s.test(stylesContent),
+    ".copilot-container-sheet.is-closing .copilot-composer-input must clamp height to 40px !important"
+  );
+
+  // 3. --quadro-width clamping on pill
+  assert.ok(
+    /\.copilot-surface\.copilot-container-pill\s*\{[^}]*width:\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\);[^}]*max-width:\s*min\(calc\(46rem - 32px\),\s*calc\(var\(--quadro-width,\s*100vw\) - 32px\)\);/s.test(stylesContent),
+    "Pill surface must clamp width and max-width against --quadro-width"
+  );
+
+  // 4. .copilot-btn-composer-dock / .copilot-btn-pill-hide round & borderless, send hidden in pill/sheet
+  assert.ok(
+    /\.copilot-btn-composer-dock,\s*\.copilot-btn-pill-hide\s*\{[^}]*background:\s*transparent;[^}]*border:\s*none;[^}]*border-radius:\s*9999px;/s.test(stylesContent),
+    ".copilot-btn-composer-dock and .copilot-btn-pill-hide must be round with transparent background and no border"
+  );
+  assert.ok(
+    /\.copilot-surface\.copilot-container-pill\s+\.copilot-btn-send,\s*\.copilot-surface\.copilot-container-sheet\s+\.copilot-btn-send/s.test(stylesContent),
+    "Send button must be hidden in both pill and sheet/fullscreen modes"
+  );
+  assert.ok(
+    /\.copilot-composer\s*\{[^}]*padding\s+0\.28s\s+cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/s.test(stylesContent),
+    ".copilot-composer must transition padding smoothly over 0.28s"
+  );
+});
+
+test("CopilotPill: mic button activates animated red dictation pill with volume bars and cleans up on every exit", async () => {
+  const stylesPath = path.resolve(__dirname, "../src/styles.css");
+  const stylesContent = fs.readFileSync(stylesPath, "utf-8");
+
+  assert.ok(
+    /\.copilot-surface\.copilot-container-pill\.is-dictating/.test(stylesContent),
+    "Styles must define red .is-dictating state on the pill surface"
+  );
+  assert.ok(
+    /\.copilot-dictation-strip/.test(stylesContent) &&
+      /\.copilot-dictation-dot/.test(stylesContent) &&
+      /\.copilot-dictation-meter/.test(stylesContent) &&
+      /\.copilot-dictation-bar/.test(stylesContent),
+    "Styles must define animated dictation strip, pulsing dot, meter, and volume bars"
+  );
+
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "pill",
+      targetContainer: container as any
+    });
+
+    const surface = container.querySelector(".copilot-surface")!;
+    const btnMic = container.querySelector(".copilot-btn-pill-mic") as unknown as MockDOMElement;
+    const meter = container.querySelector(".copilot-dictation-meter") as unknown as MockDOMElement;
+    assert.ok(btnMic, "Pill must render .copilot-btn-pill-mic next to dock and hide buttons");
+    assert.ok(meter, "Pill must render .copilot-dictation-meter");
+    assert.equal(meter.children.length, 36, "Dictation meter must render 36 volume bars");
+    assert.equal(btnMic.getAttribute("aria-pressed"), "false");
+    assert.ok(!surface.classList.contains("is-dictating"));
+
+    // 1. Click mic -> activates red dictation state
+    btnMic.click();
+    assert.equal(btnMic.getAttribute("aria-pressed"), "true");
+    assert.ok(surface.classList.contains("is-dictating"));
+
+    // Wait > 70ms so interval tick animates bar heights
+    await new Promise((r) => setTimeout(r, 90));
+    const lastBar = meter.children[meter.children.length - 1]!;
+    assert.ok(lastBar.style.height && lastBar.style.height !== "2px", "Volume bars must animate on tick");
+
+    // 2. Click mic again -> stops dictation cleanly
+    btnMic.click();
+    assert.equal(btnMic.getAttribute("aria-pressed"), "false");
+    assert.ok(!surface.classList.contains("is-dictating"));
+
+    // 3. Re-activate and press Escape -> stops dictation without minimizing pill
+    btnMic.click();
+    assert.ok(surface.classList.contains("is-dictating"));
+    env.mockWindow.dispatchEvent({ type: "keydown", key: "Escape", preventDefault: () => {} });
+    assert.ok(!surface.classList.contains("is-dictating"));
+    assert.equal(drawer.getState(), "pill");
+
+    // 4. Re-activate and transition to sheet -> dictation stays available in popup/fullscreen too
+    btnMic.click();
+    assert.ok(surface.classList.contains("is-dictating"));
+    drawer.setState("sheet");
+    assert.ok(surface.classList.contains("is-dictating"), "Dictation remains active when morphing to sheet");
+    drawer.setState("drawer");
+    assert.ok(!surface.classList.contains("is-dictating"), "Dictation stops when switching to drawer");
 
     drawer.destroy();
   } finally {
