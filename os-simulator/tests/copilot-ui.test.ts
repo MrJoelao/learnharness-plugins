@@ -1491,13 +1491,15 @@ test("CopilotPill: mic button activates animated red dictation pill with volume 
     assert.ok(!surface.classList.contains("is-dictating"));
     assert.equal(drawer.getState(), "pill");
 
-    // 4. Re-activate and transition to sheet -> dictation stays available in popup/fullscreen too
+    // 4. Re-activate and transition to sheet / drawer -> dictation stays available, stops on minimized
     btnMic.click();
     assert.ok(surface.classList.contains("is-dictating"));
     drawer.setState("sheet");
     assert.ok(surface.classList.contains("is-dictating"), "Dictation remains active when morphing to sheet");
     drawer.setState("drawer");
-    assert.ok(!surface.classList.contains("is-dictating"), "Dictation stops when switching to drawer");
+    assert.ok(surface.classList.contains("is-dictating"), "Dictation remains active in drawer mode");
+    drawer.setState("minimized");
+    assert.ok(!surface.classList.contains("is-dictating"), "Dictation stops when minimized");
 
     drawer.destroy();
   } finally {

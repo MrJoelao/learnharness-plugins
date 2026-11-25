@@ -234,6 +234,13 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     cancelMorphAnimation?.();
     isClosing = true;
     surfaceEl.classList.add("is-closing");
+    if (currentState === "drawer") {
+      options.targetContainer?.classList.remove("has-copilot-drawer");
+      options.targetContainer?.classList.remove("is-resizing");
+      if (options.targetContainer?.style && typeof options.targetContainer.style.removeProperty === "function") {
+        options.targetContainer.style.removeProperty("--copilot-drawer-width");
+      }
+    }
 
     let finished = false;
     const cleanupClose = () => {
@@ -265,7 +272,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   const globalKeyDownHandler = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
-      if (isDictating && (currentState === "pill" || currentState === "sheet")) {
+      if (isDictating) {
         stopPillDictation();
         return;
       }
@@ -286,7 +293,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   function transitionTo(nextState: CopilotUiMode, carriedInput?: string) {
     if (nextState === currentState && !carriedInput) return;
-    if (nextState !== "pill" && nextState !== "sheet" && isDictating) {
+    if (nextState === "minimized" && isDictating) {
       stopPillDictation();
     }
     if (nextState !== "sheet") {
@@ -890,7 +897,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   };
 
   const startPillDictation = () => {
-    if (isDictating || isDestroyed || (currentState !== "pill" && currentState !== "sheet")) return;
+    if (isDictating || isDestroyed || currentState === "minimized") return;
     isDictating = true;
     const gen = ++dictationGeneration;
     dictationPhaseTick = 0;
@@ -1167,6 +1174,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       "copilot-container-drawer",
       "is-morphed",
       "is-morphing-open",
+      "is-entering-from-drawer",
       "is-fullscreen",
       "is-expanded",
       "is-minimized"
@@ -1221,6 +1229,24 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         cancelMorphAnimation = cleanupMorph;
         surfaceEl.addEventListener("animationend", onMorphDone);
         morphTimeoutId = setTimeout(() => onMorphDone(), 320);
+      } else if (previousState === "drawer") {
+        surfaceEl.classList.add("is-entering-from-drawer");
+        const cleanupEnter = () => {
+          surfaceEl.removeEventListener("animationend", onEnterDone);
+          if (morphTimeoutId) {
+            clearTimeout(morphTimeoutId);
+            morphTimeoutId = null;
+          }
+          surfaceEl.classList.remove("is-entering-from-drawer");
+          cancelMorphAnimation = null;
+        };
+        const onEnterDone = (e?: Event) => {
+          if (e && e.target && e.target !== surfaceEl) return;
+          cleanupEnter();
+        };
+        cancelMorphAnimation = cleanupEnter;
+        surfaceEl.addEventListener("animationend", onEnterDone);
+        morphTimeoutId = setTimeout(() => onEnterDone(), 300);
       }
       if (composerInputEl.style) {
         composerInputEl.style.height = "";

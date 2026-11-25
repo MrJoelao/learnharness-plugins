@@ -2284,7 +2284,18 @@
 
 @keyframes copilot-pill-enter {
   from {
-    transform: translateX(-50%) translateY(8px) scale(0.98);
+    transform: translateX(-50%) translateY(10px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes copilot-sheet-enter {
+  from {
+    transform: translateX(-50%) translateY(12px) scale(0.98);
     opacity: 0;
   }
   to {
@@ -2418,17 +2429,7 @@
   border: 1px solid var(--border);
   overflow: hidden;
   z-index: 50;
-  transition: height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              max-width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              max-height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              bottom 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              top 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              left 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              right 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              border-radius 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s ease,
+  transition: box-shadow 0.3s ease,
               border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               background-color 0.2s ease;
 }
@@ -2455,7 +2456,7 @@
   background-color: var(--card);
   border: 1px solid var(--border);
   box-shadow: var(--lh-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15));
-  animation: copilot-pill-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-pill-enter 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-surface.copilot-container-pill:hover {
@@ -2667,6 +2668,10 @@
   animation: copilot-card-open 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.copilot-container-sheet.is-entering-from-drawer {
+  animation: copilot-sheet-enter 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .copilot-container-sheet:hover {
   border-color: var(--border);
   box-shadow: var(--lh-shadow-lg, 0 12px 30px -10px rgba(0, 0, 0, 0.3)), 0 20px 45px -10px rgba(0, 0, 0, 0.4);
@@ -2769,11 +2774,16 @@
   pointer-events: none;
 }
 
+.memory-lab-root,
+.cpu-lab-root,
+.concurrency-lab-root {
+  transition: padding-right 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .memory-lab-root.has-copilot-drawer,
 .cpu-lab-root.has-copilot-drawer,
 .concurrency-lab-root.has-copilot-drawer {
   padding-right: var(--copilot-drawer-width, 410px);
-  transition: padding-right 0.25s ease;
 }
 
 .memory-lab-root.has-copilot-drawer.is-resizing,
@@ -2799,8 +2809,8 @@
   z-index: 55;
   overflow: hidden;
   box-sizing: border-box;
-  animation: copilot-drawer-slide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: width 0.2s ease;
+  animation: copilot-drawer-slide 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-drawer.is-resizing {
@@ -2842,7 +2852,7 @@
 }
 
 .copilot-container-drawer.is-closing {
-  animation: copilot-drawer-slide-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-drawer-slide-out 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
@@ -2955,6 +2965,7 @@
 .copilot-surface.copilot-container-pill .copilot-floating-actions .copilot-btn-close,
 .copilot-surface.copilot-container-sheet .copilot-floating-actions .copilot-btn-dock,
 .copilot-surface.copilot-container-sheet .copilot-floating-actions .copilot-btn-close,
+.copilot-surface.copilot-container-drawer .copilot-floating-actions .copilot-btn-dock,
 .copilot-surface.copilot-container-drawer .copilot-floating-actions .copilot-btn-expand {
   display: none;
 }
@@ -3022,6 +3033,7 @@
 .copilot-container-drawer .copilot-chat-body {
   padding: 0 16px 12px 16px;
   gap: 8px;
+  overflow-x: hidden;
 }
 
 .copilot-chat-empty {
@@ -3058,8 +3070,8 @@
 }
 
 .copilot-container-drawer .copilot-bubble-message {
-  max-width: 90%;
-  padding: 10px 14px;
+  max-width: 94%;
+  padding: 10px 12px;
 }
 
 .copilot-bubble-user {
@@ -3262,7 +3274,8 @@
               padding-top 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.copilot-container-sheet .copilot-btn-dictate {
+.copilot-container-sheet .copilot-btn-dictate,
+.copilot-container-drawer .copilot-btn-dictate {
   display: none;
 }
 
@@ -3316,9 +3329,10 @@
 }
 
 .copilot-container-drawer .copilot-composer {
-  padding: 12px 16px 16px 16px;
-  background-color: var(--card);
-  border-top: 1px solid var(--border);
+  padding: 4px 12px 12px 12px;
+  background-color: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  overflow-x: hidden;
 }
 
 .copilot-composer-surface {
@@ -3344,7 +3358,10 @@
 .copilot-surface.copilot-container-pill .copilot-composer-surface:focus-within,
 .copilot-container-sheet .copilot-composer-surface,
 .copilot-container-sheet .copilot-composer-surface:hover,
-.copilot-container-sheet .copilot-composer-surface:focus-within {
+.copilot-container-sheet .copilot-composer-surface:focus-within,
+.copilot-container-drawer .copilot-composer-surface,
+.copilot-container-drawer .copilot-composer-surface:hover,
+.copilot-container-drawer .copilot-composer-surface:focus-within {
   border: none;
   border-radius: 0;
   background-color: transparent;
@@ -3354,15 +3371,6 @@
   padding: 0;
   gap: 6px;
   align-items: center;
-}
-
-.copilot-container-drawer .copilot-composer-surface {
-  border-radius: var(--radius-lg, 12px);
-  background-color: color-mix(in srgb, var(--card) 95%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  padding: 6px 8px 6px 12px;
 }
 
 .copilot-composer-surface:hover {
@@ -3398,7 +3406,7 @@
   height: 40px;
   min-height: 40px;
   max-height: 40px;
-  padding: 8px 0;
+  padding: 10px 0;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -3450,7 +3458,7 @@
   font-size: 0.875rem;
   line-height: 1.45;
   min-height: 40px;
-  padding: 8px 0;
+  padding: 10px 0;
   white-space: pre-wrap;
   overflow-y: auto;
 }
@@ -3464,8 +3472,9 @@
 
 .copilot-container-drawer .copilot-composer-input {
   font-size: var(--text-sm, 12.5px);
-  min-height: 36px;
-  padding: 6px 0;
+  line-height: 1.45;
+  min-height: 40px;
+  padding: 11px 0;
 }
 
 .copilot-composer-input::placeholder {
@@ -3515,13 +3524,9 @@
   background: transparent;
 }
 
-.copilot-container-drawer .copilot-btn-pill-mic,
 .copilot-container-drawer .copilot-btn-composer-dock,
 .copilot-container-drawer .copilot-btn-pill-hide {
-  width: 0;
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
+  display: none;
 }
 
 .copilot-btn-send {
@@ -3549,7 +3554,8 @@
 
 .copilot-surface.copilot-container-pill .copilot-btn-send,
 .copilot-surface.copilot-container-sheet .copilot-btn-send,
-.copilot-container-sheet.is-closing .copilot-btn-send {
+.copilot-container-sheet.is-closing .copilot-btn-send,
+.copilot-surface.copilot-container-drawer .copilot-btn-send {
   display: none;
 }
 
