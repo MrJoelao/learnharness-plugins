@@ -814,6 +814,16 @@ test("Copilot UX: subtle hub-style focus and hover borders adhering to LearnHarn
   const composerSurfaceFocusMatch = stylesContent.match(/\.copilot-composer-surface:focus-within\s*\{([^}]+)\}/);
   assert.ok(composerSurfaceFocusMatch);
   assert.ok(!copilotPillFocusFocusHasPrimary(composerSurfaceFocusMatch[1]!));
+
+  // Verify sheet mode removes nested bottom card and expands to true fullscreen
+  assert.ok(
+    stylesContent.includes(".copilot-container-sheet .copilot-composer-surface"),
+    "Sheet mode should flatten nested composer surface card"
+  );
+  assert.ok(
+    /\.copilot-container-sheet\.is-fullscreen,\s*\.copilot-container-sheet\.is-expanded\s*\{[^}]*width:\s*100vw;[^}]*height:\s*100dvh;[^}]*border-radius:\s*0;/s.test(stylesContent),
+    "Fullscreen mode must expand organically to true 100vw x 100dvh fullscreen"
+  );
 });
 
 function copilotPillFocusFocusHasPrimary(block: string): boolean {

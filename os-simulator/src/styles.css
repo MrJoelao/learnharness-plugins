@@ -2229,13 +2229,23 @@
 
 @keyframes copilot-card-fullscreen-close {
   0% {
-    height: calc(100dvh - 40px);
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
     opacity: 1;
     transform: translateX(-50%);
-    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+    box-shadow: none;
   }
   100% {
+    bottom: 20px;
+    left: var(--quadro-center-x, 50%);
+    width: calc(100% - 32px);
+    max-width: calc(46rem - 32px);
     height: 52px;
+    border-radius: var(--radius-xl, 16px);
     opacity: 1;
     transform: translateX(-50%);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15);
@@ -2266,11 +2276,11 @@
 
 @keyframes copilot-pill-enter {
   from {
-    transform: translateX(-50%);
-    opacity: 1;
+    transform: translateX(-50%) translateY(8px) scale(0.98);
+    opacity: 0;
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(0) scale(1);
     opacity: 1;
   }
 }
@@ -2278,14 +2288,22 @@
 @keyframes copilot-sheet-content-reveal {
   0% {
     opacity: 0;
-    transform: translateY(6px);
-  }
-  60% {
-    opacity: 0.6;
+    transform: translateY(8px);
   }
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes copilot-floating-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -2460,13 +2478,20 @@
   z-index: 50;
   overflow: hidden;
   box-sizing: border-box;
-  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+  transition: height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              max-height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              bottom 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              left 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              border-radius 0.34s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.3s ease,
-              left 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               background-color 0.2s ease;
-  animation: copilot-card-open 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.copilot-container-sheet.is-morphing-open {
+  animation: copilot-card-open 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-sheet:hover {
@@ -2481,15 +2506,31 @@
 
 .copilot-container-sheet.is-fullscreen,
 .copilot-container-sheet.is-expanded {
-  bottom: 20px;
-  height: calc(100vh - 40px) !important;
-  height: calc(100dvh - 40px) !important;
-  max-height: calc(100dvh - 40px) !important;
-  max-width: 52rem;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border-color: transparent;
+  box-shadow: none;
+  z-index: 60;
   animation: none !important;
-  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s ease;
+}
+
+.copilot-container-sheet.is-fullscreen .copilot-chat-body,
+.copilot-container-sheet.is-fullscreen .copilot-composer {
+  width: 100%;
+  max-width: 52rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.copilot-container-sheet.is-fullscreen .copilot-floating-actions {
+  top: max(16px, env(titlebar-area-inset-top, 16px));
+  right: max(16px, env(titlebar-area-inset-right, 16px));
 }
 
 .copilot-container-sheet.is-closing {
@@ -2499,19 +2540,28 @@
 
 .copilot-container-sheet.is-fullscreen.is-closing,
 .copilot-container-sheet.is-expanded.is-closing {
-  animation: copilot-card-fullscreen-close 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-card-fullscreen-close 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
-.copilot-container-sheet .copilot-chat-body,
-.copilot-container-sheet .copilot-composer {
-  animation: copilot-sheet-content-reveal 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.copilot-container-sheet.is-morphing-open .copilot-chat-body {
+  animation: copilot-sheet-content-reveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+}
+
+.copilot-container-sheet.is-morphing-open .copilot-floating-actions {
+  animation: copilot-floating-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
 }
 
 .copilot-container-sheet.is-closing .copilot-chat-body,
-.copilot-container-sheet.is-closing .copilot-composer {
+.copilot-container-sheet.is-closing .copilot-floating-actions {
   opacity: 0;
-  transition: opacity 0.1s ease;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.copilot-container-sheet.is-closing .copilot-composer {
+  opacity: 0.6;
+  transition: opacity 0.18s ease;
   pointer-events: none;
 }
 
@@ -2600,6 +2650,7 @@
   -webkit-app-region: no-drag;
 }
 
+.copilot-container-sheet .copilot-floating-actions,
 .copilot-container-drawer .copilot-floating-actions {
   position: absolute;
   top: 12px;
@@ -2612,6 +2663,8 @@
   -webkit-app-region: no-drag;
 }
 
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn,
+.copilot-container-sheet .copilot-floating-actions .btn-icon,
 .copilot-container-drawer .copilot-floating-actions .copilot-floating-btn,
 .copilot-container-drawer .copilot-floating-actions .btn-icon {
   width: 32px;
@@ -2633,6 +2686,8 @@
   -webkit-app-region: no-drag;
 }
 
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn:hover,
+.copilot-container-sheet .copilot-floating-actions .btn-icon:hover,
 .copilot-container-drawer .copilot-floating-actions .copilot-floating-btn:hover,
 .copilot-container-drawer .copilot-floating-actions .btn-icon:hover {
   background-color: var(--background);
@@ -2640,14 +2695,20 @@
   border-color: var(--border);
 }
 
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn:focus,
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn:focus-visible,
+.copilot-container-sheet .copilot-floating-actions .btn-icon:focus,
+.copilot-container-sheet .copilot-floating-actions .btn-icon:focus-visible,
 .copilot-container-drawer .copilot-floating-actions .copilot-floating-btn:focus,
 .copilot-container-drawer .copilot-floating-actions .copilot-floating-btn:focus-visible,
 .copilot-container-drawer .copilot-floating-actions .btn-icon:focus,
 .copilot-container-drawer .copilot-floating-actions .btn-icon:focus-visible {
   outline: none;
-  border-color: var(--primary);
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
 }
 
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn svg,
+.copilot-container-sheet .copilot-floating-actions .btn-icon svg,
 .copilot-container-drawer .copilot-floating-actions .copilot-floating-btn svg,
 .copilot-container-drawer .copilot-floating-actions .btn-icon svg {
   color: inherit;
@@ -2747,7 +2808,7 @@
 .copilot-chat-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 52px 16px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2961,9 +3022,9 @@
 .copilot-composer {
   display: flex;
   flex-direction: column;
-  padding: 8px 16px 12px 16px;
-  background-color: var(--card);
-  border-top: 1px solid var(--border);
+  padding: 6px 14px 10px 14px;
+  background-color: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -2990,6 +3051,19 @@
   transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               background-color 0.2s ease;
+}
+
+.copilot-container-sheet .copilot-composer-surface,
+.copilot-container-sheet .copilot-composer-surface:hover,
+.copilot-container-sheet .copilot-composer-surface:focus-within {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  padding: 0;
+  align-items: center;
 }
 
 .copilot-container-drawer .copilot-composer-surface {

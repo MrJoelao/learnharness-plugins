@@ -506,6 +506,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         },
         { once: true }
       );
+      setTimeout(() => {
+        panel.classList.remove("is-morphing-open");
+      }, 320);
     }
 
     if (layoutMode === "drawer") {
@@ -629,70 +632,72 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       panel.appendChild(resizer);
     }
 
+    const floatingActions = document.createElement("div");
+    floatingActions.className = "copilot-floating-actions lh-no-drag";
+    if (floatingActions.style && typeof floatingActions.style.setProperty === "function") {
+      floatingActions.style.setProperty("-webkit-app-region", "no-drag");
+    }
+
+    const createFloatingBtn = (
+      extraClasses: string,
+      title: string,
+      ariaLabel: string,
+      iconName: Parameters<typeof createIcon>[0],
+      onClick: () => void
+    ): HTMLButtonElement => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `copilot-floating-btn btn-icon ${extraClasses} lh-no-drag`;
+      btn.title = title;
+      btn.setAttribute("aria-label", ariaLabel);
+      if (btn.style && typeof btn.style.setProperty === "function") {
+        btn.style.setProperty("-webkit-app-region", "no-drag");
+      }
+      btn.appendChild(createIcon(iconName, "size-4 text-muted-foreground"));
+      btn.addEventListener("click", onClick);
+      return btn;
+    };
+
+    const btnHistory = createFloatingBtn(
+      "copilot-btn-history",
+      "Cronologia Esercizi",
+      "Cronologia Esercizi",
+      "history",
+      () => openHistory()
+    );
+
     if (layoutMode === "sheet") {
-      const header = document.createElement("div");
-      header.className = "copilot-panel-header lh-no-drag";
-
-      const titleGroup = document.createElement("div");
-      titleGroup.className = "copilot-header-title-group";
-
-      const botIcon = createIcon("bot", "size-4 text-primary shrink-0");
-      const titleText = document.createElement("span");
-      titleText.className = "copilot-header-title font-title font-semibold";
-      titleText.textContent = "Assistente OS";
-
-      const modeBadge = document.createElement("span");
-      modeBadge.className = "copilot-badge copilot-badge-mode font-mono text-xs";
-      modeBadge.textContent = options.mode;
-
-      titleGroup.append(botIcon, titleText, modeBadge);
-
-      const actionsGroup = document.createElement("div");
-      actionsGroup.className = "copilot-header-actions lh-no-drag";
-
-      const btnHistory = document.createElement("button");
-      btnHistory.type = "button";
-      btnHistory.className = "btn-icon copilot-btn-history lh-no-drag";
-      btnHistory.title = "Cronologia Esercizi";
-      btnHistory.setAttribute("aria-label", "Cronologia Esercizi");
-      btnHistory.appendChild(createIcon("history", "size-4 text-muted-foreground"));
-      btnHistory.addEventListener("click", () => openHistory());
-
-      const btnDockToggle = document.createElement("button");
-      btnDockToggle.type = "button";
-      btnDockToggle.className = "btn-icon copilot-btn-dock lh-no-drag";
-      btnDockToggle.title = "Aggancia a destra (Drawer)";
-      btnDockToggle.setAttribute("aria-label", "Aggancia a destra");
-      btnDockToggle.appendChild(createIcon("panel-right", "size-4 text-muted-foreground"));
-      btnDockToggle.addEventListener("click", () => transitionTo("drawer"));
-
-      const btnExpandToggle = document.createElement("button");
-      btnExpandToggle.type = "button";
-      btnExpandToggle.className = "btn-icon copilot-btn-expand lh-no-drag";
-      btnExpandToggle.title = isFullscreen ? "Riduci dimensione" : "Espandi a schermo intero";
-      btnExpandToggle.setAttribute("aria-label", btnExpandToggle.title);
-      btnExpandToggle.appendChild(
-        createIcon(isFullscreen ? "minimize-2" : "maximize-2", "size-4 text-muted-foreground")
+      const btnDockToggle = createFloatingBtn(
+        "copilot-btn-dock",
+        "Aggancia a destra (Drawer)",
+        "Aggancia a destra",
+        "panel-right",
+        () => transitionTo("drawer")
       );
-      btnExpandToggle.addEventListener("click", () => {
-        setFullscreen(!isFullscreen);
-      });
 
-      const btnClose = document.createElement("button");
-      btnClose.type = "button";
-      btnClose.className = "btn-icon copilot-btn-close copilot-btn-collapse lh-no-drag";
-      btnClose.title = "Minimizza [Esc]";
-      btnClose.setAttribute("aria-label", "Minimizza assistente");
-      btnClose.appendChild(createIcon("x", "size-4 text-muted-foreground"));
-      btnClose.addEventListener("click", () => closeWithAnimation("pill"));
+      const btnExpandToggle = createFloatingBtn(
+        "copilot-btn-expand",
+        isFullscreen ? "Riduci dimensione" : "Espandi a schermo intero",
+        isFullscreen ? "Riduci dimensione" : "Espandi a schermo intero",
+        isFullscreen ? "minimize-2" : "maximize-2",
+        () => setFullscreen(!isFullscreen)
+      );
 
-      actionsGroup.append(btnHistory, btnDockToggle, btnExpandToggle, btnClose);
-      header.append(titleGroup, actionsGroup);
-      panel.appendChild(header);
+      const btnClose = createFloatingBtn(
+        "copilot-btn-close copilot-btn-collapse",
+        "Minimizza [Esc]",
+        "Minimizza assistente",
+        "x",
+        () => closeWithAnimation("pill")
+      );
+
+      floatingActions.append(btnHistory, btnDockToggle, btnExpandToggle, btnClose);
+      panel.appendChild(floatingActions);
 
       setFullscreen = (enabled: boolean) => {
         if (layoutMode !== "sheet" || isFullscreen === enabled) return;
         isFullscreen = enabled;
+        panel.classList.remove("is-morphing-open");
         if (isFullscreen) {
           panel.classList.add("is-fullscreen");
           panel.classList.add("is-expanded");
@@ -712,36 +717,21 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     } else {
       setFullscreen = () => {};
 
-      const floatingActions = document.createElement("div");
-      floatingActions.className = "copilot-floating-actions lh-no-drag";
-      floatingActions.style.setProperty("-webkit-app-region", "no-drag");
+      const btnDockToggle = createFloatingBtn(
+        "copilot-btn-dock",
+        "Aggancia in basso (Sheet)",
+        "Aggancia in basso",
+        "chevron-down",
+        () => transitionTo("sheet")
+      );
 
-      const btnHistory = document.createElement("button");
-      btnHistory.type = "button";
-      btnHistory.className = "copilot-floating-btn btn-icon copilot-btn-history lh-no-drag";
-      btnHistory.title = "Cronologia Esercizi";
-      btnHistory.setAttribute("aria-label", "Cronologia Esercizi");
-      btnHistory.style.setProperty("-webkit-app-region", "no-drag");
-      btnHistory.appendChild(createIcon("history", "size-4 text-muted-foreground"));
-      btnHistory.addEventListener("click", () => openHistory());
-
-      const btnDockToggle = document.createElement("button");
-      btnDockToggle.type = "button";
-      btnDockToggle.className = "copilot-floating-btn btn-icon copilot-btn-dock lh-no-drag";
-      btnDockToggle.title = "Aggancia in basso (Sheet)";
-      btnDockToggle.setAttribute("aria-label", "Aggancia in basso");
-      btnDockToggle.style.setProperty("-webkit-app-region", "no-drag");
-      btnDockToggle.appendChild(createIcon("chevron-down", "size-4 text-muted-foreground"));
-      btnDockToggle.addEventListener("click", () => transitionTo("sheet"));
-
-      const btnClose = document.createElement("button");
-      btnClose.type = "button";
-      btnClose.className = "copilot-floating-btn btn-icon copilot-btn-close copilot-btn-collapse lh-no-drag";
-      btnClose.title = "Minimizza [Esc]";
-      btnClose.setAttribute("aria-label", "Minimizza assistente");
-      btnClose.style.setProperty("-webkit-app-region", "no-drag");
-      btnClose.appendChild(createIcon("x", "size-4 text-muted-foreground"));
-      btnClose.addEventListener("click", () => closeWithAnimation("pill"));
+      const btnClose = createFloatingBtn(
+        "copilot-btn-close copilot-btn-collapse",
+        "Minimizza [Esc]",
+        "Minimizza assistente",
+        "x",
+        () => closeWithAnimation("pill")
+      );
 
       floatingActions.append(btnHistory, btnDockToggle, btnClose);
       panel.appendChild(floatingActions);
@@ -749,9 +739,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
     chatBodyEl = document.createElement("div");
     chatBodyEl.className = "copilot-chat-body";
-    if (layoutMode === "drawer") {
-      chatBodyEl.style.paddingTop = "52px";
-    }
+    chatBodyEl.style.paddingTop = "52px";
 
     if (layoutMode === "sheet") {
       let lastScrollTop = 0;

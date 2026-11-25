@@ -375,7 +375,7 @@ test("clampDrawerWidth: mathematical boundary correctness", () => {
   assert.equal(clampDrawerWidth(350, 320), 280);
 });
 
-test("CopilotDrawer: sheet has header and drawer mode has floating actions with lh-no-drag and no header", () => {
+test("CopilotDrawer: both sheet and drawer modes use floating actions with lh-no-drag and no header", () => {
   const env = setupMockDom();
   try {
     const container = new MockDOMElement();
@@ -386,26 +386,34 @@ test("CopilotDrawer: sheet has header and drawer mode has floating actions with 
       targetContainer: container as any
     });
 
-    // Check Sheet mode
-    const sheetHeader = container.querySelector(".copilot-panel-header")!;
-    assert.ok(sheetHeader);
-    assert.ok(sheetHeader.classList.contains("lh-no-drag"), "Sheet header must have lh-no-drag");
-    assert.ok(!sheetHeader.classList.contains("lh-wco-gutter"), "Sheet header should not have lh-wco-gutter");
+    // Check Sheet mode: header bar (title "Assistente OS" and mode badge) must be eliminated
+    assert.equal(container.querySelector(".copilot-panel-header"), null, "Sheet mode must eliminate .copilot-panel-header");
+    assert.equal(container.querySelector(".copilot-header-title"), null, "Sheet mode must eliminate .copilot-header-title");
+    assert.equal(container.querySelector(".copilot-badge-mode"), null, "Sheet mode must eliminate .copilot-badge-mode");
 
-    const sheetActions = container.querySelector(".copilot-header-actions")!;
-    assert.ok(sheetActions.classList.contains("lh-no-drag"), "Sheet header actions must have lh-no-drag");
+    const sheetFloatingActions = container.querySelector(".copilot-floating-actions")!;
+    assert.ok(sheetFloatingActions, "Sheet mode must render .copilot-floating-actions");
+    assert.ok(sheetFloatingActions.classList.contains("lh-no-drag"), "Sheet floating actions must have lh-no-drag");
 
-    const sheetBtnHistory = container.querySelector(".copilot-btn-history")!;
+    const sheetBtnHistory = sheetFloatingActions.querySelector(".copilot-btn-history")!;
+    assert.ok(sheetBtnHistory.classList.contains("copilot-floating-btn"), "Sheet history btn must be a floating btn");
     assert.ok(sheetBtnHistory.classList.contains("lh-no-drag"), "History btn must have lh-no-drag");
 
-    const sheetBtnDock = container.querySelector(".copilot-btn-dock")!;
+    const sheetBtnDock = sheetFloatingActions.querySelector(".copilot-btn-dock")!;
+    assert.ok(sheetBtnDock.classList.contains("copilot-floating-btn"), "Sheet dock btn must be a floating btn");
     assert.ok(sheetBtnDock.classList.contains("lh-no-drag"), "Dock btn must have lh-no-drag");
 
-    const sheetBtnClose = container.querySelector(".copilot-btn-close")!;
+    const sheetBtnExpand = sheetFloatingActions.querySelector(".copilot-btn-expand")!;
+    assert.ok(sheetBtnExpand.classList.contains("copilot-floating-btn"), "Sheet expand btn must be a floating btn");
+    assert.ok(sheetBtnExpand.classList.contains("lh-no-drag"), "Expand btn must have lh-no-drag");
+
+    const sheetBtnClose = sheetFloatingActions.querySelector(".copilot-btn-close")!;
+    assert.ok(sheetBtnClose.classList.contains("copilot-floating-btn"), "Sheet close btn must be a floating btn");
     assert.ok(sheetBtnClose.classList.contains("lh-no-drag"), "Close btn must have lh-no-drag");
 
-    const sheetBtnExpand = container.querySelector(".copilot-btn-expand")!;
-    assert.ok(sheetBtnExpand.classList.contains("lh-no-drag"), "Expand btn must have lh-no-drag");
+    const sheetChatBody = container.querySelector(".copilot-chat-body")!;
+    assert.ok(sheetChatBody);
+    assert.equal(sheetChatBody.style.paddingTop, "52px", "Chat body in sheet mode should have padding-top: 52px");
 
     // Transition to Drawer mode
     drawer.setState("drawer");
