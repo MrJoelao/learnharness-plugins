@@ -35,9 +35,6 @@ export function createCopilotPill(options: CopilotPillOptions = {}): CopilotPill
   container.className = "copilot-pill";
   container.setAttribute("role", "search");
 
-  const botIcon = createIcon("bot", "size-4 text-primary shrink-0");
-  container.appendChild(botIcon);
-
   const input = document.createElement("input");
   input.type = "text";
   input.className = "copilot-pill-input font-sans";

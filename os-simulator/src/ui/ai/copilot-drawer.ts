@@ -141,6 +141,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   let isDestroyed = false;
   let isFullscreen = false;
   let setFullscreen: (enabled: boolean) => void = () => {};
+  const activePlaceholder = getRandomGraphPlaceholder();
 
   let drawerWidth: number = (() => {
     try {
@@ -168,6 +169,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     if (!target || typeof target.getBoundingClientRect !== "function") {
       if (rootEl.style && typeof rootEl.style.setProperty === "function") {
         rootEl.style.setProperty("--quadro-center-x", "50%");
+        rootEl.style.setProperty("--quadro-width", "100vw");
       }
       return;
     }
@@ -176,10 +178,12 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       const centerX = rect.left + rect.width / 2;
       if (rootEl.style && typeof rootEl.style.setProperty === "function") {
         rootEl.style.setProperty("--quadro-center-x", `${centerX}px`);
+        rootEl.style.setProperty("--quadro-width", `${rect.width}px`);
       }
     } else {
       if (rootEl.style && typeof rootEl.style.setProperty === "function") {
         rootEl.style.setProperty("--quadro-center-x", "50%");
+        rootEl.style.setProperty("--quadro-width", "100vw");
       }
     }
   }
@@ -434,7 +438,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
     activePillHandle = createCopilotPill({
       initialValue: initialText,
-      placeholder: getRandomGraphPlaceholder(),
+      placeholder: activePlaceholder,
       onFocusOrInput: (text) => {
         transitionTo("sheet", text);
       },
@@ -801,7 +805,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
     composerInputEl = document.createElement("textarea");
     composerInputEl.className = "copilot-composer-input font-sans";
-    composerInputEl.placeholder = "Fai una domanda o chiedi un esercizio... [Invio]";
+    composerInputEl.placeholder = activePlaceholder;
     composerInputEl.rows = 1;
     composerInputEl.addEventListener("input", autoGrow);
     if (carriedInput) {

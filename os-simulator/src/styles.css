@@ -2230,9 +2230,9 @@
 @keyframes copilot-card-fullscreen-close {
   0% {
     bottom: 0;
-    left: 50%;
-    width: 100vw;
-    max-width: 100vw;
+    left: var(--quadro-center-x, 50%);
+    width: var(--quadro-width, 100vw);
+    max-width: var(--quadro-width, 100vw);
     height: 100dvh;
     border-radius: 0;
     opacity: 1;
@@ -2507,9 +2507,9 @@
 .copilot-container-sheet.is-fullscreen,
 .copilot-container-sheet.is-expanded {
   bottom: 0;
-  left: 50%;
-  width: 100vw;
-  max-width: 100vw;
+  left: var(--quadro-center-x, 50%);
+  width: var(--quadro-width, 100vw);
+  max-width: var(--quadro-width, 100vw);
   height: 100vh;
   height: 100dvh;
   max-height: 100dvh;
@@ -2560,8 +2560,7 @@
 }
 
 .copilot-container-sheet.is-closing .copilot-composer {
-  opacity: 0.6;
-  transition: opacity 0.18s ease;
+  opacity: 1;
   pointer-events: none;
 }
 
@@ -3022,11 +3021,16 @@
 .copilot-composer {
   display: flex;
   flex-direction: column;
-  padding: 6px 14px 10px 14px;
+  width: 100%;
+  max-width: calc(46rem - 32px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px 14px 6px 14px;
   background-color: transparent;
   border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   box-sizing: border-box;
   flex-shrink: 0;
+  transition: max-width 0.34s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-drawer .copilot-composer {
@@ -3100,6 +3104,13 @@
   field-sizing: content;
   padding: 8px 0;
   resize: none;
+}
+
+.copilot-container-sheet .copilot-composer-input {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  min-height: 40px;
+  padding: 10px 0;
 }
 
 .copilot-container-drawer .copilot-composer-input {
