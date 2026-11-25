@@ -218,18 +218,17 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     const carriedInput = composerInputEl?.value?.trim() ? composerInputEl.value : undefined;
 
     let finished = false;
-    const onDone = () => {
+    const onDone = (e?: Event) => {
+      if (e && e.target && e.target !== panel) return;
       if (finished) return;
       finished = true;
       panel.removeEventListener("animationend", onDone);
-      panel.removeEventListener("transitionend", onDone);
       isClosing = false;
       transitionTo(nextMode, carriedInput);
     };
 
-    panel.addEventListener("animationend", onDone, { once: true });
-    panel.addEventListener("transitionend", onDone, { once: true });
-    setTimeout(onDone, 240);
+    panel.addEventListener("animationend", onDone);
+    setTimeout(() => onDone(), 260);
   }
 
   const globalKeyDownHandler = (e: KeyboardEvent) => {
