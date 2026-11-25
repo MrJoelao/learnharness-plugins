@@ -568,14 +568,6 @@ export function createCpuLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
-    loadSuggestions: ctx && typeof ctx.call === "function"
-      ? (mode) => ctx.call("get-suggestions", { mode })
-      : undefined,
-    onSettingsChanged: ctx && typeof ctx.onNotification === "function"
-      ? (listener) => ctx.onNotification((event) => {
-          if (event.topic === "settings-changed") listener();
-        })
-      : undefined,
     signal,
     ui: ctx?.ui
   });

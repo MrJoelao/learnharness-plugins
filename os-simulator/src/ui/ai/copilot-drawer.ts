@@ -1,10 +1,8 @@
 import type {
   CopilotUiMode,
   CopilotMessage,
-  CopilotPromptChip,
   CopilotDrawerOptions
 } from "./types.js";
-import { getOstepPromptChips } from "./types.js";
 import { createCopilotPill, type CopilotPillHandle, getRandomGraphPlaceholder } from "./copilot-pill.js";
 import { openExerciseHistoryModal } from "./exercise-history-modal.js";
 import { createIcon } from "../icons.js";
@@ -140,8 +138,6 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   let activePillHandle: CopilotPillHandle | null = null;
   let activeDrawerCleanup: (() => void) | null = null;
   let historyModalCloseFn: (() => void) | null = null;
-  let suggestionsEnabled = true;
-  let activePromptChips: readonly CopilotPromptChip[] = getOstepPromptChips(options.mode);
   let isDestroyed = false;
   let isFullscreen = false;
   let setFullscreen: (enabled: boolean) => void = () => {};
@@ -162,28 +158,6 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
     return COPILOT_DRAWER_DEFAULT_WIDTH;
   })();
-
-  async function refreshSuggestions(): Promise<void> {
-    if (!options.loadSuggestions) return;
-    try {
-      const result = await options.loadSuggestions(options.mode);
-      if (isDestroyed) return;
-      suggestionsEnabled = Boolean(result.enabled);
-      activePromptChips = Array.isArray(result.chips) ? result.chips : [];
-      if (currentState === "pill" || currentState === "sheet" || currentState === "drawer") {
-        const carried = currentState === "pill" ? activePillHandle?.getValue() : composerInputEl?.value;
-        render(carried);
-      }
-    } catch {
-      // Keep current/fallback chips on transient error
-    }
-  }
-
-  const unsubscribeSettings = options.onSettingsChanged
-    ? options.onSettingsChanged(() => {
-        void refreshSuggestions();
-      })
-    : null;
 
   const rootEl = document.createElement("div");
   rootEl.className = "copilot-root";
@@ -475,25 +449,6 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       },
       signal: options.signal
     });
-
-    if (suggestionsEnabled && activePromptChips.length > 0) {
-      const chipsStrip = document.createElement("div");
-      chipsStrip.className = "copilot-prompt-chips-strip copilot-prompt-chips-strip-pill";
-
-      for (const chip of activePromptChips) {
-        const chipBtn = document.createElement("button");
-        chipBtn.type = "button";
-        chipBtn.className = "copilot-prompt-chip font-sans";
-        chipBtn.textContent = chip.label;
-        chipBtn.title = chip.prompt;
-        chipBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          transitionTo("sheet", chip.prompt);
-        });
-        chipsStrip.appendChild(chipBtn);
-      }
-      pillWrapper.appendChild(chipsStrip);
-    }
 
     pillWrapper.appendChild(activePillHandle.element);
     rootEl.appendChild(pillWrapper);
@@ -850,28 +805,6 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       composerInputEl.style.height = `${composerInputEl.scrollHeight}px`;
     };
 
-    if (suggestionsEnabled && activePromptChips.length > 0) {
-      const chipsStrip = document.createElement("div");
-      chipsStrip.className = "copilot-prompt-chips-strip";
-
-      for (const chip of activePromptChips) {
-        const chipBtn = document.createElement("button");
-        chipBtn.type = "button";
-        chipBtn.className = "copilot-prompt-chip font-sans";
-        chipBtn.textContent = chip.label;
-        chipBtn.title = chip.prompt;
-        chipBtn.addEventListener("click", () => {
-          if (composerInputEl) {
-            composerInputEl.value = chip.prompt;
-            autoGrow();
-            composerInputEl.focus();
-          }
-        });
-        chipsStrip.appendChild(chipBtn);
-      }
-      panel.appendChild(chipsStrip);
-    }
-
     const composer = document.createElement("div");
     composer.className = "copilot-composer";
 
@@ -1067,7 +1000,6 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   }
 
   render();
-  void refreshSuggestions();
 
   const destroy = () => {
     isDestroyed = true;
@@ -1076,7 +1008,6 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       activeDrawerCleanup();
       activeDrawerCleanup = null;
     }
-    unsubscribeSettings?.();
     window.removeEventListener("keydown", globalKeyDownHandler);
     window.removeEventListener("resize", updateQuadroCenter);
     if (resizeObserver) {

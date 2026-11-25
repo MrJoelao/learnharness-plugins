@@ -54,12 +54,9 @@ it("activate registers memory-lab, cpu-lab, and concurrency-lab modes with exerc
 
   const cleanup = activate(fakeCtx);
   assert.equal(registeredModes.length, 3);
-  assert.equal(registeredHandlers.size, 5);
+  assert.equal(registeredHandlers.size, 2);
   assert.ok(registeredHandlers.has("ai-turn"));
   assert.ok(registeredHandlers.has("ai-catalog"));
-  assert.ok(registeredHandlers.has("get-settings"));
-  assert.ok(registeredHandlers.has("update-settings"));
-  assert.ok(registeredHandlers.has("get-suggestions"));
 
   const [memoryMode, cpuMode, concurrencyMode] = registeredModes;
   assert.equal(memoryMode?.id, "memory-lab");

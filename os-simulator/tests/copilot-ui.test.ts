@@ -11,7 +11,6 @@ import {
   createCopilotPill,
   createCopilotDrawer,
   openExerciseHistoryModal,
-  getOstepPromptChips,
   type CopilotUiMode
 } from "../src/ui/ai/index.js";
 import type { SavedExercise, LabMode } from "../src/types/ai.js";
@@ -422,7 +421,6 @@ test("CopilotDrawer: mounts cleanly in all 4 states ('pill', 'sheet', 'drawer', 
     drawer.setState("sheet");
     assert.equal(drawer.getState(), "sheet");
     assert.ok(container.querySelector(".copilot-container-sheet"));
-    assert.ok(container.querySelector(".copilot-prompt-chips-strip"));
     assert.ok(container.querySelector(".copilot-composer"));
     assert.ok(!container.classList.contains("has-copilot-drawer"));
 
@@ -530,14 +528,8 @@ test("CopilotDrawer: handles prompt submission, OSTEP chips, generated exercise 
       onHistoryChange: (hist) => { historyUpdates.push(hist); }
     });
 
-    const chips = container.querySelectorAll(".copilot-prompt-chip");
-    assert.ok(chips.length >= 3);
-
-    const firstChip = chips[0]!;
-    firstChip.click();
     const composerInput = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
     assert.ok(composerInput);
-    assert.ok(composerInput.value.length > 0);
 
     await drawer.sendPrompt("Come funziona STCF?");
 

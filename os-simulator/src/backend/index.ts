@@ -1,6 +1,5 @@
 import type { PluginBackendContext } from "learnharness-plugin-api";
 import { handleAiTurn, handleAiCatalog } from "./ai-service.js";
-import { loadCopilotSettings, saveCopilotSettings, handleGetSuggestions } from "./suggestions-service.js";
 
 export function activate(ctx: PluginBackendContext): () => void {
   const unregisterMemory = ctx.registerMode({
@@ -78,33 +77,11 @@ export function activate(ctx: PluginBackendContext): () => void {
       ? ctx.handle("ai-catalog", () => handleAiCatalog(ctx))
       : () => {};
 
-  const unregisterGetSettings =
-    typeof ctx.handle === "function"
-      ? ctx.handle("get-settings", () => loadCopilotSettings(ctx.dataDirectory))
-      : () => {};
-
-  const unregisterUpdateSettings =
-    typeof ctx.handle === "function"
-      ? ctx.handle("update-settings", (input: unknown) => {
-          const next = saveCopilotSettings(ctx.dataDirectory, input);
-          ctx.events?.emit?.("settings-changed", next);
-          return next;
-        })
-      : () => {};
-
-  const unregisterGetSuggestions =
-    typeof ctx.handle === "function"
-      ? ctx.handle("get-suggestions", (input: unknown) => handleGetSuggestions(ctx, input))
-      : () => {};
-
   return () => {
     unregisterMemory();
     unregisterCpu();
     unregisterConcurrency();
     unregisterAiTurn();
     unregisterAiCatalog();
-    unregisterGetSettings();
-    unregisterUpdateSettings();
-    unregisterGetSuggestions();
   };
 }
