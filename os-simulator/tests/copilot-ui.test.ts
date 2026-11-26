@@ -832,7 +832,7 @@ test("Copilot UX: subtle hub-style focus and hover borders adhering to LearnHarn
 
   // Verify symmetrical open/close morph animations (GPU-composited reveal/hide without padding-top reflow)
   assert.ok(
-    /\.copilot-container-sheet\.is-closing\s*\{[^}]*animation:\s*copilot-card-close\s+0\.28s\s+cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/.test(stylesContent),
+    /\.copilot-container-sheet\.is-closing\s*\{[^}]*animation:\s*copilot-card-close\s+(?:calc\()?0\.28s(?:\s*\*\s*var\(--copilot-anim-scale,\s*1\)\))?\s+cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/.test(stylesContent),
     "is-closing must use the exact same 0.28s cubic-bezier(0.16, 1, 0.3, 1) timing as is-morphing-open"
   );
   assert.ok(
@@ -1337,7 +1337,7 @@ test("CopilotDrawer: AUDIT-3 CSS & scroll/wheel hardening regressions", () => {
     ".copilot-container-sheet.is-closing .copilot-composer must match pill padding to prevent bounce"
   );
   assert.ok(
-    /\.copilot-composer-footer\s*\{[^}]*max-height:\s*36px;[^}]*transition:\s*max-height 0\.22s cubic-bezier\(0\.16, 1, 0\.3, 1\),\s*opacity 0\.14s ease,\s*padding-top 0\.22s cubic-bezier\(0\.16, 1, 0\.3, 1\);/s.test(stylesContent),
+    /\.copilot-composer-footer\s*\{[^}]*max-height:\s*36px;[^}]*transition:\s*max-height (?:calc\()?0\.22s(?:\s*\*\s*var\(--copilot-anim-scale,\s*1\)\))? cubic-bezier\(0\.16, 1, 0\.3, 1\),\s*opacity (?:calc\()?0\.14s(?:\s*\*\s*var\(--copilot-anim-scale,\s*1\)\))? ease,\s*padding-top (?:calc\()?0\.22s(?:\s*\*\s*var\(--copilot-anim-scale,\s*1\)\))? cubic-bezier\(0\.16, 1, 0\.3, 1\);/s.test(stylesContent),
     ".copilot-composer-footer must smoothly transition max-height, opacity, and padding-top"
   );
   assert.ok(
@@ -1430,7 +1430,7 @@ test("CopilotDrawer: FIX-3 close bounce elimination, textarea clamp, action coll
     "Send button must be hidden in both pill and sheet/fullscreen modes"
   );
   assert.ok(
-    /\.copilot-composer\s*\{[^}]*padding\s+0\.28s\s+cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/s.test(stylesContent),
+    /\.copilot-composer\s*\{[^}]*padding\s+(?:calc\()?0\.28s(?:\s*\*\s*var\(--copilot-anim-scale,\s*1\)\))?\s+cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/s.test(stylesContent),
     ".copilot-composer must transition padding smoothly over 0.28s"
   );
 });

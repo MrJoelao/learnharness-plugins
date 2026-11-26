@@ -8,6 +8,33 @@ import { openExerciseHistoryModal } from "./exercise-history-modal.js";
 import { createIcon } from "../icons.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse } from "../../types/ai.js";
 
+declare const __LH_DEBUG_ANIMATIONS__: boolean | undefined;
+
+export const COPILOT_DEBUG_ANIMATIONS_STORAGE_KEY = "lh-os-copilot-debug-animations";
+export const COPILOT_DEBUG_ANIM_SCALE = 10;
+
+export function isDebugAnimationsEnabled(): boolean {
+  try {
+    if (typeof __LH_DEBUG_ANIMATIONS__ !== "undefined" && __LH_DEBUG_ANIMATIONS__) {
+      return true;
+    }
+  } catch {
+  }
+  try {
+    if (typeof window !== "undefined") {
+      if ((window as any).__LH_DEBUG_ANIMATIONS__ === true) return true;
+      if (window.location?.search && new URLSearchParams(window.location.search).get("debug-animations") === "1") {
+        return true;
+      }
+      if ((window as any).localStorage?.getItem(COPILOT_DEBUG_ANIMATIONS_STORAGE_KEY) === "1") {
+        return true;
+      }
+    }
+  } catch {
+  }
+  return false;
+}
+
 export const COPILOT_DRAWER_WIDTH_STORAGE_KEY = "lh-os-copilot-width";
 export const COPILOT_DRAWER_DEFAULT_WIDTH = 400;
 export const COPILOT_DRAWER_MIN_WIDTH = 280;
@@ -177,7 +204,18 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   })();
 
   const rootEl = document.createElement("div");
-  rootEl.className = "copilot-root";
+  const debugAnimations = isDebugAnimationsEnabled();
+  const animScale = debugAnimations ? COPILOT_DEBUG_ANIM_SCALE : 1;
+  rootEl.className = debugAnimations ? "copilot-root is-debug-animations" : "copilot-root";
+  if (debugAnimations) {
+    if (rootEl.style && typeof rootEl.style.setProperty === "function") {
+      rootEl.style.setProperty("--copilot-anim-scale", String(animScale));
+    }
+    options.targetContainer?.classList.add("is-debug-animations");
+    if (options.targetContainer?.style && typeof options.targetContainer.style.setProperty === "function") {
+      options.targetContainer.style.setProperty("--copilot-anim-scale", String(animScale));
+    }
+  }
   (options.targetContainer ?? document.body).appendChild(rootEl);
 
   function updateQuadroCenter(): void {
@@ -267,7 +305,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       cleanupClose();
     };
     surfaceEl.addEventListener("animationend", onDone);
-    closeTimeoutId = setTimeout(() => onDone(), 320);
+    closeTimeoutId = setTimeout(() => onDone(), 320 * animScale);
   }
 
   const globalKeyDownHandler = (e: KeyboardEvent) => {
@@ -1089,7 +1127,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     };
     cancelFullscreenTransition = cleanupFullscreenTransition;
     surfaceEl.addEventListener("transitionend", onFullscreenTransitionDone);
-    fullscreenTimeoutId = setTimeout(() => cleanupFullscreenTransition(), 360);
+    fullscreenTimeoutId = setTimeout(() => cleanupFullscreenTransition(), 360 * animScale);
     surfaceEl.setAttribute("data-fullscreen", isFullscreen ? "true" : "false");
     if (isFullscreen) {
       surfaceEl.classList.add("is-fullscreen", "is-expanded");
@@ -1228,7 +1266,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         };
         cancelMorphAnimation = cleanupMorph;
         surfaceEl.addEventListener("animationend", onMorphDone);
-        morphTimeoutId = setTimeout(() => onMorphDone(), 320);
+        morphTimeoutId = setTimeout(() => onMorphDone(), 320 * animScale);
       } else if (previousState === "drawer") {
         surfaceEl.classList.add("is-entering-from-drawer");
         const cleanupEnter = () => {
@@ -1246,7 +1284,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         };
         cancelMorphAnimation = cleanupEnter;
         surfaceEl.addEventListener("animationend", onEnterDone);
-        morphTimeoutId = setTimeout(() => onEnterDone(), 300);
+        morphTimeoutId = setTimeout(() => onEnterDone(), 300 * animScale);
       }
       if (composerInputEl.style) {
         composerInputEl.style.height = "";
@@ -1422,8 +1460,10 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
     options.targetContainer?.classList.remove("has-copilot-drawer");
     options.targetContainer?.classList.remove("is-resizing");
+    options.targetContainer?.classList.remove("is-debug-animations");
     if (options.targetContainer?.style && typeof options.targetContainer.style.removeProperty === "function") {
       options.targetContainer.style.removeProperty("--copilot-drawer-width");
+      options.targetContainer.style.removeProperty("--copilot-anim-scale");
     }
     if (historyModalCloseFn) {
       historyModalCloseFn();

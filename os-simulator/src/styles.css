@@ -2418,6 +2418,12 @@
   position: relative;
   z-index: 50;
   font-family: var(--font-sans);
+  --copilot-anim-scale: 1;
+}
+
+.copilot-root.is-debug-animations,
+.is-debug-animations {
+  --copilot-anim-scale: 10;
 }
 
 .copilot-surface {
@@ -2482,7 +2488,7 @@
   bottom: 20px;
   left: var(--quadro-center-x, 50%);
   transform: translateX(-50%);
-  transition: left 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: left calc(0.2s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 40;
   pointer-events: auto;
   width: 100%;
@@ -2493,7 +2499,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  animation: copilot-pill-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-pill-enter calc(0.2s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .copilot-container-pill.is-morphed {
@@ -2652,20 +2658,20 @@
   z-index: 50;
   overflow: hidden;
   box-sizing: border-box;
-  transition: height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              max-width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              max-height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              bottom 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              left 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              border-radius 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s ease,
-              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 0.2s ease;
+  transition: height calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              width calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              max-width calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              max-height calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              bottom calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              left calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              border-radius calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow calc(0.3s * var(--copilot-anim-scale, 1)) ease,
+              border-color calc(0.2s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              background-color calc(0.2s * var(--copilot-anim-scale, 1)) ease;
 }
 
 .copilot-container-sheet.is-morphing-open {
-  animation: copilot-card-open 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-card-open calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-sheet.is-entering-from-drawer {
@@ -2712,41 +2718,41 @@
 }
 
 .copilot-container-sheet.is-closing {
-  animation: copilot-card-close 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-card-close calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
 .copilot-container-sheet.is-fullscreen.is-closing,
 .copilot-container-sheet.is-expanded.is-closing {
-  animation: copilot-card-fullscreen-close 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-card-fullscreen-close calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
 .copilot-container-sheet.is-morphing-open .copilot-chat-body {
   padding: 0;
   overflow: hidden;
-  transition: padding 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: copilot-sheet-content-reveal 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: padding calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-sheet-content-reveal calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .copilot-container-sheet.is-morphing-open .copilot-floating-actions {
-  animation: copilot-floating-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+  animation: copilot-floating-in calc(0.24s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) calc(0.04s * var(--copilot-anim-scale, 1)) both;
 }
 
 .copilot-container-sheet.is-morphing-open .copilot-composer {
-  animation: copilot-composer-border-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: copilot-composer-border-in calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .copilot-container-sheet.is-morphing-open .copilot-composer-footer {
-  animation: copilot-composer-footer-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: copilot-composer-footer-in calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .copilot-container-sheet.is-closing .copilot-chat-body {
   padding: 0;
   overflow: hidden;
   pointer-events: none;
-  transition: padding 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: copilot-sheet-content-hide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: padding calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-sheet-content-hide calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .copilot-container-sheet.is-closing .copilot-chat-body::before {
@@ -2755,14 +2761,14 @@
 
 .copilot-container-sheet.is-closing .copilot-floating-actions {
   pointer-events: none;
-  animation: copilot-floating-out 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-floating-out calc(0.24s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .copilot-container-sheet.is-closing .copilot-composer {
   opacity: 1;
   padding: 6px 6px 6px 16px;
   pointer-events: none;
-  animation: copilot-composer-border-out 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-composer-border-out calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .copilot-container-sheet.is-closing .copilot-composer-footer {
@@ -2784,6 +2790,7 @@
 .cpu-lab-root.has-copilot-drawer,
 .concurrency-lab-root.has-copilot-drawer {
   padding-right: var(--copilot-drawer-width, 410px);
+  transition: padding-right calc(0.25s * var(--copilot-anim-scale, 1)) ease;
 }
 
 .memory-lab-root.has-copilot-drawer.is-resizing,
@@ -2809,8 +2816,8 @@
   z-index: 55;
   overflow: hidden;
   box-sizing: border-box;
-  animation: copilot-drawer-slide 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-drawer-slide calc(0.26s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: width calc(0.22s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-drawer.is-resizing {
@@ -2852,7 +2859,7 @@
 }
 
 .copilot-container-drawer.is-closing {
-  animation: copilot-drawer-slide-out 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: copilot-drawer-slide-out calc(0.26s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
@@ -3248,8 +3255,8 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: max-width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              padding 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: max-width calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              padding calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-sheet .copilot-composer {
@@ -3269,9 +3276,9 @@
   padding-top: 8px;
   overflow: hidden;
   flex-wrap: wrap;
-  transition: max-height 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.14s ease,
-              padding-top 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: max-height calc(0.22s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              opacity calc(0.14s * var(--copilot-anim-scale, 1)) ease,
+              padding-top calc(0.22s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-container-sheet .copilot-btn-dictate,

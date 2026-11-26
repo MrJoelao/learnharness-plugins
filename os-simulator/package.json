@@ -7,6 +7,7 @@
   "scripts": {
     "sdk": "node ../../scripts/build-plugin-types.mjs .sdk",
     "build": "node scripts/build.mjs",
+    "build:debug-animations": "node scripts/build.mjs --debug-animations",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"
   },

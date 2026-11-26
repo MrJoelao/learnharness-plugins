@@ -21,7 +21,19 @@ try {
 fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(output, { recursive: true });
 
-const common = { absWorkingDir: root, bundle: true, target: "es2022", minify: true, legalComments: "eof", metafile: true };
+const debugAnimations = process.argv.includes("--debug-animations") || process.env.LH_DEBUG_ANIMATIONS === "1";
+
+const common = {
+  absWorkingDir: root,
+  bundle: true,
+  target: "es2022",
+  minify: true,
+  legalComments: "eof",
+  metafile: true,
+  define: {
+    __LH_DEBUG_ANIMATIONS__: debugAnimations ? "true" : "false"
+  }
+};
 const frontend = await build({ ...common, entryPoints: ["src/main.ts"], outfile: path.join(output, "main.js"), format: "esm", platform: "browser" });
 const backend = await build({ ...common, entryPoints: ["src/backend.ts"], outfile: path.join(output, "backend.cjs"), format: "cjs", platform: "node" });
 
@@ -52,4 +64,4 @@ if (fs.existsSync(presetsSrc)) {
   fs.cpSync(presetsSrc, path.join(output, "presets"), { recursive: true });
 }
 
-console.log(`Built OS Simulator plugin: ${output}`);
+console.log(`Built OS Simulator plugin: ${output}${debugAnimations ? " [debug-animations: 10x slow-motion]" : ""}`);
