@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "os-simulator",
-    "test-sample"
+    "os-simulator"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
@@ -13,6 +12,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "validate": "node scripts/validate-plugin.mjs",
     "validate:all": "node scripts/validate-plugin.mjs os-simulator",
+    "generate:registry": "node scripts/generate-registry.mjs",
     "install:plugin": "node scripts/install-plugin.mjs",
     "create:plugin": "node scripts/create-plugin.mjs"
   },
