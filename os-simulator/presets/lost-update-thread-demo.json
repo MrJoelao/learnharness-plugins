@@ -1,0 +1,76 @@
+{
+  "scenarioId": "lost-update-thread-demo",
+  "name": "Lost Update Race Condition",
+  "description": "Due thread concorrenti su x=10 con sequenza di istruzioni read/add/write che causano lost update.",
+  "threads": [
+    {
+      "id": "T1",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "read",
+          "targetVariable": "x",
+          "register": "eax",
+          "label": "mov x, %eax"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "add $1, %eax"
+        },
+        {
+          "op": "write",
+          "targetVariable": "x",
+          "register": "eax",
+          "label": "mov %eax, x"
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "read",
+          "targetVariable": "x",
+          "register": "eax",
+          "label": "mov x, %eax"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "add $1, %eax"
+        },
+        {
+          "op": "write",
+          "targetVariable": "x",
+          "register": "eax",
+          "label": "mov %eax, x"
+        }
+      ]
+    }
+  ],
+  "sharedMemory": {
+    "x": 10
+  },
+  "activeThreadId": "T1",
+  "locks": {},
+  "semaphores": {},
+  "conditionVariables": {},
+  "executionHistory": [
+    "Scenario inizializzato: variabile condivisa x = 10."
+  ],
+  "stepCount": 0
+}

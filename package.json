@@ -1,0 +1,25 @@
+{
+  "name": "learnharness-plugins-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "os-simulator"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "validate": "node scripts/validate-plugin.mjs",
+    "validate:all": "node scripts/validate-plugin.mjs os-simulator",
+    "generate:registry": "node scripts/generate-registry.mjs",
+    "install:plugin": "node scripts/install-plugin.mjs",
+    "create:plugin": "node scripts/create-plugin.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3"
+  }
+}

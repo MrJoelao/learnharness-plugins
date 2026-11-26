@@ -1,0 +1,38 @@
+{
+  "id": "segmentation-unimi-seed-0",
+  "name": "Segmentazione UNIMI (seed 0)",
+  "description": "Esercizio d'esame con crescita opposta: SEG0 positiva (Base 6890, Lim 472), SEG1 negativa (Base 4692, Lim 450).",
+  "subsystem": "segmentation",
+  "trace": [523, 414, 802, 310, 488],
+  "segmentationConfig": {
+    "addressSpaceBits": 10,
+    "segmentBits": 1,
+    "physicalMemorySize": 16384,
+    "segments": [
+      {
+        "id": 0,
+        "name": "SEG0 (Codice/Heap)",
+        "base": 6890,
+        "limit": 472,
+        "growth": "positive",
+        "permissions": {
+          "read": true,
+          "write": true,
+          "execute": true
+        }
+      },
+      {
+        "id": 1,
+        "name": "SEG1 (Stack)",
+        "base": 4692,
+        "limit": 450,
+        "growth": "negative",
+        "permissions": {
+          "read": true,
+          "write": true,
+          "execute": false
+        }
+      }
+    ]
+  }
+}

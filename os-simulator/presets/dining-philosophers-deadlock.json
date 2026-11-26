@@ -1,0 +1,419 @@
+{
+  "scenarioId": "dining-philosophers-deadlock",
+  "name": "Dining Philosophers (5 Filosofi Deadlock e Soluzione Asimmetrica)",
+  "description": "5 filosofi e 5 forchette con deadlock simmetrico vs risoluzione con filosofo asimmetrico.",
+  "threads": [
+    {
+      "id": "P0",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork0",
+          "label": "lock(&fork0) [sinistra]"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork1",
+          "label": "lock(&fork1) [destra]"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork0",
+          "label": "unlock(&fork0)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork1",
+          "label": "unlock(&fork1)"
+        }
+      ]
+    },
+    {
+      "id": "P1",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork1",
+          "label": "lock(&fork1) [sinistra]"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork2",
+          "label": "lock(&fork2) [destra]"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork1",
+          "label": "unlock(&fork1)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork2",
+          "label": "unlock(&fork2)"
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork2",
+          "label": "lock(&fork2) [sinistra]"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork3",
+          "label": "lock(&fork3) [destra]"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork2",
+          "label": "unlock(&fork2)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork3",
+          "label": "unlock(&fork3)"
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork3",
+          "label": "lock(&fork3) [sinistra]"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork4",
+          "label": "lock(&fork4) [destra]"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork3",
+          "label": "unlock(&fork3)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork4",
+          "label": "unlock(&fork4)"
+        }
+      ]
+    },
+    {
+      "id": "P4",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork4",
+          "label": "lock(&fork4) [sinistra]"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork0",
+          "label": "lock(&fork0) [destra]"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork4",
+          "label": "unlock(&fork4)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork0",
+          "label": "unlock(&fork0)"
+        }
+      ]
+    }
+  ],
+  "asymmetricThreads": [
+    {
+      "id": "P0",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork0",
+          "label": "lock(&fork0)"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork1",
+          "label": "lock(&fork1)"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork0",
+          "label": "unlock(&fork0)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork1",
+          "label": "unlock(&fork1)"
+        }
+      ]
+    },
+    {
+      "id": "P1",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork1",
+          "label": "lock(&fork1)"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork2",
+          "label": "lock(&fork2)"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork1",
+          "label": "unlock(&fork1)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork2",
+          "label": "unlock(&fork2)"
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork2",
+          "label": "lock(&fork2)"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork3",
+          "label": "lock(&fork3)"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork2",
+          "label": "unlock(&fork2)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork3",
+          "label": "unlock(&fork3)"
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork3",
+          "label": "lock(&fork3)"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork4",
+          "label": "lock(&fork4)"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork3",
+          "label": "unlock(&fork3)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork4",
+          "label": "unlock(&fork4)"
+        }
+      ]
+    },
+    {
+      "id": "P4",
+      "programCounter": 0,
+      "registers": {
+        "eax": 0
+      },
+      "state": "ready",
+      "callStack": [],
+      "instructions": [
+        {
+          "op": "lock",
+          "syncObject": "fork0",
+          "label": "lock(&fork0) [inversione asimmetrica]"
+        },
+        {
+          "op": "lock",
+          "syncObject": "fork4",
+          "label": "lock(&fork4)"
+        },
+        {
+          "op": "add",
+          "register": "eax",
+          "literal": 1,
+          "label": "eat()"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork0",
+          "label": "unlock(&fork0)"
+        },
+        {
+          "op": "unlock",
+          "syncObject": "fork4",
+          "label": "unlock(&fork4)"
+        }
+      ]
+    }
+  ],
+  "sharedMemory": {},
+  "activeThreadId": "P0",
+  "locks": {
+    "fork0": {
+      "id": "fork0",
+      "heldBy": null,
+      "waitQueue": [],
+      "type": "mutex"
+    },
+    "fork1": {
+      "id": "fork1",
+      "heldBy": null,
+      "waitQueue": [],
+      "type": "mutex"
+    },
+    "fork2": {
+      "id": "fork2",
+      "heldBy": null,
+      "waitQueue": [],
+      "type": "mutex"
+    },
+    "fork3": {
+      "id": "fork3",
+      "heldBy": null,
+      "waitQueue": [],
+      "type": "mutex"
+    },
+    "fork4": {
+      "id": "fork4",
+      "heldBy": null,
+      "waitQueue": [],
+      "type": "mutex"
+    }
+  },
+  "semaphores": {},
+  "conditionVariables": {},
+  "executionHistory": [
+    "Scenario inizializzato: 5 filosofi con forchette fork0..fork4."
+  ],
+  "stepCount": 0
+}

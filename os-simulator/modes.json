@@ -1,0 +1,31 @@
+{
+  "modes": [
+    {
+      "id": "memory-lab",
+      "name": "Memory Virtualization Lab",
+      "description": "Simulatore di Segmentazione (+/-), Paging lineare e a 2 livelli, TLB e Swapping.",
+      "category": "Operating Systems",
+      "difficulty": "intermediate",
+      "tags": ["memory", "paging", "segmentation", "tlb", "replacement-policies"],
+      "icon": "Network"
+    },
+    {
+      "id": "cpu-lab",
+      "name": "CPU Scheduling & Hardware Lab",
+      "description": "Simulatore di Gantt (FIFO, SJF, STCF, RR, MLFQ a 5 regole) e meccanismo LDE.",
+      "category": "Operating Systems",
+      "difficulty": "intermediate",
+      "tags": ["cpu", "scheduling", "mlfq", "round-robin", "privilege-levels"],
+      "icon": "Calculator"
+    },
+    {
+      "id": "concurrency-lab",
+      "name": "Concurrency & Deadlock Lab",
+      "description": "Interleaving deterministico di thread, lock, semafori, condition variables e grafi RAG.",
+      "category": "Operating Systems",
+      "difficulty": "advanced",
+      "tags": ["concurrency", "threads", "semaphores", "deadlock", "bounded-buffer"],
+      "icon": "Brain"
+    }
+  ]
+}

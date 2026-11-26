@@ -1,0 +1,68 @@
+{
+  "id": "mlfq-gaming-workload",
+  "name": "MLFQ: Regola 4 (Demozione per Allotment Cumulativo)",
+  "description": "Job CPU-bound lungo e job interattivo con I/O frequenti per verificare allotment demotion a Q1.",
+  "algorithm": "MLFQ",
+  "mlfqConfig": {
+    "queues": [
+      {
+        "priority": 0,
+        "timeSlice": 10,
+        "allotment": 20
+      },
+      {
+        "priority": 1,
+        "timeSlice": 20,
+        "allotment": 40
+      },
+      {
+        "priority": 2,
+        "timeSlice": 40,
+        "allotment": 80
+      }
+    ],
+    "priorityBoostInterval": 100
+  },
+  "workload": [
+    {
+      "id": "P1",
+      "arrivalTime": 0,
+      "bursts": [
+        {
+          "type": "cpu",
+          "duration": 50
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "arrivalTime": 0,
+      "bursts": [
+        {
+          "type": "cpu",
+          "duration": 9
+        },
+        {
+          "type": "io",
+          "duration": 2
+        },
+        {
+          "type": "cpu",
+          "duration": 9
+        },
+        {
+          "type": "io",
+          "duration": 2
+        },
+        {
+          "type": "cpu",
+          "duration": 9
+        },
+        {
+          "type": "io",
+          "duration": 2
+        }
+      ]
+    }
+  ]
+}

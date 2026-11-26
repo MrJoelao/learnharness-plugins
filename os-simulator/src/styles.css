@@ -1,0 +1,4045 @@
+@import "../../shared/plugin-base.css";
+
+/* OS Simulator: Phase 1 Memory Virtualization Lab Styles */
+
+.lh-root .os-simulator-stub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+}
+
+.lh-root.memory-lab-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background-color: var(--background);
+  box-sizing: border-box;
+  min-height: 100%;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner) .font-mono {
+  font-family: var(--font-mono, monospace);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner) .font-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner) .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toolbar */
+.lh-root .memory-lab-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .subsystem-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lh-root .tab-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lh-root .tab-button:hover {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.lh-root .tab-button.tab-active {
+  background-color: var(--muted);
+  border-color: var(--primary);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.lh-root .toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+/* Buttons */
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius, 8px);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-primary:hover {
+  opacity: 0.9;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-outline {
+  background-color: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-outline:hover {
+  background-color: var(--muted);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-secondary:hover:not(:disabled) {
+  background-color: var(--muted);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-ghost {
+  background-color: transparent;
+  color: var(--foreground);
+  border: 1px solid transparent;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-ghost:hover:not(:disabled) {
+  background-color: var(--accent);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-icon:not(:disabled):hover {
+  background-color: var(--muted);
+}
+
+/* Preset Popover */
+.lh-root .preset-dropdown-container {
+  position: relative;
+}
+
+.lh-root .preset-menu-popover {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 50;
+  min-width: min(280px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lh-root .toolbar-group-left .preset-menu-popover {
+  left: 0;
+  right: auto;
+}
+
+.lh-root .preset-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius, 4px);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+
+.lh-root .preset-menu-item:hover,
+.lh-root .preset-menu-item.active {
+  background-color: var(--muted);
+}
+
+.lh-root .preset-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .preset-desc {
+  font-size: var(--text-xs, 11px);
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+/* Address Control Bar */
+.lh-root .address-control-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .trace-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .trace-counter {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.lh-root .direct-address-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .control-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-text,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-number,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-select {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background-color: var(--background);
+  color: var(--foreground);
+  outline: none;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-text:focus,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-number:focus,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-select:focus {
+  border-color: var(--primary);
+}
+
+.lh-root .trace-pills-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.lh-root .trace-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lh-root .trace-pill.active {
+  border-color: var(--primary);
+  background-color: var(--muted);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* Bit Visualizer (One Bright Element) */
+.lh-root .bit-visualizer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .bit-visualizer-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lh-root .bit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius, 8px);
+  font-size: 0.75rem;
+}
+
+.lh-root .bit-badge-primary {
+  background-color: var(--muted);
+  border: 1px solid var(--primary);
+  color: var(--foreground);
+}
+
+.lh-root .bit-badge-secondary {
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.lh-root .bit-badge-accent {
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.lh-root .badge-label {
+  font-weight: 600;
+}
+
+.lh-root .badge-range {
+  opacity: 0.8;
+}
+
+.lh-root .bit-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+}
+
+.lh-root .bit-group {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .bit-group-primary {
+  border: 1px solid var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 4%, transparent);
+}
+
+.lh-root .bit-group-secondary {
+  border: 1px dashed var(--border);
+  background-color: var(--background);
+}
+
+.lh-root .bit-group-accent {
+  border: 1px solid var(--border);
+  background-color: var(--muted);
+}
+
+.lh-root .bit-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 40px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.lh-root .bit-cell-one {
+  font-weight: 700;
+  color: var(--foreground);
+  border-color: var(--primary);
+}
+
+.lh-root .bit-cell-zero {
+  color: var(--muted-foreground);
+}
+
+.lh-root .bit-index {
+  font-size: var(--lh-text-xs, 11px);
+  color: var(--muted-foreground);
+  line-height: 1;
+}
+
+.lh-root .bit-value {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.lh-root .bit-visualizer-footer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.lh-root .conversion-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .conversion-label {
+  font-size: var(--text-xs, 11px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.lh-root .conversion-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* Two-Column Grid */
+.lh-root .memory-lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.lh-root .memory-lab-grid > * {
+  min-width: 0;
+}
+
+@container lab-workspace (max-width: 840px) {
+  .lh-root .memory-lab-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lh-root .grid-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Step Panel */
+.lh-root .step-panel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .step-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid transparent;
+}
+
+.lh-root .step-banner-valid {
+  background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 8%, transparent));
+  border-color: color-mix(in srgb, var(--success, var(--lh-success)) 30%, transparent);
+  color: var(--success, var(--lh-success));
+}
+
+.lh-root .step-banner-invalid {
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 8%, transparent));
+  border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
+  color: var(--destructive, var(--lh-error));
+}
+
+.lh-root .banner-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.lh-root .banner-subtitle {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  opacity: 0.85;
+}
+
+.lh-root .savings-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  font-size: 0.8125rem;
+}
+
+.lh-root .savings-label {
+  font-weight: 500;
+}
+
+.lh-root .savings-amount {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.lh-root .savings-note {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.lh-root .steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lh-root .steps-header {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .steps-ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lh-root .step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 4px);
+}
+
+.lh-root .step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--muted);
+  border-radius: 4px;
+  font-size: var(--text-xs, 11px);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.lh-root .step-text {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--foreground);
+  word-break: break-word;
+}
+
+/* Memory Map & Tables */
+.lh-root .memory-map-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .memory-map-header {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .structure-table-card,
+.lh-root .frame-grid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lh-root .structure-table-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lh-root .structure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.lh-root .structure-table th,
+.lh-root .structure-table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .structure-table th {
+  background-color: var(--background);
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+.lh-root .row-highlighted {
+  background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+  font-weight: 600;
+}
+
+.lh-root .valid-tag {
+  color: var(--success, var(--lh-success));
+  font-weight: 600;
+}
+
+.lh-root .invalid-tag {
+  color: var(--destructive, var(--lh-error));
+  font-weight: 600;
+}
+
+.lh-root .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: var(--text-xs, 11px);
+}
+
+.lh-root .status-badge.valid {
+  background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 10%, transparent));
+  color: var(--success, var(--lh-success));
+}
+
+.lh-root .status-badge.violation {
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 10%, transparent));
+  color: var(--destructive, var(--lh-error));
+}
+
+.lh-root .growth-tag {
+  padding: 0.25rem;
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--text-xs, 11px);
+}
+
+.lh-root .growth-positive {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.lh-root .growth-negative {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* Frame Grid */
+.lh-root .frame-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.lh-root .frame-box {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border-radius: var(--radius, 4px);
+  border: 1px solid var(--border);
+  font-size: var(--text-xs, 11px);
+  transition: transform 0.1s ease;
+}
+
+.lh-root .frame-free {
+  background-color: var(--background);
+  color: var(--muted-foreground);
+}
+
+.lh-root .frame-allocated {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.lh-root .frame-target-highlight {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.lh-root .frame-pfn {
+  font-weight: 600;
+}
+
+.lh-root .frame-base {
+  font-size: var(--lh-text-xs, 11px);
+  color: var(--muted-foreground);
+}
+
+.lh-root .frame-status {
+  margin-top: 0.25rem;
+  font-size: var(--lh-text-xs, 11px);
+}
+
+/* Replacement View */
+.lh-root .replacement-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lh-root .replacement-controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .policy-selector-group,
+.lh-root .frame-count-group,
+.lh-root .step-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .step-counter {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  min-width: 96px;
+  text-align: center;
+}
+
+.lh-root .belady-alert-card {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius, 8px);
+  background-color: var(--warning-surface, color-mix(in srgb, var(--warning, var(--lh-warning)) 8%, transparent));
+  border: 1px solid color-mix(in srgb, var(--warning, var(--lh-warning)) 30%, transparent);
+  color: var(--warning, var(--lh-warning));
+}
+
+.lh-root .belady-alert-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.lh-root .belady-alert-body {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.lh-root .reference-string-card,
+.lh-root .replacement-matrix-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .card-section-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lh-root .ref-string-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.lh-root .ref-page-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 48px;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lh-root .ref-page-cell.current {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--muted));
+}
+
+.lh-root .ref-page-cell.past.was-fault {
+  border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 40%, transparent);
+}
+
+.lh-root .ref-page-cell.past.was-hit {
+  border-color: color-mix(in srgb, var(--success, var(--lh-success)) 40%, transparent);
+}
+
+.lh-root .ref-page-num {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.lh-root .ref-page-step {
+  font-size: var(--lh-text-xs, 11px);
+  color: var(--muted-foreground);
+}
+
+.lh-root .matrix-table-wrapper {
+  overflow-x: auto;
+}
+
+.lh-root .replacement-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.lh-root .replacement-matrix-table th,
+.lh-root .replacement-matrix-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.lh-root .matrix-sticky-col {
+  position: sticky;
+  left: 0;
+  background-color: var(--card);
+  z-index: 10;
+  font-weight: 600;
+  text-align: left !important;
+  white-space: nowrap;
+}
+
+.lh-root .col-current {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  font-weight: 700;
+}
+
+.lh-root .cell-victim {
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 15%, transparent));
+  color: var(--destructive, var(--lh-error));
+  font-weight: 700;
+}
+
+.lh-root .outcome-hit {
+  color: var(--success, var(--lh-success));
+  font-weight: 700;
+  background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 8%, transparent));
+}
+
+.lh-root .outcome-fault {
+  color: var(--destructive, var(--lh-error));
+  font-weight: 700;
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 8%, transparent));
+}
+
+.lh-root .step-callout {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  font-size: 0.8125rem;
+}
+
+.lh-root .callout-hit {
+  background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 6%, transparent));
+  border-color: color-mix(in srgb, var(--success, var(--lh-success)) 30%, transparent);
+}
+
+.lh-root .callout-fault {
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 6%, transparent));
+  border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
+}
+
+.lh-root .callout-badge {
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.lh-root .callout-hit .callout-badge {
+  background-color: var(--success, var(--lh-success));
+  color: var(--primary-foreground);
+}
+
+.lh-root .callout-fault .callout-badge {
+  background-color: var(--destructive, var(--lh-error));
+  color: var(--primary-foreground);
+}
+
+.lh-root .replacement-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.lh-root .metric-card {
+  padding: 0.75rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .metric-label {
+  font-size: var(--text-xs, 11px);
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.lh-root .metric-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-top: 0.25rem;
+}
+
+.lh-root .metric-fault {
+  color: var(--destructive, var(--lh-error));
+}
+
+.lh-root .metric-hit {
+  color: var(--success, var(--lh-success));
+}
+
+/* Modals */
+:is(.lh-root, .lh-root body) .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+:is(.modal-overlay, .lh-root) .modal-dialog {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .form-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+:is(.lh-root, .lh-root .lh-dialog-overlay, .lh-root [role="dialog"], :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .modal-dialog, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content) .modal-error,
+:is(.lh-root, .lh-root .lh-dialog-overlay, .lh-root [role="dialog"], :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .modal-dialog, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content) .modal-error-message {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius, 8px);
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
+  color: var(--destructive, var(--lh-error));
+  font-size: 0.75rem;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .hidden {
+  display: none !important;
+}
+
+/* OS Simulator: Phase 2 CPU Virtualization & Hardware Mechanisms Lab Styles */
+
+.lh-root.cpu-lab-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background-color: var(--background);
+  box-sizing: border-box;
+  min-height: 100%;
+}
+
+.lh-root .cpu-lab-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .cpu-param-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Gantt Timeline & Controls */
+.lh-root .cpu-gantt-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lh-root .cpu-playback-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .playback-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .playback-scrubber-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  max-width: 500px;
+}
+
+.lh-root .cpu-scrubber-slider {
+  flex: 1;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.lh-root .cpu-tick-badge {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  min-width: 112px;
+  text-align: right;
+}
+
+.lh-root .cpu-event-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-event-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .cpu-event-details {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.lh-root .cpu-gantt-matrix-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-gantt-scroll-wrapper {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.lh-root .cpu-gantt-table {
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  min-width: 100%;
+}
+
+.lh-root .cpu-gantt-corner-header {
+  position: sticky;
+  left: 0;
+  background-color: var(--card);
+  z-index: 10;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.lh-root .cpu-gantt-tick-header {
+  padding: 0.5rem 0.25rem;
+  min-width: 32px;
+  text-align: center;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  user-select: none;
+}
+
+.lh-root .cpu-gantt-tick-header:hover,
+.lh-root .cpu-gantt-tick-header.tick-current {
+  background-color: var(--muted);
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.lh-root .cpu-gantt-row-label {
+  position: sticky;
+  left: 0;
+  background-color: var(--card);
+  z-index: 10;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .process-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.lh-root .cpu-gantt-cell {
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  text-align: center;
+  min-width: 32px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.lh-root .cell-current-scrubber {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.lh-root .cpu-gantt-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--text-xs, 11px);
+  font-weight: 600;
+}
+
+.lh-root .cpu-gantt-block.cpu-running {
+  color: var(--primary-foreground);
+}
+
+.lh-root .cpu-gantt-block.cpu-blocked {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px dashed var(--border);
+}
+
+.lh-root .cpu-gantt-block.cpu-ready {
+  background-color: var(--background);
+  color: var(--muted-foreground);
+  font-weight: 400;
+  font-size: var(--lh-text-xs, 11px);
+}
+
+.lh-root .cpu-gantt-block.cpu-idle {
+  background-color: var(--background);
+  color: var(--muted-foreground);
+  font-size: var(--lh-text-xs, 11px);
+}
+
+.lh-root .cpu-gantt-summary-row {
+  border-bottom: 2px solid var(--border);
+}
+
+/* Metrics Table */
+.lh-root .cpu-metrics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-table-responsive {
+  overflow-x: auto;
+}
+
+/* MLFQ Inspector */
+.lh-root .cpu-mlfq-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-mlfq-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.lh-root .cpu-boost-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius, 8px);
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--foreground);
+}
+
+.lh-root .cpu-mlfq-queues-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.lh-root .cpu-mlfq-queue-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-mlfq-queue-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lh-root .cpu-mlfq-queue-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.lh-root .cpu-mlfq-queue-params {
+  font-size: var(--text-xs, 11px);
+  color: var(--muted-foreground);
+}
+
+.lh-root .cpu-mlfq-proc-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 28px;
+  align-items: center;
+}
+
+.lh-root .cpu-mlfq-proc-pill {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  font-size: 0.75rem;
+}
+
+.lh-root .cpu-mlfq-proc-pill.proc-running {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+
+.lh-root .cpu-mlfq-empty {
+  font-size: var(--text-xs, 11px);
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+/* Workload Modal */
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .cpu-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-dialog {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-error {
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 1rem 0;
+  border-radius: var(--radius, 8px);
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
+  color: var(--destructive, var(--lh-error));
+  font-size: 0.75rem;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-workload-edit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-workload-edit-table th,
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-workload-edit-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-json-editor {
+  width: 100%;
+  min-height: 240px;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  resize: vertical;
+}
+
+/* LDE Hardware Inspector */
+.lh-root .cpu-lde-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lh-root .cpu-lde-top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-lde-status-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lh-root .cpu-cpl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius, 8px);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.lh-root .cpl-ring0 {
+  background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--destructive, var(--lh-error)) 35%, transparent);
+  color: var(--destructive, var(--lh-error));
+}
+
+.lh-root .cpl-ring3 {
+  background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--success, var(--lh-success)) 35%, transparent);
+  color: var(--success, var(--lh-success));
+}
+
+.lh-root .cpu-lde-step-counter {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.lh-root .cpu-lde-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .cpu-lde-desc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.lh-root .cpu-lde-stage-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.lh-root .cpu-lde-desc-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.lh-root .cpu-lde-asm-box {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius, 4px);
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  font-size: 0.8125rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.lh-root .cpu-lde-stacks-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.lh-root .cpu-lde-stacks-grid > * {
+  min-width: 0;
+}
+
+@container lab-workspace (max-width: 840px) {
+  .lh-root .cpu-lde-stacks-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lh-root .cpu-stack-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  overflow: hidden;
+}
+
+.lh-root .cpu-stack-card.stack-active {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 4%, var(--card));
+}
+
+.lh-root .cpu-stack-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .cpu-stack-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .cpu-stack-badge {
+  font-size: var(--text-xs, 11px);
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+}
+
+.lh-root .kernel-badge {
+  color: var(--destructive, var(--lh-error));
+  border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
+}
+
+.lh-root .cpu-stack-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 200px;
+}
+
+.lh-root .cpu-stack-empty {
+  color: var(--muted-foreground);
+  font-style: italic;
+  font-size: 0.75rem;
+  text-align: center;
+  padding-top: 2rem;
+}
+
+.lh-root .cpu-stack-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+
+.lh-root .trap-frame-entry {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.lh-root .trap-tag {
+  font-size: var(--lh-text-xs, 11px);
+  font-weight: 700;
+  color: var(--primary);
+  margin-left: 0.5rem;
+  border: 1px solid var(--primary);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm, 4px);
+}
+
+
+/* =========================================================================
+   Phase 3: Concurrency, Synchronization & Deadlock Lab Styles ($unslop)
+   ========================================================================= */
+
+.lh-root.concurrency-lab-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background-color: var(--background);
+  box-sizing: border-box;
+  min-height: 100%;
+}
+
+.lh-root .concurrency-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .toolbar-group-left,
+.lh-root .toolbar-group-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .scenario-info-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius, 8px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+}
+
+.lh-root .scenario-banner-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .scenario-banner-desc {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  line-height: 1.4;
+}
+
+.lh-root .concurrency-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.lh-root .concurrency-main-grid > * {
+  min-width: 0;
+}
+
+@container lab-workspace (max-width: 840px) {
+  .lh-root .concurrency-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lh-root .concurrency-left-col,
+.lh-root .concurrency-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Thread Inspector & Side-by-side Columns */
+.lh-root .thread-inspector-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lh-root .threads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.lh-root .thread-column-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius, 8px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.lh-root .thread-state-blocked {
+  border-color: color-mix(in srgb, var(--destructive) 40%, var(--border));
+}
+
+.lh-root .thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .thread-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .thread-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.lh-root .thread-state-badge {
+  font-size: var(--text-xs, 11px);
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.lh-root .badge-ready {
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.lh-root .badge-running {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+}
+
+.lh-root .badge-blocked {
+  background-color: color-mix(in srgb, var(--destructive) 15%, transparent);
+  color: var(--destructive);
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
+}
+
+.lh-root .badge-terminated {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.lh-root .thread-registers-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: color-mix(in srgb, var(--card) 50%, var(--background));
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+
+.lh-root .register-item {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.lh-root .reg-name {
+  color: var(--muted-foreground);
+}
+
+.lh-root .reg-val {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .instructions-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0;
+  font-size: 0.8125rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.lh-root .instruction-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  transition: background-color 0.1s ease;
+}
+
+.lh-root .instruction-active {
+  background-color: var(--muted);
+  border-left: 3px solid var(--primary);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .instruction-past {
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
+.lh-root .instruction-future {
+  color: var(--foreground);
+}
+
+.lh-root .inst-line-num {
+  font-size: var(--text-xs, 11px);
+  color: var(--muted-foreground);
+  user-select: none;
+  min-width: 1.25rem;
+}
+
+.lh-root .inst-code {
+  flex: 1;
+}
+
+.lh-root .pc-indicator {
+  font-size: var(--text-xs, 11px);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Shared Memory & Objects Panel */
+.lh-root .shared-state-panel {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius, 8px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.lh-root .shared-state-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.lh-root .shared-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lh-root .shared-box-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  letter-spacing: 0.04em;
+}
+
+.lh-root .shared-kv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.lh-root .shared-kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+}
+
+.lh-root .kv-key {
+  color: var(--muted-foreground);
+}
+
+.lh-root .kv-val {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* Visualizer Cards (Circular Buffer & RAG) */
+.lh-root .visualizer-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.lh-root .circular-buffer-card,
+.lh-root .rag-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius, 8px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.lh-root .circular-buffer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.lh-root .circular-buffer-svg {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+}
+
+.lh-root .buffer-queues-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  font-size: 0.8125rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.lh-root .queue-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .queue-label {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .queue-val {
+  color: var(--muted-foreground);
+}
+
+.lh-root .queue-waiting {
+  color: var(--primary);
+  font-size: 0.75rem;
+}
+
+/* RAG Graph & Coffman Conditions */
+.lh-root .deadlock-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
+  color: var(--destructive);
+  font-size: 0.8125rem;
+}
+
+.lh-root .rag-svg {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  height: auto;
+  padding: 0.5rem;
+}
+
+.lh-root .rag-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
+  background-color: var(--background);
+}
+
+.lh-root .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lh-root .legend-badge {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--border);
+}
+
+.lh-root .legend-proc {
+  border-radius: 50%;
+  background-color: var(--card);
+}
+
+.lh-root .legend-res {
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--muted);
+}
+
+.lh-root .legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  background-color: var(--foreground);
+}
+
+.lh-root .legend-alloc {
+  background-color: var(--foreground);
+}
+
+.lh-root .legend-req {
+  background-color: var(--muted-foreground);
+  border-top: 1px dashed var(--muted-foreground);
+  height: 0;
+}
+
+.lh-root .coffman-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.lh-root .coffman-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+}
+
+.lh-root .coffman-met {
+  border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
+}
+
+.lh-root .coffman-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lh-root .coffman-cond-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lh-root .coffman-status-badge {
+  font-size: var(--text-xs, 11px);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+}
+
+.lh-root .status-met {
+  background-color: color-mix(in srgb, var(--destructive) 15%, transparent);
+  color: var(--destructive);
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
+}
+
+.lh-root .status-unmet {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.lh-root .coffman-explanation {
+  margin: 0;
+  font-size: var(--text-xs, 11px);
+  color: var(--muted-foreground);
+  line-height: 1.35;
+}
+
+/* History Log */
+.lh-root .history-section-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius, 8px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.lh-root .execution-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+}
+
+.lh-root .history-item {
+  color: var(--muted-foreground);
+  line-height: 1.4;
+}
+
+.lh-root .history-item:last-child {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* Custom Scenario Modal */
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal {
+  max-width: 640px;
+  width: 90%;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  resize: vertical;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+
+/* Overflow, Section Headers, Metrics Table, Error Banner, Window Drag, & Icon Utilities */
+.lh-root .table-scroll-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.lh-root .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .section-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: var(--text-sm, 12.5px);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.lh-root .lh-toolbar .lh-no-drag,
+.lh-root .memory-lab-toolbar button,
+.lh-root .cpu-lab-toolbar button,
+.lh-root .concurrency-toolbar button {
+  -webkit-app-region: no-drag;
+}
+
+.lh-root .cpu-metrics-row-avg {
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+  background-color: var(--muted);
+}
+
+.lh-root .cpu-metrics-cell-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.lh-root .cpu-metrics-cell-label {
+  font-weight: 600;
+}
+
+.lh-root .cpu-metrics-cell-primary {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .lh-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid color-mix(in srgb, var(--destructive, #ef4444) 30%, transparent);
+  background: color-mix(in srgb, var(--destructive, #ef4444) 10%, transparent);
+  color: var(--destructive, #ef4444);
+  font-size: var(--text-sm, 12.5px);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .size-4 {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .size-3\.5 {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@keyframes lh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .animate-spin {
+  animation: lh-spin 1s linear infinite;
+}
+
+@container lab-workspace (max-width: 560px) {
+  .lh-root .cpu-playback-bar,
+  .lh-root .replacement-controls-bar,
+  .lh-root .cpu-lde-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lh-root .playback-scrubber-group {
+    max-width: 100%;
+  }
+}
+
+/* ==========================================================================
+   OS Simulator Copilot: AI Copilot UX Styles
+   ========================================================================== */
+
+/* [ANIMATION-PROTECTED: DO NOT REMOVE VIA $UNSLOP] Smooth bottom-sheet rise, morph, and exit transitions */
+@keyframes copilot-card-open {
+  0% {
+    height: 54px;
+    max-width: min(calc(46rem - 32px), calc(var(--quadro-width, 100vw) - 32px));
+    border-radius: var(--radius-xl, 16px);
+    opacity: 1;
+    transform: translateX(-50%);
+    box-shadow: var(--lh-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15));
+  }
+  100% {
+    height: min(50vh, 460px);
+    max-width: min(58rem, calc(var(--quadro-width, 100vw) - 32px));
+    border-radius: var(--radius-xl, 16px);
+    opacity: 1;
+    transform: translateX(-50%);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+  }
+}
+
+@keyframes copilot-card-close {
+  0% {
+    height: min(50vh, 460px);
+    max-width: min(58rem, calc(var(--quadro-width, 100vw) - 32px));
+    border-radius: var(--radius-xl, 16px);
+    opacity: 1;
+    transform: translateX(-50%);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+  }
+  100% {
+    height: 52px;
+    max-width: min(calc(46rem - 32px), calc(var(--quadro-width, 100vw) - 32px));
+    border-radius: var(--radius-xl, 16px);
+    opacity: 1;
+    transform: translateX(-50%);
+    box-shadow: var(--lh-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15));
+  }
+}
+
+@keyframes copilot-card-fullscreen-close {
+  0% {
+    bottom: 0;
+    left: var(--quadro-center-x, 50%);
+    width: var(--quadro-width, 100vw);
+    max-width: var(--quadro-width, 100vw);
+    height: 100dvh;
+    border-radius: 0;
+    opacity: 1;
+    transform: translateX(-50%);
+    box-shadow: none;
+  }
+  100% {
+    bottom: 20px;
+    left: var(--quadro-center-x, 50%);
+    width: calc(var(--quadro-width, 100vw) - 32px);
+    max-width: min(calc(46rem - 32px), calc(var(--quadro-width, 100vw) - 32px));
+    height: 52px;
+    border-radius: var(--radius-xl, 16px);
+    opacity: 1;
+    transform: translateX(-50%);
+    box-shadow: var(--lh-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15));
+  }
+}
+
+@keyframes copilot-drawer-slide {
+  from {
+    transform: translateX(100%);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes copilot-drawer-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 1;
+  }
+}
+
+@keyframes copilot-pill-enter {
+  from {
+    transform: translateX(-50%) translateY(10px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes copilot-sheet-enter {
+  from {
+    transform: translateX(-50%) translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes copilot-sheet-content-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes copilot-sheet-content-hide {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes copilot-floating-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes copilot-floating-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+  }
+}
+
+@keyframes copilot-composer-border-in {
+  0% {
+    border-top-color: transparent;
+    padding: 6px 6px 6px 16px;
+  }
+  100% {
+    border-top-color: color-mix(in srgb, var(--border) 45%, transparent);
+    padding: 4px 16px;
+  }
+}
+
+@keyframes copilot-composer-border-out {
+  0% {
+    border-top-color: color-mix(in srgb, var(--border) 45%, transparent);
+  }
+  100% {
+    border-top-color: transparent;
+  }
+}
+
+@keyframes copilot-composer-footer-in {
+  0% {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+  }
+  100% {
+    opacity: 1;
+    max-height: 36px;
+    padding-top: 8px;
+  }
+}
+
+@keyframes copilot-toast-in {
+  from {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes copilot-dictation-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes copilot-bubble-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.copilot-root {
+  position: relative;
+  z-index: 50;
+  font-family: var(--font-sans);
+  --copilot-anim-scale: 1;
+}
+
+.copilot-root.is-debug-animations,
+.is-debug-animations {
+  --copilot-anim-scale: 10;
+}
+
+.copilot-surface {
+  position: fixed;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  z-index: 50;
+  transition: box-shadow 0.3s ease,
+              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease;
+}
+
+.copilot-surface.is-minimized {
+  display: none !important;
+}
+
+.copilot-surface.copilot-container-pill {
+  position: fixed;
+  bottom: 20px;
+  left: var(--quadro-center-x, 50%);
+  transform: translateX(-50%);
+  z-index: 40;
+  pointer-events: auto;
+  width: calc(var(--quadro-width, 100vw) - 32px);
+  max-width: min(calc(46rem - 32px), calc(var(--quadro-width, 100vw) - 32px));
+  min-height: 54px;
+  height: 54px;
+  max-height: 54px;
+  padding: 0;
+  justify-content: flex-end;
+  border-radius: var(--radius-xl, 16px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--lh-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15));
+  animation: copilot-pill-enter 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-surface.copilot-container-pill:hover {
+  border-color: var(--border);
+  box-shadow: var(--lh-shadow-lg, 0 8px 24px -8px rgba(0, 0, 0, 0.25));
+}
+
+.copilot-surface.copilot-container-pill:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  box-shadow: var(--lh-shadow-lg, 0 8px 24px -8px rgba(0, 0, 0, 0.25));
+}
+
+.copilot-surface.copilot-container-pill.is-dictating,
+.copilot-surface.copilot-container-pill.is-dictating:hover,
+.copilot-surface.copilot-container-pill.is-dictating:focus-within {
+  background-color: color-mix(in srgb, var(--destructive, var(--lh-error, #ef4444)) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--destructive, var(--lh-error, #ef4444)) 45%, var(--border));
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--destructive, var(--lh-error, #ef4444)) 24%, transparent);
+}
+
+.copilot-container-pill:not(.copilot-surface) {
+  position: fixed;
+  bottom: 20px;
+  left: var(--quadro-center-x, 50%);
+  transform: translateX(-50%);
+  transition: left calc(0.2s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 40;
+  pointer-events: auto;
+  width: 100%;
+  max-width: 46rem;
+  box-sizing: border-box;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  animation: copilot-pill-enter calc(0.2s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.copilot-container-pill.is-morphed {
+  animation: none !important;
+}
+
+.copilot-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 54px;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--radius-xl, 16px);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  box-shadow: none;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease;
+}
+
+.copilot-pill:hover {
+  border-color: var(--border);
+  box-shadow: var(--lh-shadow-lg, 0 8px 24px -8px rgba(0, 0, 0, 0.25));
+}
+
+.copilot-pill:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  box-shadow: var(--lh-shadow-lg, 0 8px 24px -8px rgba(0, 0, 0, 0.25));
+}
+
+.copilot-pill-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--foreground);
+  width: 100%;
+  flex: 1;
+}
+
+.copilot-pill-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.copilot-pill-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius, 8px);
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.copilot-pill-btn:hover {
+  color: var(--foreground);
+  background-color: var(--muted);
+  border-color: var(--border);
+}
+
+.copilot-pill-btn.copilot-btn-hide,
+.copilot-pill-btn.copilot-btn-hide:hover {
+  background: transparent;
+  border: none;
+}
+
+.copilot-container-minimized {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 40;
+  animation: copilot-bubble-enter 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-bubble {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background-color: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  box-shadow: var(--lh-shadow-lg, 0 8px 24px -8px rgba(0, 0, 0, 0.25));
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.15s ease,
+              border-color 0.15s ease,
+              color 0.15s ease,
+              box-shadow 0.2s ease;
+}
+
+.copilot-bubble:hover {
+  color: var(--foreground);
+  background-color: var(--accent);
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  transform: scale(1.06);
+  box-shadow: var(--lh-shadow-lg, 0 10px 28px -8px rgba(0, 0, 0, 0.32));
+}
+
+.copilot-bubble:active {
+  transform: scale(0.95);
+}
+
+.copilot-bubble-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  font-size: var(--lh-text-xs, 11px);
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0 4px;
+  line-height: 16px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.copilot-container-sheet {
+  position: fixed;
+  bottom: 20px;
+  left: var(--quadro-center-x, 50%);
+  transform: translateX(-50%);
+  width: calc(var(--quadro-width, 100vw) - 32px);
+  max-width: min(58rem, calc(var(--quadro-width, 100vw) - 32px));
+  height: min(50vh, 460px);
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+  z-index: 50;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: height calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              width calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              max-width calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              max-height calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              bottom calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              left calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              border-radius calc(0.34s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow calc(0.3s * var(--copilot-anim-scale, 1)) ease,
+              border-color calc(0.2s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              background-color calc(0.2s * var(--copilot-anim-scale, 1)) ease;
+}
+
+.copilot-container-sheet.is-morphing-open {
+  animation: copilot-card-open calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-container-sheet.is-entering-from-drawer {
+  animation: copilot-sheet-enter 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-container-sheet:hover {
+  border-color: var(--border);
+  box-shadow: var(--lh-shadow-lg, 0 12px 30px -10px rgba(0, 0, 0, 0.3)), 0 20px 45px -10px rgba(0, 0, 0, 0.4);
+}
+
+.copilot-container-sheet:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  box-shadow: 0 22px 50px -10px rgba(0, 0, 0, 0.45), 0 0 0 1px color-mix(in srgb, var(--foreground) 25%, var(--border));
+}
+
+.copilot-container-sheet.is-fullscreen,
+.copilot-container-sheet.is-expanded {
+  bottom: 0;
+  left: var(--quadro-center-x, 50%);
+  width: var(--quadro-width, 100vw);
+  max-width: var(--quadro-width, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border-color: transparent;
+  box-shadow: none;
+  z-index: 60;
+  animation: none;
+}
+
+.copilot-container-sheet.is-fullscreen .copilot-chat-body,
+.copilot-container-sheet.is-fullscreen .copilot-composer {
+  width: 100%;
+  max-width: 52rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.copilot-container-sheet.is-fullscreen .copilot-floating-actions {
+  top: max(16px, env(titlebar-area-inset-top, 16px));
+  right: max(16px, env(titlebar-area-inset-right, 16px));
+}
+
+.copilot-container-sheet.is-closing {
+  animation: copilot-card-close calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+.copilot-container-sheet.is-fullscreen.is-closing,
+.copilot-container-sheet.is-expanded.is-closing {
+  animation: copilot-card-fullscreen-close calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+.copilot-container-sheet.is-morphing-open .copilot-chat-body {
+  padding: 0;
+  overflow: hidden;
+  transition: padding calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-sheet-content-reveal calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.copilot-container-sheet.is-morphing-open .copilot-floating-actions {
+  animation: copilot-floating-in calc(0.24s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) calc(0.04s * var(--copilot-anim-scale, 1)) both;
+}
+
+.copilot-container-sheet.is-morphing-open .copilot-composer {
+  animation: copilot-composer-border-in calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.copilot-container-sheet.is-morphing-open .copilot-composer-footer {
+  animation: copilot-composer-footer-in calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.copilot-container-sheet.is-closing .copilot-chat-body {
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: padding calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+  animation: copilot-sheet-content-hide calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.copilot-container-sheet.is-closing .copilot-chat-body::before {
+  height: 0;
+}
+
+.copilot-container-sheet.is-closing .copilot-floating-actions {
+  pointer-events: none;
+  animation: copilot-floating-out calc(0.24s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.copilot-container-sheet.is-closing .copilot-composer {
+  opacity: 1;
+  padding: 6px 6px 6px 16px;
+  pointer-events: none;
+  animation: copilot-composer-border-out calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.copilot-container-sheet.is-closing .copilot-composer-footer {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.memory-lab-root,
+.cpu-lab-root,
+.concurrency-lab-root {
+  transition: padding-right 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.memory-lab-root.has-copilot-drawer,
+.cpu-lab-root.has-copilot-drawer,
+.concurrency-lab-root.has-copilot-drawer {
+  padding-right: var(--copilot-drawer-width, 410px);
+}
+
+.memory-lab-root.has-copilot-drawer.is-resizing,
+.cpu-lab-root.has-copilot-drawer.is-resizing,
+.concurrency-lab-root.has-copilot-drawer.is-resizing {
+  transition: none !important;
+}
+
+.copilot-container-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  max-width: 100vw;
+  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card);
+  border-left: 1px solid var(--border);
+  box-shadow: none;
+  z-index: 55;
+  overflow: hidden;
+  box-sizing: border-box;
+  animation: copilot-drawer-slide calc(0.26s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: width calc(0.22s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-container-drawer.is-resizing {
+  transition: none !important;
+  user-select: none;
+}
+
+.copilot-drawer-resizer {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: no-drag;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.copilot-container-drawer .copilot-drawer-resizer {
+  display: block;
+}
+
+.copilot-drawer-resizer:hover,
+.copilot-drawer-resizer:active,
+.copilot-drawer-resizer:focus-visible,
+.copilot-container-drawer.is-resizing .copilot-drawer-resizer {
+  background-color: var(--border);
+  opacity: 1;
+}
+
+.copilot-drawer-resizer:focus-visible {
+  outline: none;
+}
+
+.copilot-container-drawer.is-closing {
+  animation: copilot-drawer-slide-out calc(0.26s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+:is(.lh-root, .memory-lab-root, .cpu-lab-root, .concurrency-lab-root, .copilot-root, .copilot-container-drawer, .copilot-container-sheet) .lh-no-drag,
+.copilot-floating-actions,
+.copilot-floating-btn,
+.copilot-btn-history,
+.copilot-btn-dock,
+.copilot-btn-close,
+.copilot-btn-expand,
+.copilot-drawer-resizer {
+  -webkit-app-region: no-drag;
+}
+
+.copilot-surface .copilot-floating-actions,
+.copilot-container-sheet .copilot-floating-actions,
+.copilot-container-drawer .copilot-floating-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  right: max(8px, env(titlebar-area-inset-right, 8px));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+  transition: top 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-surface.copilot-container-pill .copilot-floating-actions {
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.copilot-surface .copilot-floating-actions .copilot-floating-btn,
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn,
+.copilot-container-sheet .copilot-floating-actions .btn-icon,
+.copilot-container-drawer .copilot-floating-actions .copilot-floating-btn,
+.copilot-container-drawer .copilot-floating-actions .btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  background-color: color-mix(in srgb, var(--background) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  color: var(--muted-foreground);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  flex-shrink: 0;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.15s ease,
+              color 0.15s ease,
+              border-color 0.15s ease;
+  -webkit-app-region: no-drag;
+}
+
+.copilot-surface .copilot-floating-actions .copilot-btn-history,
+.copilot-container-sheet .copilot-floating-actions .copilot-btn-history,
+.copilot-container-drawer .copilot-floating-actions .copilot-btn-history,
+.copilot-surface .copilot-floating-actions .copilot-btn-expand,
+.copilot-container-sheet .copilot-floating-actions .copilot-btn-expand,
+.copilot-container-drawer .copilot-floating-actions .copilot-btn-expand,
+.copilot-surface .copilot-floating-actions .copilot-btn-close,
+.copilot-container-sheet .copilot-floating-actions .copilot-btn-close,
+.copilot-container-drawer .copilot-floating-actions .copilot-btn-close {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.copilot-surface .copilot-floating-actions .copilot-btn-history:hover,
+.copilot-container-sheet .copilot-floating-actions .copilot-btn-history:hover,
+.copilot-container-drawer .copilot-floating-actions .copilot-btn-history:hover,
+.copilot-surface .copilot-floating-actions .copilot-btn-expand:hover,
+.copilot-container-sheet .copilot-floating-actions .copilot-btn-expand:hover,
+.copilot-container-drawer .copilot-floating-actions .copilot-btn-expand:hover,
+.copilot-surface .copilot-floating-actions .copilot-btn-close:hover,
+.copilot-container-sheet .copilot-floating-actions .copilot-btn-close:hover,
+.copilot-container-drawer .copilot-floating-actions .copilot-btn-close:hover {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+}
+
+.copilot-surface.copilot-container-pill .copilot-floating-actions .copilot-btn-history,
+.copilot-surface.copilot-container-pill .copilot-floating-actions .copilot-btn-expand {
+  opacity: 0;
+  transform: scale(0.85);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.copilot-surface.copilot-container-pill .copilot-floating-actions .copilot-btn-dock,
+.copilot-surface.copilot-container-pill .copilot-floating-actions .copilot-btn-close,
+.copilot-surface.copilot-container-sheet .copilot-floating-actions .copilot-btn-dock,
+.copilot-surface.copilot-container-sheet .copilot-floating-actions .copilot-btn-close,
+.copilot-surface.copilot-container-drawer .copilot-floating-actions .copilot-btn-dock,
+.copilot-surface.copilot-container-drawer .copilot-floating-actions .copilot-btn-expand {
+  display: none;
+}
+
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn:hover,
+.copilot-container-sheet .copilot-floating-actions .btn-icon:hover,
+.copilot-container-drawer .copilot-floating-actions .copilot-floating-btn:hover,
+.copilot-container-drawer .copilot-floating-actions .btn-icon:hover {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn:focus,
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn:focus-visible,
+.copilot-container-sheet .copilot-floating-actions .btn-icon:focus,
+.copilot-container-sheet .copilot-floating-actions .btn-icon:focus-visible,
+.copilot-container-drawer .copilot-floating-actions .copilot-floating-btn:focus,
+.copilot-container-drawer .copilot-floating-actions .copilot-floating-btn:focus-visible,
+.copilot-container-drawer .copilot-floating-actions .btn-icon:focus,
+.copilot-container-drawer .copilot-floating-actions .btn-icon:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+}
+
+.copilot-container-sheet .copilot-floating-actions .copilot-floating-btn svg,
+.copilot-container-sheet .copilot-floating-actions .btn-icon svg,
+.copilot-container-drawer .copilot-floating-actions .copilot-floating-btn svg,
+.copilot-container-drawer .copilot-floating-actions .btn-icon svg {
+  color: inherit;
+}
+
+.copilot-surface.copilot-container-pill .copilot-chat-body {
+  flex: 0 0 0px;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.copilot-surface.copilot-container-pill .copilot-chat-body::before {
+  height: 0;
+}
+
+.copilot-chat-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  contain: layout style;
+}
+
+.copilot-chat-body::before {
+  content: "";
+  display: block;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.copilot-container-drawer .copilot-chat-body {
+  padding: 0 16px 12px 16px;
+  gap: 8px;
+  overflow-x: hidden;
+}
+
+.copilot-chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  text-align: center;
+  padding: 24px;
+}
+
+.copilot-message-row {
+  display: flex;
+  width: 100%;
+}
+
+.copilot-message-user {
+  justify-content: flex-end;
+}
+
+.copilot-message-assistant {
+  justify-content: flex-start;
+}
+
+.copilot-bubble-message {
+  max-width: 88%;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg, 12px);
+  font-size: var(--text-sm, 12.5px);
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.copilot-container-drawer .copilot-bubble-message {
+  max-width: 94%;
+  padding: 10px 12px;
+}
+
+.copilot-bubble-user {
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  border-radius: var(--radius-lg, 12px);
+}
+
+.copilot-bubble-assistant {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  border-radius: var(--radius-lg, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot-message-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--foreground);
+  margin-bottom: 2px;
+}
+
+.copilot-markdown-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  word-break: break-word;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 12.5px);
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.copilot-paragraph {
+  margin: 0;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.copilot-list {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.copilot-code {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs, 11px);
+  color: var(--foreground);
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.copilot-pre {
+  margin: 4px 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs, 11px);
+  line-height: 1.45;
+  color: var(--foreground);
+}
+
+.copilot-code-block {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  white-space: pre;
+}
+
+.copilot-thinking-bubble {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-lg, 12px);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+}
+
+.copilot-control-actions-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--background);
+  border: 1px solid var(--border);
+}
+
+.copilot-control-action-badge {
+  color: var(--muted-foreground);
+}
+
+.copilot-generated-exercise-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--radius-lg, 12px);
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  margin-top: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.copilot-generated-exercise-card:hover {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+}
+
+.copilot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--text-xs, 11px);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.copilot-badge-ai {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.copilot-badge-manual {
+  background-color: var(--accent);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.copilot-badge-mode {
+  background-color: var(--accent);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--text-xs, 11px);
+  font-family: var(--font-mono, monospace);
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Composer Area */
+.copilot-composer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: calc(46rem - 32px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px 16px;
+  background-color: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: max-width calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              padding calc(0.28s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-container-sheet .copilot-composer {
+  max-width: 58rem;
+}
+
+.copilot-surface.copilot-container-pill .copilot-composer {
+  padding: 6px 6px 6px 16px;
+  border-top-color: transparent;
+}
+
+.copilot-composer-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-height: 36px;
+  padding-top: 8px;
+  overflow: hidden;
+  flex-wrap: wrap;
+  transition: max-height calc(0.22s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+              opacity calc(0.14s * var(--copilot-anim-scale, 1)) ease,
+              padding-top calc(0.22s * var(--copilot-anim-scale, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copilot-container-sheet .copilot-btn-dictate,
+.copilot-container-drawer .copilot-btn-dictate {
+  display: none;
+}
+
+.copilot-container-drawer .copilot-composer-footer {
+  gap: 4px;
+  max-height: none;
+}
+
+.copilot-surface.copilot-container-pill .copilot-composer-footer {
+  display: none;
+}
+
+.copilot-composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs, 11px);
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  outline: none;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.copilot-container-drawer .copilot-btn-model .copilot-chip-label {
+  max-width: 112px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copilot-model-popover {
+  position: absolute;
+  bottom: 44px;
+  left: 16px;
+  width: 320px;
+  max-width: calc(100% - 24px);
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--popover, var(--card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  z-index: 80;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.copilot-model-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  flex-shrink: 0;
+}
+
+.copilot-model-search-icon {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.copilot-model-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm, 12.5px);
+  line-height: 1.4;
+}
+
+.copilot-model-search-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.copilot-model-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.copilot-model-search-clear:hover {
+  color: var(--foreground);
+  background-color: var(--accent);
+}
+
+.copilot-model-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.copilot-model-group + .copilot-model-group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.copilot-model-group-header {
+  padding: 4px 8px;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs, 11px);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  user-select: none;
+}
+
+.copilot-model-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm, 12.5px);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.copilot-model-item:hover,
+.copilot-model-item.is-highlighted {
+  background-color: var(--accent);
+}
+
+.copilot-model-item.is-selected {
+  font-weight: 600;
+}
+
+.copilot-model-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copilot-model-item-check {
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+
+.copilot-model-empty {
+  padding: 16px 12px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs, 11px);
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.copilot-composer-chip:hover {
+  color: var(--foreground);
+  background-color: var(--accent);
+  border-color: var(--border);
+}
+
+.copilot-composer-chip.is-active,
+.copilot-composer-chip[aria-pressed="true"] {
+  color: var(--foreground);
+  background-color: var(--accent);
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+}
+
+.copilot-container-drawer .copilot-composer {
+  padding: 4px 12px 12px 12px;
+  background-color: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  overflow-x: hidden;
+}
+
+.copilot-composer-surface {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background-color: color-mix(in srgb, var(--card) 95%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 6px 4px 12px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease;
+}
+
+.copilot-surface.copilot-container-pill .copilot-composer-surface,
+.copilot-surface.copilot-container-pill .copilot-composer-surface:hover,
+.copilot-surface.copilot-container-pill .copilot-composer-surface:focus-within,
+.copilot-container-sheet .copilot-composer-surface,
+.copilot-container-sheet .copilot-composer-surface:hover,
+.copilot-container-sheet .copilot-composer-surface:focus-within,
+.copilot-container-drawer .copilot-composer-surface,
+.copilot-container-drawer .copilot-composer-surface:hover,
+.copilot-container-drawer .copilot-composer-surface:focus-within {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  padding: 0;
+  gap: 6px;
+  align-items: center;
+}
+
+.copilot-composer-surface:hover {
+  border-color: var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+.copilot-composer-surface:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.copilot-composer-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-sans, inherit);
+  font-size: var(--text-base, 14px);
+  line-height: 1.5;
+  min-height: 44px;
+  max-height: 160px;
+  field-sizing: content;
+  padding: 8px 0;
+  resize: none;
+}
+
+.copilot-surface.copilot-container-pill .copilot-composer-input {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 10px 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.copilot-surface.is-dictating .copilot-composer-input {
+  display: none;
+}
+
+.copilot-dictation-strip {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+}
+
+.copilot-surface.is-dictating .copilot-dictation-strip {
+  display: flex;
+}
+
+.copilot-dictation-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  background-color: var(--destructive, var(--lh-error, #ef4444));
+  animation: copilot-dictation-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.copilot-dictation-meter {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+}
+
+.copilot-dictation-bar {
+  flex: 1;
+  min-width: 2px;
+  height: 2px;
+  border-radius: 9999px;
+  background-color: color-mix(in srgb, var(--destructive, var(--lh-error, #ef4444)) 65%, transparent);
+}
+
+.copilot-container-sheet .copilot-composer-input {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  min-height: 40px;
+  padding: 10px 0;
+  white-space: pre-wrap;
+  overflow-y: hidden;
+}
+
+.copilot-container-sheet.is-closing .copilot-composer-input {
+  height: 40px !important;
+  max-height: 40px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.copilot-container-drawer .copilot-composer-input {
+  font-size: var(--text-sm, 12.5px);
+  line-height: 1.45;
+  min-height: 40px;
+  padding: 11px 0;
+}
+
+.copilot-composer-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.copilot-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-bottom: 0;
+}
+
+.copilot-btn-pill-mic,
+.copilot-btn-composer-dock,
+.copilot-btn-pill-hide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  outline: none;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.16s ease,
+              color 0.15s ease;
+}
+
+.copilot-btn-pill-mic:hover,
+.copilot-btn-composer-dock:hover,
+.copilot-btn-pill-hide:hover {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+}
+
+.copilot-surface.is-dictating .copilot-btn-pill-mic,
+.copilot-surface.is-dictating .copilot-btn-pill-mic:hover {
+  color: var(--destructive, var(--lh-error, #ef4444));
+  background: transparent;
+}
+
+.copilot-container-drawer .copilot-btn-composer-dock,
+.copilot-container-drawer .copilot-btn-pill-hide {
+  display: none;
+}
+
+.copilot-btn-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  background-color: var(--accent);
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.15s ease,
+              border-color 0.15s ease,
+              color 0.15s ease,
+              opacity 0.2s ease,
+              transform 0.1s ease;
+}
+
+.copilot-surface.copilot-container-pill .copilot-btn-send,
+.copilot-surface.copilot-container-sheet .copilot-btn-send,
+.copilot-container-sheet.is-closing .copilot-btn-send,
+.copilot-surface.copilot-container-drawer .copilot-btn-send {
+  display: none;
+}
+
+.copilot-surface.copilot-container-pill .copilot-composer-actions,
+.copilot-surface.copilot-container-sheet .copilot-composer-actions,
+.copilot-container-sheet.is-closing .copilot-composer-actions {
+  gap: 4px;
+}
+
+.copilot-btn-send svg {
+  color: currentColor;
+}
+
+.copilot-btn-send:hover:not(:disabled) {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.copilot-btn-send:active:not(:disabled) {
+  opacity: 0.85;
+  transform: scale(0.96);
+}
+
+.copilot-btn-send:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background-color: transparent;
+  border-color: var(--border);
+  color: var(--muted-foreground);
+}
+
+.copilot-btn-send:focus,
+.copilot-btn-send:focus-visible {
+  outline: none;
+}
+
+/* Exercise History Modal */
+.copilot-history-overlay {
+  z-index: 60;
+}
+
+.copilot-history-dialog {
+  max-width: 640px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.copilot-history-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copilot-history-count {
+  font-size: 0.6875rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.copilot-history-body {
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.copilot-history-empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 0.8125rem;
+}
+
+.copilot-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.copilot-exercise-card {
+  padding: 12px 16px;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.copilot-exercise-card:hover {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+}
+
+.copilot-exercise-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-exercise-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-exercise-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.copilot-exercise-consegna {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.copilot-exercise-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.copilot-exercise-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot-exercise-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Lab View Content Containers */
+.lh-root .memory-lab-content,
+.lh-root .cpu-lab-content,
+.lh-root .concurrency-lab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+  container-name: lab-workspace;
+  padding-bottom: 96px;
+}
+
+/* Copilot Undo Toast Banner */
+.copilot-undo-banner {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius, 8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 0.8125rem;
+  color: var(--foreground);
+  animation: copilot-toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.copilot-undo-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.copilot-undo-banner-text {
+  color: var(--foreground);
+}
+
+.copilot-undo-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
