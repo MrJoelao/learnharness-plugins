@@ -1,35 +1,31 @@
 import type { PluginBackendContext, ModelCatalogResponse } from "learnharness-plugin-api";
-import type { Message, UserMessage, AssistantMessage } from "@earendil-works/pi-ai";
+import type {
+  Message,
+  UserMessage,
+  AssistantMessage,
+  ToolResultMessage,
+  ToolCall,
+  Tool
+} from "@earendil-works/pi-ai";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import {
   type AiTurnRequest,
   type AiTurnResponse,
+  type AiCatalogResponse,
+  type AiModelConfig,
+  type AiToolSchema,
+  type ControlAction,
   type SavedExercise,
   type LabMode,
+  MEMORY_TOOL_SCHEMAS,
+  CPU_TOOL_SCHEMAS,
+  CONCURRENCY_TOOL_SCHEMAS,
   aiTurnRequestBoundaryParser
 } from "../types/ai.js";
 import { createExercise } from "../core/exercise-manager.js";
-import { parseMemoryPreset, type MemoryLabPreset } from "../core/memory/types.js";
-import { workloadBoundaryParser, type ProcessWorkload } from "../core/cpu/types.js";
-import {
-  concurrencyScenarioBoundaryParser,
-  type ConcurrencyScenarioState
-} from "../core/concurrency/types.js";
-import {
-  SEGMENTATION_UNIMI_SEED_0,
-  PAGING_UNIMI_SEED_0,
-  BELADY_ANOMALY_PRESET
-} from "../core/memory/presets.js";
-import {
-  STCF_PREEMPTION,
-  RR_QUANTUM_DEMO,
-  MLFQ_GAMING_WORKLOAD
-} from "../core/cpu/presets.js";
-import {
-  BOUNDED_BUFFER_MESA,
-  LOST_UPDATE_DEMO,
-  DINING_PHILOSOPHERS_DEADLOCK
-} from "../core/concurrency/presets.js";
+import { parseMemoryPreset, type MemoryLabSubsystem } from "../core/memory/types.js";
+import { cpuPresetBoundaryParser, type CpuAlgorithm } from "../core/cpu/types.js";
+import { concurrencyScenarioBoundaryParser } from "../core/concurrency/types.js";
 
 export const MEMORY_LAB_SYSTEM_PROMPT = `Sei l'AI Copilot specialista per Memory Virtualization Lab, basato rigorosamente su OSTEP (Operating Systems: Three Easy Pieces) di Remzi e Andrea Arpaci-Dusseau.
 
@@ -56,7 +52,10 @@ I tuoi ambiti di competenza specialistica comprendono:
 4. Anomalia di Belàdy:
    - Dimostrazione del comportamento patologico con algoritmo FIFO, in cui l'aumento del numero di page frame (es. da 3 a 4 frame sulla sequenza di riferimenti [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5]) comporta un aumento dei page fault (da 9 a 10).
 
-Quando generi configurazioni di esercizi, produci esclusivamente JSON validi conformi a MemoryLabPreset.`;
+## Uso Operativo degli Strumenti (Tools) vs Risposta Pedagogica
+- Se l'utente fa una domanda concettuale o chiede una spiegazione teorica/su quanto osservato nello stato attuale, rispondi in modo chiaro e rigoroso SENZA invocare tool di modifica o generazione.
+- Se l'utente chiede di cambiare sottosistema, caricare un preset, impostare un indirizzo virtuale, avanzare nella trace o resettare, usa i tool di controllo: \`set_subsystem\` (\`segmentation\`, \`linear-paging\`, \`multi-level\`, \`tlb\`, \`replacement\`), \`load_preset\` (ID validi: \`segmentation-unimi-seed-0\`, \`paging-unimi-seed-0\`, \`multilevel-sparse-space\`, \`tlb-cached-translation\`, \`belady-anomaly-reference\`), \`set_va\`, \`step_trace\`, \`reset\`.
+- Se l'utente chiede di creare o generare un nuovo esercizio personalizzato, usa \`generate_memory_preset\` producendo un \`config\` conforme a MemoryLabPreset.`;
 
 export const CPU_LAB_SYSTEM_PROMPT = `Sei l'AI Copilot specialista per CPU Scheduling & Hardware Lab, basato rigorosamente su OSTEP (Operating Systems: Three Easy Pieces).
 
@@ -80,7 +79,10 @@ I tuoi ambiti di competenza specialistica comprendono:
    - Passaggio tramite trap/syscall: salvataggio automatico da parte dell'hardware dello stato utente nel Trap Frame sulla stack kernel del processo (letta dal registro TSS esp0), salto al trap handler nel kernel.
    - Ritorno tramite istruzione privilegiata iret (return from trap) che ripristina registri, flags e Ring 3.
 
-Quando generi configurazioni di carico, produci esclusivamente JSON validi conformi a ProcessWorkload[] o CpuPreset.`;
+## Uso Operativo degli Strumenti (Tools) vs Risposta Pedagogica
+- Se l'utente pone una domanda teorica o chiede di analizzare il Gantt/le metriche nello stato attuale, rispondi pedagogicamente SENZA invocare tool di modifica.
+- Se l'utente chiede di cambiare politica, caricare un preset, modificare il quantum, avanzare i tick o resettare, usa i tool di controllo: \`set_algorithm\` (\`FIFO\`, \`SJF\`, \`STCF\`, \`RR\`, \`MLFQ\`, \`LDE\`), \`load_preset\` (ID validi: \`fifo-vs-sjf-convoy\`, \`stcf-preemption\`, \`rr-quantum-demo\`, \`mlfq-gaming-workload\`, \`mlfq-priority-boost\`, \`lde-hardware-transition\`), \`set_quantum\`, \`step_tick\`, \`reset\`.
+- Se l'utente chiede di generare un nuovo esercizio o workload personalizzato, usa \`generate_workload_preset\` fornendo un array \`workload\` valido di ProcessWorkload.`;
 
 export const CONCURRENCY_LAB_SYSTEM_PROMPT = `Sei l'AI Copilot specialista per Concurrency & Deadlock Lab, basato rigorosamente su OSTEP (Operating Systems: Three Easy Pieces).
 
@@ -107,7 +109,10 @@ I tuoi ambiti di competenza specialistica comprendono:
    - Le 4 condizioni di Coffman: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait.
    - Problema dei 5 Filosofi a cena: 5 filosofi simmetrici creano un ciclo RAG di lunghezza 10; risoluzione tramite asimmetria o ordinamento globale delle risorse.
 
-Quando generi scenari di concorrenza, produci esclusivamente JSON validi conformi a ConcurrencyScenarioState.`;
+## Uso Operativo degli Strumenti (Tools) vs Risposta Pedagogica
+- Se l'utente pone una domanda concettuale o chiede di spiegare lo stato attuale di thread/lock/RAG, rispondi pedagogicamente SENZA invocare tool di modifica.
+- Se l'utente chiede di caricare uno scenario, eseguire l'istruzione di un thread o resettare, usa i tool di controllo: \`load_preset\` (ID validi: \`lost-update\`, \`ticket-lock\`, \`bounded-buffer-mesa\`, \`bounded-buffer-1cv-bug\`, \`semaphore-deadlock-order\`, \`dining-philosophers-deadlock\`, \`dining-philosophers-asymmetric\`), \`step_thread_instruction\`, \`reset\`.
+- Se l'utente chiede di creare un nuovo scenario di concorrenza, usa \`generate_concurrency_scenario\` con uno \`scenario\` conforme a ConcurrencyScenarioState.`;
 
 export function getSystemPromptForMode(mode: LabMode): string {
   switch (mode) {
@@ -190,46 +195,9 @@ export async function healPresetPayload<T>({
   };
 }
 
-export const FALLBACK_MODEL_CATALOG: ModelCatalogResponse = {
-  models: [
-    {
-      id: "claude-3-7-sonnet",
-      name: "Claude 3.7 Sonnet",
-      provider: "anthropic",
-      reasoning: true,
-      input: ["text", "image"],
-      supportedLevels: ["off", "low", "medium", "high"],
-      cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
-      contextWindow: 200000,
-      maxTokens: 8192
-    },
-    {
-      id: "gemini-2.5-pro",
-      name: "Gemini 2.5 Pro",
-      provider: "google",
-      reasoning: true,
-      input: ["text", "image"],
-      supportedLevels: ["off", "low", "medium", "high"],
-      cost: { input: 1.25, output: 5, cacheRead: 0.3, cacheWrite: 1.25 },
-      contextWindow: 1000000,
-      maxTokens: 8192
-    },
-    {
-      id: "gemini-2.5-flash",
-      name: "Gemini 2.5 Flash",
-      provider: "google",
-      reasoning: true,
-      input: ["text", "image"],
-      supportedLevels: ["off", "low", "medium"],
-      cost: { input: 0.15, output: 0.6, cacheRead: 0.0375, cacheWrite: 0.15 },
-      contextWindow: 1000000,
-      maxTokens: 8192
-    }
-  ],
-  defaults: {
-    model: { provider: "anthropic", id: "claude-3-7-sonnet" },
-    thinkingLevel: "medium"
-  },
+const EMPTY_MODEL_CATALOG: ModelCatalogResponse = {
+  models: [],
+  defaults: null,
   rolePins: {
     researcher: null,
     demoBuilder: null,
@@ -243,96 +211,513 @@ export const FALLBACK_MODEL_CATALOG: ModelCatalogResponse = {
     cheap: null,
     vision: null
   },
-  providers: [
-    { id: "anthropic", envVar: "ANTHROPIC_API_KEY", keyPresent: false },
-    { id: "google", envVar: "GEMINI_API_KEY", keyPresent: false }
-  ]
+  providers: []
 };
 
-export async function handleAiCatalog(ctx: PluginBackendContext): Promise<ModelCatalogResponse> {
+export function resolveDefaultModel(catalog: ModelCatalogResponse): AiModelConfig | null {
+  const models = Array.isArray(catalog.models) ? catalog.models : [];
+  const providers = Array.isArray(catalog.providers) ? catalog.providers : [];
+  const activeProviders = new Set(
+    providers.filter((p) => p && p.keyPresent === true).map((p) => p.id)
+  );
+
+  const isValidModel = (provider: string, id: string): boolean =>
+    activeProviders.has(provider) &&
+    models.some((m) => m.provider === provider && m.id === id);
+
+  if (catalog.defaults?.model) {
+    const { provider, id } = catalog.defaults.model;
+    if (isValidModel(provider, id)) {
+      return {
+        provider,
+        id,
+        ...(catalog.defaults.thinkingLevel ? { thinkingLevel: catalog.defaults.thinkingLevel } : {})
+      };
+    }
+  }
+
+  if (catalog.slots?.strong?.model) {
+    const { provider, id } = catalog.slots.strong.model;
+    if (isValidModel(provider, id)) {
+      return {
+        provider,
+        id,
+        ...(catalog.slots.strong.thinkingLevel
+          ? { thinkingLevel: catalog.slots.strong.thinkingLevel }
+          : {})
+      };
+    }
+  }
+
+  const firstActiveModel = models.find((m) => activeProviders.has(m.provider));
+  if (firstActiveModel) {
+    return {
+      provider: firstActiveModel.provider,
+      id: firstActiveModel.id
+    };
+  }
+
+  return null;
+}
+
+export async function handleAiCatalog(ctx: PluginBackendContext): Promise<AiCatalogResponse> {
   if (ctx.inference && typeof ctx.inference.catalog === "function") {
     try {
       const catalog = await ctx.inference.catalog();
       if (catalog && Array.isArray(catalog.models)) {
-        return catalog;
+        return {
+          ...catalog,
+          defaultModel: resolveDefaultModel(catalog)
+        };
       }
     } catch {
-      // Fallback below
+      // Fall through to empty catalog below
     }
   }
 
-  return FALLBACK_MODEL_CATALOG;
-}
-
-function generateDeterministicMemoryExercise(): SavedExercise<MemoryLabPreset> {
-  const preset: MemoryLabPreset = {
-    ...SEGMENTATION_UNIMI_SEED_0,
-    id: `mem-ex-${Date.now()}`,
-    name: "Esercizio OSTEP: Traduzione Segmentazione e Limiti",
-    description: "Analisi della traslazione logica-fisica e rilevamento fault su Segmento 0 e Segmento 1."
+  return {
+    ...EMPTY_MODEL_CATALOG,
+    defaultModel: null
   };
-
-  return createExercise<MemoryLabPreset>({
-    title: preset.name,
-    consegna:
-      "Dato il registro Base e Limit per Segmento 0 (Code/Heap) e Segmento 1 (Stack), calcola l'indirizzo fisico per gli indirizzi virtuali della trace ed evidenzia le violazioni di limite.",
-    mode: "memory-lab",
-    config: preset,
-    isAiGenerated: true
-  });
 }
 
-function generateDeterministicCpuExercise(): SavedExercise<ProcessWorkload[]> {
-  const workload: ProcessWorkload[] = [
-    {
-      id: "P0",
-      arrivalTime: 0,
-      bursts: [
-        { type: "cpu", duration: 2 },
-        { type: "io", duration: 2 },
-        { type: "cpu", duration: 4 }
-      ]
-    },
-    {
-      id: "P1",
-      arrivalTime: 2,
-      bursts: [{ type: "cpu", duration: 4 }]
-    },
-    {
-      id: "P2",
-      arrivalTime: 4,
-      bursts: [{ type: "cpu", duration: 2 }]
+export function formatStateSnapshot(mode: LabMode, stateSnapshot: unknown): string {
+  if (stateSnapshot === null || stateSnapshot === undefined || typeof stateSnapshot !== "object") {
+    return `Modalità: ${mode}. Nessuno snapshot di stato attivo.`;
+  }
+
+  const rec = stateSnapshot as Record<string, unknown>;
+  const lines: string[] = [`Modalità attiva: ${mode}`];
+
+  if (mode === "memory-lab") {
+    if (typeof rec.subsystem === "string") {
+      lines.push(`- Sottosistema: ${rec.subsystem}`);
     }
-  ];
+    if (typeof rec.activePresetId === "string" || rec.activePresetId === null) {
+      lines.push(`- Preset attivo: ${rec.activePresetId ?? "nessuno (custom)"}`);
+    }
+    if (typeof rec.currentVa === "number") {
+      lines.push(`- Virtual Address corrente: ${rec.currentVa} (0x${rec.currentVa.toString(16)})`);
+    }
+    if (typeof rec.currentTraceIndex === "number") {
+      lines.push(`- Indice trace: ${rec.currentTraceIndex}`);
+    }
+    if (Array.isArray(rec.trace)) {
+      lines.push(`- Trace (${rec.trace.length} elementi): [${rec.trace.slice(0, 12).join(", ")}${rec.trace.length > 12 ? ", ..." : ""}]`);
+    }
+  } else if (mode === "cpu-lab") {
+    if (typeof rec.algorithm === "string") {
+      lines.push(`- Algoritmo: ${rec.algorithm}`);
+    }
+    if (typeof rec.activePresetId === "string" || rec.activePresetId === null) {
+      lines.push(`- Preset attivo: ${rec.activePresetId ?? "nessuno (custom)"}`);
+    }
+    if (typeof rec.rrQuantum === "number") {
+      lines.push(`- Quantum RR: ${rec.rrQuantum}`);
+    }
+    if (typeof rec.currentTick === "number") {
+      lines.push(`- Tick corrente: ${rec.currentTick}`);
+    }
+    if (Array.isArray(rec.workload)) {
+      const summary = rec.workload
+        .slice(0, 8)
+        .map((p) => {
+          if (typeof p === "object" && p !== null) {
+            const pr = p as Record<string, unknown>;
+            return `${String(pr.id ?? "?")}@t=${String(pr.arrivalTime ?? 0)}`;
+          }
+          return "?";
+        })
+        .join(", ");
+      lines.push(`- Processi (${rec.workload.length}): ${summary}`);
+    }
+  } else if (mode === "concurrency-lab") {
+    if (typeof rec.activePresetId === "string") {
+      lines.push(`- Preset attivo: ${rec.activePresetId}`);
+    }
+    const sc =
+      typeof rec.scenarioState === "object" && rec.scenarioState !== null
+        ? (rec.scenarioState as Record<string, unknown>)
+        : rec;
+    if (typeof sc.scenarioId === "string") {
+      lines.push(`- Scenario ID: ${sc.scenarioId}`);
+    }
+    if (typeof sc.stepCount === "number") {
+      lines.push(`- Passi eseguiti: ${sc.stepCount}`);
+    }
+    if (typeof sc.activeThreadId === "string" || sc.activeThreadId === null) {
+      lines.push(`- Thread attivo: ${sc.activeThreadId ?? "nessuno"}`);
+    }
+    if (Array.isArray(sc.threads)) {
+      const tSummary = sc.threads
+        .slice(0, 8)
+        .map((t) => {
+          if (typeof t === "object" && t !== null) {
+            const tr = t as Record<string, unknown>;
+            return `${String(tr.id ?? "?")}(pc=${String(tr.programCounter ?? 0)},state=${String(tr.state ?? "?")})`;
+          }
+          return "?";
+        })
+        .join(", ");
+      lines.push(`- Thread (${sc.threads.length}): ${tSummary}`);
+    }
+    if (typeof sc.sharedMemory === "object" && sc.sharedMemory !== null) {
+      const memEntries = Object.entries(sc.sharedMemory as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}=${String(v)}`)
+        .join(", ");
+      if (memEntries) {
+        lines.push(`- Memoria condivisa: { ${memEntries} }`);
+      }
+    }
+  }
 
-  return createExercise<ProcessWorkload[]>({
-    title: "Esercizio OSTEP: STCF con Preemption e I/O",
-    consegna:
-      "Traccia il diagramma di Gantt sotto la politica STCF (Shortest Time-to-Completion First). Verifica quando P0 cede la CPU per I/O e se l'arrivo di P2 preempta P1.",
-    mode: "cpu-lab",
-    config: workload,
-    isAiGenerated: true
-  });
+  return lines.join("\n");
 }
 
-function generateDeterministicConcurrencyExercise(): SavedExercise<ConcurrencyScenarioState> {
-  const scenario: ConcurrencyScenarioState = {
-    ...BOUNDED_BUFFER_MESA,
-    scenarioId: `conc-ex-${Date.now()}`,
-    name: "Esercizio OSTEP: Bounded Buffer Mesa 2 CV",
-    description:
-      "Verifica l'assenza di deadlock con 2 Condition Variables (empty e fill) rispetto allo scenario patologico a singola CV."
+function getToolSchemasForMode(mode: LabMode): readonly AiToolSchema[] {
+  switch (mode) {
+    case "memory-lab":
+      return MEMORY_TOOL_SCHEMAS;
+    case "cpu-lab":
+      return CPU_TOOL_SCHEMAS;
+    case "concurrency-lab":
+      return CONCURRENCY_TOOL_SCHEMAS;
+  }
+}
+
+function toPiTools(schemas: readonly AiToolSchema[]): Tool[] {
+  return schemas.map((schema) => ({
+    name: schema.name,
+    description: schema.description,
+    parameters: schema.parameters as unknown as Tool["parameters"]
+  }));
+}
+
+const VALID_MEMORY_SUBSYSTEMS: readonly MemoryLabSubsystem[] = [
+  "segmentation",
+  "linear-paging",
+  "multi-level",
+  "tlb",
+  "replacement"
+];
+
+const VALID_MEMORY_PRESETS = new Set([
+  "segmentation-unimi-seed-0",
+  "paging-unimi-seed-0",
+  "multilevel-sparse-space",
+  "tlb-cached-translation",
+  "belady-anomaly-reference"
+]);
+
+const VALID_CPU_ALGORITHMS: readonly CpuAlgorithm[] = [
+  "FIFO",
+  "SJF",
+  "STCF",
+  "RR",
+  "MLFQ",
+  "LDE"
+];
+
+const VALID_CPU_PRESETS = new Set([
+  "fifo-vs-sjf-convoy",
+  "stcf-preemption",
+  "rr-quantum-demo",
+  "mlfq-gaming-workload",
+  "mlfq-priority-boost",
+  "lde-hardware-transition"
+]);
+
+const VALID_CONCURRENCY_PRESETS = new Set([
+  "lost-update",
+  "ticket-lock",
+  "bounded-buffer-mesa",
+  "bounded-buffer-1cv-bug",
+  "semaphore-deadlock-order",
+  "dining-philosophers-deadlock",
+  "dining-philosophers-asymmetric"
+]);
+
+function normalizeMemorySubsystem(raw: unknown): string {
+  if (raw === "two-level-paging") return "multi-level";
+  if (raw === "swapping") return "replacement";
+  return typeof raw === "string" ? raw : "";
+}
+
+interface ToolExecutionOutcome {
+  isError: boolean;
+  result: Record<string, unknown>;
+  generatedExercise?: SavedExercise;
+  controlAction?: ControlAction;
+}
+
+function executeToolCall(
+  mode: LabMode,
+  toolCall: ToolCall,
+  stateSnapshot: unknown
+): ToolExecutionOutcome {
+  const args = (toolCall.arguments ?? {}) as Record<string, unknown>;
+  const name = toolCall.name;
+
+  // Inspection tools
+  if (name === "inspect_memory" || name === "inspect_cpu" || name === "inspect_concurrency") {
+    return {
+      isError: false,
+      result: {
+        ok: true,
+        mode,
+        stateSnapshot: stateSnapshot ?? {}
+      }
+    };
+  }
+
+  // Exercise generation tools
+  if (name === "generate_memory_preset") {
+    if (mode !== "memory-lab") {
+      return { isError: true, result: { ok: false, error: `Tool ${name} is only valid in memory-lab.` } };
+    }
+    const title = typeof args.title === "string" && args.title.trim() ? args.title.trim() : "Esercizio Memory Lab";
+    const consegna = typeof args.consegna === "string" && args.consegna.trim() ? args.consegna.trim() : "Analizza la configurazione di memoria.";
+    const normalizedSubsystem = normalizeMemorySubsystem(args.subsystem);
+    const rawConfig = args.config;
+    if (typeof rawConfig !== "object" || rawConfig === null || Array.isArray(rawConfig)) {
+      return { isError: true, result: { ok: false, error: "config must be a non-null MemoryLabPreset object." } };
+    }
+    const configRec = rawConfig as Record<string, unknown>;
+    const configSubsystem = configRec.subsystem !== undefined
+      ? normalizeMemorySubsystem(configRec.subsystem)
+      : normalizedSubsystem;
+
+    const candidate = {
+      id: typeof configRec.id === "string" && configRec.id.trim() ? configRec.id : `mem-ai-${Date.now()}`,
+      name: typeof configRec.name === "string" && configRec.name.trim() ? configRec.name : title,
+      description: typeof configRec.description === "string" ? configRec.description : consegna,
+      ...configRec,
+      subsystem: configSubsystem || normalizedSubsystem
+    };
+
+    const parsed = parseMemoryPreset(candidate);
+    if (!parsed.success) {
+      return { isError: true, result: { ok: false, error: parsed.error } };
+    }
+
+    const exercise = createExercise({
+      title,
+      consegna,
+      mode: "memory-lab",
+      config: parsed.data,
+      isAiGenerated: true
+    });
+    return {
+      isError: false,
+      result: { ok: true, exerciseId: exercise.id, subsystem: parsed.data.subsystem },
+      generatedExercise: exercise
+    };
+  }
+
+  if (name === "generate_workload_preset") {
+    if (mode !== "cpu-lab") {
+      return { isError: true, result: { ok: false, error: `Tool ${name} is only valid in cpu-lab.` } };
+    }
+    const title = typeof args.title === "string" && args.title.trim() ? args.title.trim() : "Esercizio CPU Lab";
+    const consegna = typeof args.consegna === "string" && args.consegna.trim() ? args.consegna.trim() : "Analizza lo scheduling della CPU.";
+    const algorithm = typeof args.algorithm === "string" ? args.algorithm.trim().toUpperCase() : "RR";
+
+    const candidate = {
+      id: `cpu-ai-${Date.now()}`,
+      name: title,
+      description: consegna,
+      algorithm,
+      workload: args.workload,
+      ...(args.quantum !== undefined ? { rrQuantum: args.quantum } : {}),
+      ...(args.mlfqConfig !== undefined ? { mlfqConfig: args.mlfqConfig } : {})
+    };
+
+    const parsed = cpuPresetBoundaryParser.parse(candidate);
+    if (!parsed.success) {
+      return { isError: true, result: { ok: false, error: parsed.error } };
+    }
+
+    const exercise = createExercise({
+      title,
+      consegna,
+      mode: "cpu-lab",
+      config: parsed.data,
+      isAiGenerated: true
+    });
+    return {
+      isError: false,
+      result: { ok: true, exerciseId: exercise.id, algorithm: parsed.data.algorithm },
+      generatedExercise: exercise
+    };
+  }
+
+  if (name === "generate_concurrency_scenario") {
+    if (mode !== "concurrency-lab") {
+      return { isError: true, result: { ok: false, error: `Tool ${name} is only valid in concurrency-lab.` } };
+    }
+    const title = typeof args.title === "string" && args.title.trim() ? args.title.trim() : "Scenario Concurrency Lab";
+    const consegna = typeof args.consegna === "string" && args.consegna.trim() ? args.consegna.trim() : "Analizza l'interleaving dei thread.";
+
+    const parsed = concurrencyScenarioBoundaryParser.parse(args.scenario);
+    if (!parsed.success) {
+      return { isError: true, result: { ok: false, error: parsed.error } };
+    }
+
+    const exercise = createExercise({
+      title,
+      consegna,
+      mode: "concurrency-lab",
+      config: parsed.data,
+      isAiGenerated: true
+    });
+    return {
+      isError: false,
+      result: { ok: true, exerciseId: exercise.id, scenarioId: parsed.data.scenarioId },
+      generatedExercise: exercise
+    };
+  }
+
+  // Control tools
+  if (name === "set_subsystem" && mode === "memory-lab") {
+    const normalized = normalizeMemorySubsystem(args.subsystem);
+    if (!(VALID_MEMORY_SUBSYSTEMS as readonly string[]).includes(normalized)) {
+      return {
+        isError: true,
+        result: { ok: false, error: `Invalid subsystem '${String(args.subsystem)}'. Must be one of: ${VALID_MEMORY_SUBSYSTEMS.join(", ")}.` }
+      };
+    }
+    const action: ControlAction = { action: "set_subsystem", payload: { subsystem: normalized } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "set_va" && mode === "memory-lab") {
+    const va = args.virtualAddress;
+    if (typeof va !== "number" || !Number.isInteger(va) || va < 0) {
+      return { isError: true, result: { ok: false, error: "virtualAddress must be a non-negative integer." } };
+    }
+    const action: ControlAction = { action: "set_va", payload: { virtualAddress: va } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "execute_translation" && mode === "memory-lab") {
+    const va = args.virtualAddress;
+    if (typeof va !== "number" || !Number.isInteger(va) || va < 0) {
+      return { isError: true, result: { ok: false, error: "virtualAddress must be a non-negative integer." } };
+    }
+    const payload = {
+      virtualAddress: va,
+      ...(typeof args.asid === "number" ? { asid: args.asid } : {})
+    };
+    const action: ControlAction = { action: "execute_translation", payload };
+    return { isError: false, result: { ok: true, action: action.action, payload }, controlAction: action };
+  }
+
+  if (name === "step_trace" && mode === "memory-lab") {
+    const steps = args.steps === undefined ? 1 : args.steps;
+    if (typeof steps !== "number" || !Number.isInteger(steps) || steps <= 0) {
+      return { isError: true, result: { ok: false, error: "steps must be a positive integer." } };
+    }
+    const action: ControlAction = { action: "step_trace", payload: { steps } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "set_algorithm" && mode === "cpu-lab") {
+    const algo = typeof args.algorithm === "string" ? args.algorithm.trim().toUpperCase() : "";
+    if (!(VALID_CPU_ALGORITHMS as readonly string[]).includes(algo)) {
+      return {
+        isError: true,
+        result: { ok: false, error: `Invalid algorithm '${String(args.algorithm)}'. Must be one of: ${VALID_CPU_ALGORITHMS.join(", ")}.` }
+      };
+    }
+    const action: ControlAction = { action: "set_algorithm", payload: { algorithm: algo } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "set_quantum" && mode === "cpu-lab") {
+    const quantum = args.quantum;
+    if (typeof quantum !== "number" || !Number.isInteger(quantum) || quantum <= 0) {
+      return { isError: true, result: { ok: false, error: "quantum must be a positive integer > 0." } };
+    }
+    const action: ControlAction = { action: "set_quantum", payload: { quantum } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "step_tick" && mode === "cpu-lab") {
+    const ticks = args.ticks === undefined ? 1 : args.ticks;
+    if (typeof ticks !== "number" || !Number.isInteger(ticks) || ticks <= 0) {
+      return { isError: true, result: { ok: false, error: "ticks must be a positive integer." } };
+    }
+    const action: ControlAction = { action: "step_tick", payload: { ticks } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "control_scheduler" && mode === "cpu-lab") {
+    const command = args.command;
+    if (command !== "step" && command !== "play" && command !== "pause" && command !== "reset") {
+      return { isError: true, result: { ok: false, error: "command must be one of: step, play, pause, reset." } };
+    }
+    const payload = {
+      command,
+      ...(typeof args.ticks === "number" ? { ticks: args.ticks } : {})
+    };
+    const action: ControlAction = { action: "control_scheduler", payload };
+    return { isError: false, result: { ok: true, action: action.action, payload }, controlAction: action };
+  }
+
+  if (name === "load_preset") {
+    const presetId = typeof args.presetId === "string" ? args.presetId.trim() : "";
+    const validSet =
+      mode === "memory-lab"
+        ? VALID_MEMORY_PRESETS
+        : mode === "cpu-lab"
+          ? VALID_CPU_PRESETS
+          : VALID_CONCURRENCY_PRESETS;
+    if (!validSet.has(presetId)) {
+      return {
+        isError: true,
+        result: { ok: false, error: `Invalid presetId '${presetId}' for ${mode}. Valid IDs: ${Array.from(validSet).join(", ")}.` }
+      };
+    }
+    const action: ControlAction = { action: "load_preset", payload: { presetId } };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  if (name === "step_thread_instruction" && mode === "concurrency-lab") {
+    const threadId = typeof args.threadId === "string" ? args.threadId.trim() : "";
+    if (!threadId) {
+      return { isError: true, result: { ok: false, error: "threadId must be a non-empty string." } };
+    }
+    const payload = {
+      threadId,
+      ...(typeof args.instructionIndex === "number" ? { instructionIndex: args.instructionIndex } : {})
+    };
+    const action: ControlAction = { action: "step_thread_instruction", payload };
+    return { isError: false, result: { ok: true, action: action.action, payload }, controlAction: action };
+  }
+
+  if (name === "reset") {
+    const action: ControlAction = { action: "reset", payload: {} };
+    return { isError: false, result: { ok: true, action: action.action, payload: action.payload }, controlAction: action };
+  }
+
+  return {
+    isError: true,
+    result: { ok: false, error: `Unknown or unsupported tool '${name}' for mode '${mode}'.` }
   };
-
-  return createExercise<ConcurrencyScenarioState>({
-    title: scenario.name,
-    consegna:
-      "Esegui l'interleaving istruzione per istruzione dei thread Producer e Consumer. Verifica che la semantica Mesa utilizzi il ciclo while e che il risveglio non provochi starvation o deadlock.",
-    mode: "concurrency-lab",
-    config: scenario,
-    isAiGenerated: true
-  });
 }
+
+const MAX_TOOL_ROUNDS = 4;
+
+const VALID_THINKING_LEVELS: readonly ThinkingLevel[] = [
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max"
+];
 
 export async function handleAiTurn(
   ctx: PluginBackendContext,
@@ -347,218 +732,263 @@ export async function handleAiTurn(
   }
 
   const request: AiTurnRequest = parseResult.data;
-  const systemPrompt = getSystemPromptForMode(request.mode);
 
-  // If ctx.inference is available and operational, attempt inference
-  if (ctx.inference && typeof ctx.inference.complete === "function") {
-    try {
-      const validThinkingLevels: readonly ThinkingLevel[] = [
-        "off",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-        "max"
-      ];
-      const thinkingLevel =
-        request.model?.thinkingLevel &&
-        (validThinkingLevels as readonly string[]).includes(request.model.thinkingLevel)
-          ? (request.model.thinkingLevel as ThinkingLevel)
-          : undefined;
+  if (!ctx.inference || typeof ctx.inference.stream !== "function") {
+    const errorMsg = "Servizio di inferenza AI non disponibile in questo ambiente LearnHarness.";
+    return {
+      responseText: errorMsg,
+      error: errorMsg
+    };
+  }
 
-      const modelSpec = {
-        provider: request.model?.provider ?? "anthropic",
-        id: request.model?.id ?? "claude-3-7-sonnet",
-        ...(thinkingLevel !== undefined ? { thinkingLevel } : {})
-      };
+  const catalog = await handleAiCatalog(ctx);
+  const hasConfiguredProvider =
+    catalog.models.length > 0 && catalog.providers.some((p) => p.keyPresent === true);
 
-      const messages: Message[] = [];
-      const now = Date.now();
+  if (!hasConfiguredProvider) {
+    const errorMsg =
+      "Nessun provider AI configurato con API key attiva. Configura una chiave nelle impostazioni di LearnHarness per usare il Copilot.";
+    return {
+      responseText: errorMsg,
+      error: errorMsg
+    };
+  }
 
-      for (const turn of request.conversationHistory) {
-        if (turn.role === "user") {
-          const userMsg: UserMessage = {
-            role: "user",
-            content: turn.text,
-            timestamp: now
-          };
-          messages.push(userMsg);
-        } else {
-          const assistantMsg: AssistantMessage = {
-            role: "assistant",
-            content: [{ type: "text", text: turn.text }],
-            api: "chat",
-            provider: modelSpec.provider,
-            model: modelSpec.id,
-            usage: {
-              input: 0,
-              output: 0,
-              cacheRead: 0,
-              cacheWrite: 0,
-              totalTokens: 0,
-              cost: {
-                input: 0,
-                output: 0,
-                cacheRead: 0,
-                cacheWrite: 0,
-                total: 0
-              }
-            },
-            stopReason: "stop",
-            timestamp: now
-          };
-          messages.push(assistantMsg);
-        }
-      }
+  const resolvedModel = request.model ?? catalog.defaultModel;
+  if (!resolvedModel) {
+    const errorMsg =
+      "Nessun modello AI predefinito disponibile nel catalogo corrente. Seleziona un modello valido nelle impostazioni.";
+    return {
+      responseText: errorMsg,
+      error: errorMsg
+    };
+  }
 
-      const finalUserMsg: UserMessage = {
+  const thinkingLevel =
+    resolvedModel.thinkingLevel &&
+    (VALID_THINKING_LEVELS as readonly string[]).includes(resolvedModel.thinkingLevel)
+      ? (resolvedModel.thinkingLevel as ThinkingLevel)
+      : undefined;
+
+  const modelSpec = {
+    provider: resolvedModel.provider,
+    id: resolvedModel.id,
+    ...(thinkingLevel !== undefined ? { thinkingLevel } : {})
+  };
+
+  const baseSystemPrompt = getSystemPromptForMode(request.mode);
+  const stateSummary = formatStateSnapshot(request.mode, request.stateSnapshot);
+  const systemPrompt = `${baseSystemPrompt}\n\n## Stato Attuale del Simulatore\n${stateSummary}`;
+
+  const messages: Message[] = [];
+  const now = Date.now();
+
+  for (const turn of request.conversationHistory) {
+    if (turn.role === "user") {
+      const userMsg: UserMessage = {
         role: "user",
-        content: request.userMessage,
+        content: turn.text,
         timestamp: now
       };
-      messages.push(finalUserMsg);
+      messages.push(userMsg);
+    } else {
+      const assistantMsg: AssistantMessage = {
+        role: "assistant",
+        content: [{ type: "text", text: turn.text }],
+        api: "chat",
+        provider: modelSpec.provider,
+        model: modelSpec.id,
+        usage: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          totalTokens: 0,
+          cost: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+            total: 0
+          }
+        },
+        stopReason: "stop",
+        timestamp: now
+      };
+      messages.push(assistantMsg);
+    }
+  }
 
-      const inferenceResult = await ctx.inference.complete({
+  const finalUserMsg: UserMessage = {
+    role: "user",
+    content: request.userMessage,
+    timestamp: now
+  };
+  messages.push(finalUserMsg);
+
+  const tools = toPiTools(getToolSchemasForMode(request.mode));
+  const controlActions: ControlAction[] = [];
+  const rawToolCalls: unknown[] = [];
+  let generatedExercise: SavedExercise | undefined;
+  let accumulatedText = "";
+
+  const emitStream = (type: string, extra?: { delta?: string; toolName?: string }) => {
+    if (request.requestId && ctx.events && typeof ctx.events.emit === "function") {
+      ctx.events.emit("ai-stream", {
+        requestId: request.requestId,
+        type,
+        ...(extra?.delta !== undefined ? { delta: extra.delta } : {}),
+        ...(extra?.toolName !== undefined ? { toolName: extra.toolName } : {})
+      });
+    }
+  };
+
+  try {
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const stream = ctx.inference.stream({
         model: modelSpec,
         purpose: "user",
         context: {
           systemPrompt,
-          messages
-        }
+          messages,
+          tools
+        },
+        signal: ctx.signal
       });
 
-      if (inferenceResult && inferenceResult.content) {
-        let text = "";
-        for (const item of inferenceResult.content) {
-          if (item.type === "text") {
-            text += item.text;
-          }
+      let doneMessage: AssistantMessage | undefined;
+      let streamError: string | undefined;
+
+      for await (const event of stream) {
+        if (event.type === "text_delta") {
+          emitStream("text_delta", { delta: event.delta });
+        } else if (event.type === "thinking_delta") {
+          emitStream("thinking_delta", { delta: event.delta });
+        } else if (event.type === "toolcall_start") {
+          const block = event.partial.content[event.contentIndex];
+          const toolName = block && block.type === "toolCall" ? block.name : undefined;
+          emitStream("toolcall_start", { toolName });
+        } else if (event.type === "done") {
+          doneMessage = event.message;
+        } else if (event.type === "error") {
+          streamError =
+            event.error?.errorMessage || `Inference stream error (${event.reason}).`;
+          break;
         }
-        if (text.trim().length > 0) {
-          return {
-            responseText: text.trim()
+      }
+
+      if (streamError) {
+        return {
+          responseText: accumulatedText.trim() || streamError,
+          error: streamError,
+          ...(generatedExercise ? { generatedExercise } : {}),
+          ...(controlActions.length > 0 ? { controlActions } : {}),
+          ...(rawToolCalls.length > 0 ? { rawToolCalls } : {})
+        };
+      }
+
+      if (!doneMessage) {
+        const missingDoneErr = "Il flusso di inferenza AI è terminato senza un messaggio finale.";
+        return {
+          responseText: accumulatedText.trim() || missingDoneErr,
+          error: missingDoneErr,
+          ...(generatedExercise ? { generatedExercise } : {}),
+          ...(controlActions.length > 0 ? { controlActions } : {}),
+          ...(rawToolCalls.length > 0 ? { rawToolCalls } : {})
+        };
+      }
+
+      if (doneMessage.stopReason === "error" || doneMessage.stopReason === "aborted") {
+        const stopErr =
+          doneMessage.errorMessage || `Inference stopped with reason: ${doneMessage.stopReason}`;
+        return {
+          responseText: accumulatedText.trim() || stopErr,
+          error: stopErr,
+          ...(generatedExercise ? { generatedExercise } : {}),
+          ...(controlActions.length > 0 ? { controlActions } : {}),
+          ...(rawToolCalls.length > 0 ? { rawToolCalls } : {})
+        };
+      }
+
+      messages.push(doneMessage);
+
+      const roundText = doneMessage.content
+        .filter((c): c is { type: "text"; text: string } => c.type === "text")
+        .map((c) => c.text)
+        .join("");
+
+      if (roundText.length > 0) {
+        accumulatedText = accumulatedText.length > 0 ? `${accumulatedText}\n${roundText}` : roundText;
+      }
+
+      const toolCalls = doneMessage.content.filter(
+        (c): c is ToolCall => c.type === "toolCall"
+      );
+
+      if (toolCalls.length === 0) {
+        break;
+      }
+
+      for (const toolCall of toolCalls) {
+        rawToolCalls.push({
+          id: toolCall.id,
+          name: toolCall.name,
+          arguments: toolCall.arguments,
+          ...(toolCall.argumentsError ? { argumentsError: toolCall.argumentsError } : {})
+        });
+
+        if (toolCall.argumentsError) {
+          const errToolResult: ToolResultMessage = {
+            role: "toolResult",
+            toolCallId: toolCall.id,
+            toolName: toolCall.name,
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ ok: false, error: toolCall.argumentsError })
+              }
+            ],
+            isError: true,
+            timestamp: Date.now()
           };
+          messages.push(errToolResult);
+          continue;
         }
-      }
-    } catch {
-      // Fall through to deterministic fallback on inference error
-    }
-  }
 
-  // Deterministic Fallback Logic
-  const msgLower = request.userMessage.toLowerCase();
-  const shouldGenerateExercise =
-    msgLower.includes("esercizio") ||
-    msgLower.includes("preset") ||
-    msgLower.includes("genera") ||
-    msgLower.includes("exercise") ||
-    msgLower.includes("scenario") ||
-    msgLower.includes("workload") ||
-    msgLower.includes("test");
+        const outcome = executeToolCall(request.mode, toolCall, request.stateSnapshot);
+        if (outcome.generatedExercise) {
+          generatedExercise = outcome.generatedExercise;
+        }
+        if (outcome.controlAction) {
+          controlActions.push(outcome.controlAction);
+        }
 
-  if (request.mode === "memory-lab") {
-    let generatedExercise: SavedExercise | undefined;
-
-    if (shouldGenerateExercise) {
-      const candidateExercise = generateDeterministicMemoryExercise();
-      const healResult = await healPresetPayload({
-        raw: candidateExercise.config,
-        validator: parseMemoryPreset,
-        repairFn: () => SEGMENTATION_UNIMI_SEED_0
-      });
-
-      if (healResult.success && healResult.data) {
-        candidateExercise.config = healResult.data;
-        generatedExercise = candidateExercise;
+        const toolResult: ToolResultMessage = {
+          role: "toolResult",
+          toolCallId: toolCall.id,
+          toolName: toolCall.name,
+          content: [{ type: "text", text: JSON.stringify(outcome.result) }],
+          isError: outcome.isError,
+          timestamp: Date.now()
+        };
+        messages.push(toolResult);
       }
     }
-
-    const responseText = [
-      "In conformità ai principi di Memory Virtualization descritti in OSTEP (Operating Systems: Three Easy Pieces):",
-      "- Segmentazione: La traslazione calcola Physical Address = Base + Offset. Per segmenti a crescita positiva (Code, Heap), l'offset non deve superare Limit. Per segmenti a crescita negativa (Stack), Base punta all'indirizzo fisico massimo e l'offset negativo viene calcolato rispetto alla dimensione massima.",
-      "- Paging & TLB: L'indirizzo virtuale è scomposto in VPN e Offset. La Page Table Entry (PTE) utilizza l'MSB 0x80000000 come valid bit. Il TLB associa VPN ad ASID e PFN per eliminare memory reference aggiuntivi durante l'accesso.",
-      "- Sostituzione & Belàdy: Con FIFO, la sequenza [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5] manifesta l'Anomalia di Belàdy (passaggio da 9 a 10 page fault con 4 frame invece di 3)."
-    ].join("\n");
 
     return {
-      responseText,
-      generatedExercise,
-      controlActions: [
-        { action: "set_subsystem", payload: { subsystem: "segmentation" } }
-      ]
+      responseText: accumulatedText.trim() || "Operazione completata.",
+      ...(generatedExercise ? { generatedExercise } : {}),
+      ...(controlActions.length > 0 ? { controlActions } : {}),
+      ...(rawToolCalls.length > 0 ? { rawToolCalls } : {})
     };
-  }
-
-  if (request.mode === "cpu-lab") {
-    let generatedExercise: SavedExercise | undefined;
-
-    if (shouldGenerateExercise) {
-      const candidateExercise = generateDeterministicCpuExercise();
-      const healResult = await healPresetPayload({
-        raw: candidateExercise.config,
-        validator: workloadBoundaryParser.parse,
-        repairFn: () => STCF_PREEMPTION.workload
-      });
-
-      if (healResult.success && healResult.data) {
-        candidateExercise.config = healResult.data;
-        generatedExercise = candidateExercise;
-      }
-    }
-
-    const responseText = [
-      "In conformità ai principi di CPU Scheduling & LDE descritti in OSTEP:",
-      "- STCF & Round Robin: STCF preempta il processo corrente non appena giunge un job con tempo di completamento rimanente inferiore. Round Robin garantisce equità temporale e ottimizza il response time mediante quantum di clock.",
-      "- MLFQ (5 Regole): L'allotment cumulativo impedisce il gaming tramite frequenti yield di I/O (Regola 4). Il priority boost periodico ogni intervallo S (Regola 5) azzera la priority e previene la starvation.",
-      "- Limited Direct Execution (LDE): Le transizioni Ring 3 -> Ring 0 avvengono attraverso la IDT salvando il Trap Frame sulla stack kernel del processo (letta dal TSS esp0), e terminano con l'istruzione hardware iret."
-    ].join("\n");
-
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     return {
-      responseText,
-      generatedExercise,
-      controlActions: [
-        { action: "set_algorithm", payload: { algorithm: "stcf" } }
-      ]
+      responseText: accumulatedText.trim() || errMsg,
+      error: errMsg,
+      ...(generatedExercise ? { generatedExercise } : {}),
+      ...(controlActions.length > 0 ? { controlActions } : {}),
+      ...(rawToolCalls.length > 0 ? { rawToolCalls } : {})
     };
   }
-
-  if (request.mode === "concurrency-lab") {
-    let generatedExercise: SavedExercise | undefined;
-
-    if (shouldGenerateExercise) {
-      const candidateExercise = generateDeterministicConcurrencyExercise();
-      const healResult = await healPresetPayload({
-        raw: candidateExercise.config,
-        validator: concurrencyScenarioBoundaryParser.parse,
-        repairFn: () => BOUNDED_BUFFER_MESA
-      });
-
-      if (healResult.success && healResult.data) {
-        candidateExercise.config = healResult.data;
-        generatedExercise = candidateExercise;
-      }
-    }
-
-    const responseText = [
-      "In conformità ai principi di Concurrency & Synchronization descritti in OSTEP:",
-      "- Lost Update: La sequenza di basso livello (mov rax; add 1; mov rax) su memoria condivisa produce corruzione dei dati se un context switch interrompe l'esecuzione prima dello Store.",
-      "- Condition Variables & Mesa: pthread_cond_wait rilascia atomicamente il lock e addormenta il thread. Al risveglio (pthread_cond_signal), la semantica Mesa impone la riverifica dello stato mediante ciclo while(condizione). Nel Bounded Buffer, l'uso di due condition variable distinte (empty e fill) previene il deadlock.",
-      "- Semafori & RAG Deadlock: Un semaforo con valore negativo indica il numero esatto di thread sospesi nella waiting queue FIFO. Il deadlock si instaura quando le 4 condizioni di Coffman sono verificate simultaneamente (es. 5 filosofi simmetrici che formano un ciclo RAG di lunghezza 10)."
-    ].join("\n");
-
-    return {
-      responseText,
-      generatedExercise,
-      controlActions: [
-        { action: "set_scenario", payload: { scenario: "bounded-buffer" } }
-      ]
-    };
-  }
-
-  const _exhaustive: never = request.mode;
-  return {
-    responseText: "Unsupported mode.",
-    error: `Unsupported mode: ${_exhaustive}`
-  };
 }

@@ -1,5 +1,5 @@
-import type { PluginUi } from "learnharness-plugin-api";
-import type { LabMode, SavedExercise, ControlAction, AiTurnRequest, AiTurnResponse } from "../../types/ai.js";
+import type { PluginUi, PluginFrontendContext } from "learnharness-plugin-api";
+import type { LabMode, SavedExercise, ControlAction, AiTurnRequest, AiTurnResponse, AiCatalogResponse } from "../../types/ai.js";
 
 export type CopilotUiMode = "pill" | "sheet" | "drawer" | "minimized";
 
@@ -26,6 +26,8 @@ export interface CopilotDrawerOptions {
   targetContainer?: HTMLElement;
   signal?: AbortSignal;
   ui?: PluginUi;
+  onNotification?: PluginFrontendContext["onNotification"];
+  loadCatalog?: () => Promise<AiCatalogResponse>;
   autoApplyExercise?: boolean;
   onTurnResponse?: (response: AiTurnResponse) => void;
 }

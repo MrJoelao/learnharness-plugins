@@ -15,7 +15,7 @@ import { openWorkloadEditorModal } from "./workload-editor-modal.js";
 import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
 import { ensureAbortSignal, openToolbarMenu, showErrorBanner } from "../toolbar-helpers.js";
-import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
+import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction, AiCatalogResponse } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
 
@@ -137,8 +137,9 @@ export function createCpuLabView(
           partial.algorithm = algoUpper as CpuAlgorithm;
         }
       }
-      if (typeof rec.rrQuantum === "number" && rec.rrQuantum > 0) {
-        partial.rrQuantum = rec.rrQuantum;
+      const rawQuantum = typeof rec.rrQuantum === "number" ? rec.rrQuantum : rec.quantum;
+      if (typeof rawQuantum === "number" && Number.isFinite(rawQuantum) && rawQuantum > 0) {
+        partial.rrQuantum = Math.max(1, Math.round(rawQuantum));
       }
       if (rec.mlfqConfig && typeof rec.mlfqConfig === "object") {
         partial.mlfqConfig = rec.mlfqConfig as MlfqConfig;
@@ -183,12 +184,89 @@ export function createCpuLabView(
     });
   }
 
+  function stepByTicks(rawTicks: number) {
+    if (state.algorithm === "LDE") {
+      const nextLdeStep = Math.max(0, state.ldeStepIndex + rawTicks);
+      stopTimer();
+      update({ ldeStepIndex: nextLdeStep, isPlaying: false });
+    } else {
+      const simResult = simulateSchedule(state.algorithm, state.workload, {
+        quantum: state.rrQuantum,
+        mlfqConfig: state.mlfqConfig
+      });
+      const maxTick = Math.max(0, simResult.timeline.length - 1);
+      const nextTick = Math.max(0, Math.min(maxTick, state.currentTick + rawTicks));
+      stopTimer();
+      update({ currentTick: nextTick, isPlaying: false });
+    }
+  }
+
   function executeControlAction(action: ControlAction) {
-    if (action.action === "set_algorithm" && typeof (action.payload as Record<string, unknown>)?.algorithm === "string") {
-      const algo = String((action.payload as { algorithm: string }).algorithm).toUpperCase();
+    const payload =
+      action.payload && typeof action.payload === "object"
+        ? (action.payload as Record<string, unknown>)
+        : {};
+
+    if (action.action === "set_algorithm" && typeof payload.algorithm === "string") {
+      const algo = payload.algorithm.toUpperCase();
       if (["FIFO", "SJF", "STCF", "RR", "MLFQ", "LDE"].includes(algo)) {
         stopTimer();
         update({ algorithm: algo as CpuAlgorithm, currentTick: 0, isPlaying: false });
+      }
+    } else if (action.action === "load_preset" && typeof payload.presetId === "string") {
+      const preset = CPU_PRESETS.find((p) => p.id === payload.presetId);
+      if (preset) {
+        stopTimer();
+        isPresetMenuOpen = false;
+        update({
+          algorithm: preset.algorithm,
+          workload: preset.workload,
+          rrQuantum: preset.rrQuantum ?? state.rrQuantum,
+          mlfqConfig: preset.mlfqConfig ?? state.mlfqConfig,
+          activePresetId: preset.id,
+          currentTick: 0,
+          isPlaying: false,
+          ldeStepIndex: 0
+        });
+      }
+    } else if (action.action === "set_quantum" && typeof payload.quantum === "number" && Number.isFinite(payload.quantum)) {
+      const q = Math.max(1, Math.round(payload.quantum));
+      stopTimer();
+      update({ rrQuantum: q, currentTick: 0, isPlaying: false });
+    } else if (action.action === "step_tick") {
+      const rawTicks =
+        typeof payload.ticks === "number" && Number.isFinite(payload.ticks)
+          ? Math.trunc(payload.ticks)
+          : 1;
+      stepByTicks(rawTicks);
+    } else if (action.action === "control_scheduler" && typeof payload.command === "string") {
+      if (payload.command === "step") {
+        const rawTicks =
+          typeof payload.ticks === "number" && Number.isFinite(payload.ticks)
+            ? Math.trunc(payload.ticks)
+            : 1;
+        stepByTicks(rawTicks);
+      } else if (payload.command === "play") {
+        if (state.algorithm === "LDE") {
+          update({ isPlaying: true });
+        } else {
+          const simResult = simulateSchedule(state.algorithm, state.workload, {
+            quantum: state.rrQuantum,
+            mlfqConfig: state.mlfqConfig
+          });
+          const maxTick = Math.max(0, simResult.timeline.length - 1);
+          if (state.currentTick >= maxTick) {
+            update({ isPlaying: true, currentTick: 0 });
+          } else {
+            update({ isPlaying: true });
+          }
+        }
+      } else if (payload.command === "pause") {
+        stopTimer();
+        update({ isPlaying: false });
+      } else if (payload.command === "reset") {
+        stopTimer();
+        update({ currentTick: 0, isPlaying: false });
       }
     } else if (action.action === "reset") {
       stopTimer();
@@ -568,6 +646,14 @@ export function createCpuLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
+    onNotification:
+      typeof ctx?.onNotification === "function"
+        ? (listener) => ctx.onNotification(listener)
+        : undefined,
+    loadCatalog:
+      ctx && typeof ctx.call === "function"
+        ? () => ctx.call<AiCatalogResponse>("ai-catalog")
+        : undefined,
     signal: viewSignal,
     ui: ctx?.ui
   });

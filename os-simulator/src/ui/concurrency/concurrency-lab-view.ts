@@ -20,7 +20,7 @@ import { renderCircularBuffer } from "./circular-buffer.js";
 import { openCustomScenarioModal } from "./custom-scenario-modal.js";
 import { renderRagGraph } from "./rag-graph.js";
 import { renderThreadInspector } from "./thread-inspector.js";
-import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
+import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction, AiCatalogResponse } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
 
@@ -192,8 +192,19 @@ export function createConcurrencyLabView(
   }
 
   function executeControlAction(action: ControlAction) {
-    if (action.action === "step_thread_instruction" && typeof (action.payload as Record<string, unknown>)?.threadId === "string") {
-      stepSpecificThread((action.payload as { threadId: string }).threadId);
+    const payload =
+      action.payload && typeof action.payload === "object"
+        ? (action.payload as Record<string, unknown>)
+        : {};
+
+    if (action.action === "load_preset" && typeof payload.presetId === "string") {
+      const preset = CONCURRENCY_PRESETS.find((p) => p.scenarioId === payload.presetId);
+      if (preset) {
+        isPresetDropdownOpen = false;
+        applyScenario(preset, preset.scenarioId);
+      }
+    } else if (action.action === "step_thread_instruction" && typeof payload.threadId === "string") {
+      stepSpecificThread(payload.threadId);
     } else if (action.action === "reset") {
       resetCurrentScenario();
     }
@@ -565,6 +576,14 @@ export function createConcurrencyLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
+    onNotification:
+      typeof ctx?.onNotification === "function"
+        ? (listener) => ctx.onNotification(listener)
+        : undefined,
+    loadCatalog:
+      ctx && typeof ctx.call === "function"
+        ? () => ctx.call<AiCatalogResponse>("ai-catalog")
+        : undefined,
     signal: viewSignal,
     ui: ctx?.ui
   });

@@ -370,6 +370,16 @@ export function createIcon(name: string, className = "size-4"): SVGSVGElement {
       svg.append(p1, p2, l);
       break;
     }
+    case "search": {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", "11");
+      c.setAttribute("cy", "11");
+      c.setAttribute("r", "8");
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", "m21 21-4.3-4.3");
+      svg.append(c, p);
+      break;
+    }
     default: {
       const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       c.setAttribute("cx", "12");

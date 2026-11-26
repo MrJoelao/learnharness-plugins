@@ -6,7 +6,10 @@ import type {
 import { getRandomGraphPlaceholder } from "./copilot-pill.js";
 import { openExerciseHistoryModal } from "./exercise-history-modal.js";
 import { createIcon } from "../icons.js";
-import type { SavedExercise, AiTurnRequest, AiTurnResponse } from "../../types/ai.js";
+import type { SavedExercise, AiTurnRequest, AiTurnResponse, AiCatalogResponse, AiModelConfig } from "../../types/ai.js";
+import type { ModelCatalogResponse, PluginDictationHandle } from "learnharness-plugin-api";
+
+type ModelCatalogEntry = ModelCatalogResponse["models"][number];
 
 declare const __LH_DEBUG_ANIMATIONS__: boolean | undefined;
 
@@ -36,6 +39,8 @@ export function isDebugAnimationsEnabled(): boolean {
 }
 
 export const COPILOT_DRAWER_WIDTH_STORAGE_KEY = "lh-os-copilot-width";
+export const COPILOT_MODEL_STORAGE_KEY = "lh-os-copilot-model";
+export const COPILOT_THINKING_STORAGE_KEY = "lh-os-copilot-thinking";
 export const COPILOT_DRAWER_DEFAULT_WIDTH = 400;
 export const COPILOT_DRAWER_MIN_WIDTH = 280;
 export const COPILOT_DRAWER_MAX_WIDTH = 720;
@@ -184,6 +189,14 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   let historyModalCloseFn: (() => void) | null = null;
   let isDestroyed = false;
   let isFullscreen = false;
+  const drawerAbortController = new AbortController();
+  const drawerSignal = drawerAbortController.signal;
+  let activeRequestId: string | null = null;
+  let activeStreamingMessage: CopilotMessage | null = null;
+  let isFinishingDictation = false;
+  let selectedModel: AiModelConfig | null = null;
+  let selectedThinkingLevel = "medium";
+  let dictationHandle: PluginDictationHandle | null = null;
   const activePlaceholder = getRandomGraphPlaceholder();
 
   let drawerWidth: number = (() => {
@@ -308,8 +321,18 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     closeTimeoutId = setTimeout(() => onDone(), 320 * animScale);
   }
 
+  let closeModelPopoverFn: ((restoreFocus?: boolean) => void) | null = null;
+  const closeModelPopover = (restoreFocus = false) => {
+    closeModelPopoverFn?.(restoreFocus);
+  };
+
   const globalKeyDownHandler = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
+      if (closeModelPopoverFn) {
+        e.preventDefault();
+        closeModelPopover(true);
+        return;
+      }
       if (isDictating) {
         stopPillDictation();
         return;
@@ -331,6 +354,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   function transitionTo(nextState: CopilotUiMode, carriedInput?: string) {
     if (nextState === currentState && !carriedInput) return;
+    closeModelPopover();
     if (nextState === "minimized" && isDictating) {
       stopPillDictation();
     }
@@ -347,7 +371,12 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   async function handleSendPrompt(promptText: string) {
     const trimmed = promptText.trim();
-    if (trimmed.length === 0 || isThinking) return;
+    if (trimmed.length === 0 || isThinking || isDestroyed) return;
+
+    const conversationHistory = messages.map((m) => ({
+      role: m.role,
+      text: m.text
+    }));
 
     const userMessage: CopilotMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -355,7 +384,18 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       text: trimmed,
       timestamp: new Date().toISOString()
     };
-    messages.push(userMessage);
+
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    activeRequestId = requestId;
+
+    const placeholderAssistantMessage: CopilotMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      role: "assistant",
+      text: "",
+      timestamp: new Date().toISOString()
+    };
+    activeStreamingMessage = placeholderAssistantMessage;
+    messages.push(userMessage, placeholderAssistantMessage);
 
     if (currentState === "pill" || currentState === "minimized") {
       transitionTo("sheet");
@@ -370,16 +410,21 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     renderComposerState();
 
     try {
-      const historyTurns = messages.map((m) => ({
-        role: m.role,
-        text: m.text
-      }));
-
       const turnRequest: AiTurnRequest = {
         mode: options.mode,
         userMessage: trimmed,
         stateSnapshot: options.getSimulatorSnapshot ? options.getSimulatorSnapshot() : {},
-        conversationHistory: historyTurns.slice(0, -1)
+        conversationHistory,
+        requestId,
+        ...(selectedModel
+          ? {
+              model: {
+                provider: selectedModel.provider,
+                id: selectedModel.id,
+                thinkingLevel: selectedThinkingLevel
+              }
+            }
+          : {})
       };
 
       let response: AiTurnResponse;
@@ -390,17 +435,16 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       }
       if (isDestroyed) return;
 
-      const assistantMessage: CopilotMessage = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        role: "assistant",
-        text: response.responseText,
-        timestamp: new Date().toISOString(),
-        generatedExercise: response.generatedExercise,
-        controlActions: response.controlActions,
-        toolCalls: response.rawToolCalls,
-        error: response.error
-      };
-      messages.push(assistantMessage);
+      activeRequestId = null;
+      activeStreamingMessage = null;
+
+      placeholderAssistantMessage.text = response.responseText;
+      placeholderAssistantMessage.timestamp = new Date().toISOString();
+      placeholderAssistantMessage.generatedExercise = response.generatedExercise;
+      placeholderAssistantMessage.controlActions = response.controlActions;
+      placeholderAssistantMessage.toolCalls = response.rawToolCalls;
+      placeholderAssistantMessage.error = response.error;
+
       if (messages.length >= 3 && !isFullscreen && currentState === "sheet") {
         setFullscreen(true);
       }
@@ -422,15 +466,12 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       options.onTurnResponse?.(response);
     } catch (err: unknown) {
       if (isDestroyed) return;
+      activeRequestId = null;
+      activeStreamingMessage = null;
       const errorMsg = err instanceof Error ? err.message : String(err);
-      const assistantMessage: CopilotMessage = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        role: "assistant",
-        text: `Si è verificato un errore durante la risposta dell'assistente: ${errorMsg}`,
-        timestamp: new Date().toISOString(),
-        error: errorMsg
-      };
-      messages.push(assistantMessage);
+      placeholderAssistantMessage.text = `Si è verificato un errore durante la risposta dell'assistente: ${errorMsg}`;
+      placeholderAssistantMessage.timestamp = new Date().toISOString();
+      placeholderAssistantMessage.error = errorMsg;
       if (messages.length >= 3 && !isFullscreen && currentState === "sheet") {
         setFullscreen(true);
       }
@@ -462,7 +503,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         options.onHistoryChange?.(exercises);
       },
       targetContainer: options.targetContainer,
-      signal: options.signal,
+      signal: drawerSignal,
       ui: options.ui
     });
   }
@@ -722,14 +763,18 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   composerInputEl.placeholder = activePlaceholder;
   composerInputEl.rows = 1;
 
+  const MAX_COMPOSER_HEIGHT = 160;
   const autoGrow = () => {
     if (!composerInputEl.style) return;
     if (currentState === "pill") {
       composerInputEl.style.height = "40px";
+      composerInputEl.style.overflowY = "hidden";
       return;
     }
     composerInputEl.style.height = "auto";
-    composerInputEl.style.height = `${composerInputEl.scrollHeight}px`;
+    const scrollHeight = composerInputEl.scrollHeight;
+    composerInputEl.style.height = `${scrollHeight}px`;
+    composerInputEl.style.overflowY = scrollHeight > MAX_COMPOSER_HEIGHT ? "auto" : "hidden";
   };
 
   const handlePillInteraction = () => {
@@ -748,13 +793,29 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     autoGrow();
   });
 
-  const submitComposerText = () => {
+  const submitComposerText = async () => {
+    if (isFinishingDictation || isThinking || isDestroyed) return;
+    if (dictationHandle) {
+      isFinishingDictation = true;
+      try {
+        await dictationHandle.finish();
+      } catch {
+        return;
+      } finally {
+        isFinishingDictation = false;
+      }
+      if (isDestroyed) return;
+      if (!hostSupportsStateChange && isDictating) {
+        applyDictationUiState(false);
+      }
+    }
+
     const text = composerInputEl.value;
     if (currentState === "pill") {
       const trimmed = text.trim();
       if (trimmed.length > 0) {
         composerInputEl.value = "";
-        handleSendPrompt(trimmed);
+        void handleSendPrompt(trimmed);
       } else {
         transitionTo("sheet");
       }
@@ -762,13 +823,13 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
     composerInputEl.value = "";
     autoGrow();
-    handleSendPrompt(text);
+    void handleSendPrompt(text);
   };
 
   composerInputEl.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      submitComposerText();
+      void submitComposerText();
     } else if (e.key === "Escape" && currentState === "pill") {
       e.preventDefault();
       if (isDictating) {
@@ -843,7 +904,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   composerSendBtn.title = "Invia [Invio]";
   composerSendBtn.appendChild(createIcon("corner-down-left", "size-4"));
   composerSendBtn.addEventListener("click", () => {
-    submitComposerText();
+    void submitComposerText();
   });
 
   composerActions.append(btnPillMic, btnComposerDock, btnPillHide, composerSendBtn);
@@ -863,6 +924,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   dictateLabelEl.textContent = "Dictate";
   btnDictate.append(createIcon("mic", "size-3.5"), dictateLabelEl);
   let isDictating = false;
+  let hostSupportsStateChange = false;
   let dictationIntervalId: ReturnType<typeof setInterval> | null = null;
   let dictationStream: MediaStream | null = null;
   let dictationAudioCtx: AudioContext | null = null;
@@ -919,7 +981,80 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
   };
 
+  const computeFallbackDictationLevel = (tick: number): number => {
+    const wave = 0.5 + 0.5 * Math.sin(tick * 0.42);
+    const ripple = 0.5 + 0.5 * Math.cos(tick * 0.23);
+    return 0.08 + 0.24 * wave * ripple;
+  };
+
+  const stopHostDictationMeter = () => {
+    if (dictationIntervalId) {
+      clearInterval(dictationIntervalId);
+      dictationIntervalId = null;
+    }
+    dictationLevels = new Array(PILL_DICTATION_BAR_COUNT).fill(0);
+    renderDictationBars();
+  };
+
+  const applyDictationUiState = (active: boolean, error?: string | null) => {
+    isDictating = active;
+    if (active) {
+      surfaceEl.classList.add("is-dictating");
+      btnDictate.classList.add("is-active");
+    } else {
+      surfaceEl.classList.remove("is-dictating");
+      btnDictate.classList.remove("is-active");
+    }
+    dictationStripEl.setAttribute("aria-hidden", active ? "false" : "true");
+    btnPillMic.setAttribute("aria-pressed", active ? "true" : "false");
+    btnDictate.setAttribute("aria-pressed", active ? "true" : "false");
+
+    if (error) {
+      btnPillMic.title = error;
+      btnPillMic.setAttribute("aria-label", error);
+      btnDictate.title = error;
+      btnDictate.setAttribute("aria-label", error);
+    } else {
+      btnPillMic.title = active ? "Ferma dettatura [Esc]" : "Dettatura vocale";
+      btnPillMic.setAttribute("aria-label", "Dettatura vocale");
+      btnDictate.title = "Dettatura vocale";
+      btnDictate.setAttribute("aria-label", "Dettatura vocale");
+    }
+
+    if (active) {
+      if (!dictationIntervalId) {
+        dictationPhaseTick = 0;
+        dictationLevels = new Array(PILL_DICTATION_BAR_COUNT).fill(0);
+        renderDictationBars();
+        dictationIntervalId = setInterval(() => {
+          if (!isDictating || isDestroyed || !dictationHandle) return;
+          dictationPhaseTick++;
+          let level: number;
+          if (typeof dictationHandle.getLevel === "function") {
+            const rawLevel = dictationHandle.getLevel();
+            level = Number.isFinite(rawLevel) ? Math.max(0, Math.min(1, rawLevel)) : 0;
+          } else {
+            level = computeFallbackDictationLevel(dictationPhaseTick);
+          }
+          dictationLevels = [...dictationLevels.slice(1), level];
+          renderDictationBars();
+        }, PILL_DICTATION_TICK_MS);
+      }
+    } else {
+      stopHostDictationMeter();
+    }
+  };
+
   const stopPillDictation = () => {
+    if (dictationHandle) {
+      dictationHandle.cancel();
+      if (!hostSupportsStateChange) {
+        applyDictationUiState(false);
+      } else {
+        stopHostDictationMeter();
+      }
+      return;
+    }
     dictationGeneration++;
     if (!isDictating) return;
     isDictating = false;
@@ -935,6 +1070,10 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   };
 
   const startPillDictation = () => {
+    if (dictationHandle) {
+      dictationHandle.toggle();
+      return;
+    }
     if (isDictating || isDestroyed || currentState === "minimized") return;
     isDictating = true;
     const gen = ++dictationGeneration;
@@ -963,9 +1102,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
         level = rmsToMeter(rms);
       } else {
         // Organic idle/fallback wave while mic initializes or when unavailable
-        const wave = 0.5 + 0.5 * Math.sin(dictationPhaseTick * 0.42);
-        const ripple = 0.5 + 0.5 * Math.cos(dictationPhaseTick * 0.23);
-        level = 0.08 + 0.24 * wave * ripple;
+        level = computeFallbackDictationLevel(dictationPhaseTick);
       }
       dictationLevels = [...dictationLevels.slice(1), level];
       renderDictationBars();
@@ -1000,8 +1137,47 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
   };
 
+  if (options.ui?.mountDictation) {
+    const dictationHostContainer = document.createElement("div");
+    if (dictationHostContainer.style) {
+      dictationHostContainer.style.display = "none";
+    }
+    dictationHostContainer.setAttribute("aria-hidden", "true");
+    rootEl.appendChild(dictationHostContainer);
+
+    dictationHandle = options.ui.mountDictation(
+      dictationHostContainer,
+      {
+        onTranscript: (text: string) => {
+          if (isDestroyed || typeof text !== "string" || text.length === 0) return;
+          const currentVal = composerInputEl.value;
+          if (currentVal.length > 0 && !/\s$/.test(currentVal) && !/^\s/.test(text)) {
+            composerInputEl.value = `${currentVal} ${text}`;
+          } else {
+            composerInputEl.value = `${currentVal}${text}`;
+          }
+          autoGrow();
+          renderComposerState();
+        },
+        onStateChange: (state) => {
+          if (isDestroyed) return;
+          hostSupportsStateChange = true;
+          applyDictationUiState(state.active, state.error);
+        }
+      },
+      { signal: drawerSignal }
+    );
+  }
+
   btnPillMic.addEventListener("click", (e) => {
     e?.stopPropagation?.();
+    if (dictationHandle) {
+      dictationHandle.toggle();
+      if (!hostSupportsStateChange) {
+        applyDictationUiState(!isDictating);
+      }
+      return;
+    }
     if (isDictating) {
       stopPillDictation();
     } else {
@@ -1010,6 +1186,13 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
   });
 
   btnDictate.addEventListener("click", () => {
+    if (dictationHandle) {
+      dictationHandle.toggle();
+      if (!hostSupportsStateChange) {
+        applyDictationUiState(!isDictating);
+      }
+      return;
+    }
     if (currentState === "pill" || currentState === "sheet") {
       if (isDictating) {
         stopPillDictation();
@@ -1029,42 +1212,500 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   const COPILOT_MODELS = ["gemini-4-hydrogen", "gpt-6-luna"] as const;
   let selectedModelIdx = 0;
+  let catalogModels: ModelCatalogEntry[] = [];
   const initialModel = COPILOT_MODELS[selectedModelIdx] ?? "gemini-4-hydrogen";
   const btnModel = document.createElement("button");
   btnModel.type = "button";
   btnModel.className = "copilot-composer-chip copilot-btn-model lh-no-drag";
   btnModel.setAttribute("aria-label", "Seleziona modello");
   btnModel.setAttribute("data-model", initialModel);
+  if (btnModel.dataset) btnModel.dataset.model = initialModel;
   btnModel.title = "Cambia modello";
   const modelLabelEl = document.createElement("span");
   modelLabelEl.className = "copilot-chip-label";
   modelLabelEl.textContent = initialModel;
   btnModel.append(modelLabelEl, createIcon("chevron-down", "size-3"));
-  btnModel.addEventListener("click", () => {
-    selectedModelIdx = (selectedModelIdx + 1) % COPILOT_MODELS.length;
-    const nextModel = COPILOT_MODELS[selectedModelIdx] ?? "gemini-4-hydrogen";
-    modelLabelEl.textContent = nextModel;
-    btnModel.setAttribute("data-model", nextModel);
-  });
 
   const COPILOT_THINKING_LEVELS = ["low", "medium", "high"] as const;
   let selectedThinkingIdx = 1;
-  const initialThinking = COPILOT_THINKING_LEVELS[selectedThinkingIdx] ?? "medium";
+  selectedThinkingLevel = COPILOT_THINKING_LEVELS[selectedThinkingIdx] ?? "medium";
   const btnThinking = document.createElement("button");
   btnThinking.type = "button";
   btnThinking.className = "copilot-composer-chip copilot-btn-thinking lh-no-drag";
   btnThinking.setAttribute("aria-label", "Livello di ragionamento");
-  btnThinking.setAttribute("data-thinking", initialThinking);
+  btnThinking.setAttribute("data-thinking", selectedThinkingLevel);
+  if (btnThinking.dataset) btnThinking.dataset.thinking = selectedThinkingLevel;
   btnThinking.title = "Livello di ragionamento";
   const thinkingLabelEl = document.createElement("span");
   thinkingLabelEl.className = "copilot-chip-label";
-  thinkingLabelEl.textContent = initialThinking;
+  thinkingLabelEl.textContent = selectedThinkingLevel;
   btnThinking.append(thinkingLabelEl, createIcon("chevron-down", "size-3"));
+
+  const getSupportedThinkingLevels = (): string[] => {
+    if (catalogModels.length > 0 && selectedModel) {
+      const entry = catalogModels.find(
+        (m) => m.provider === selectedModel!.provider && m.id === selectedModel!.id
+      );
+      if (entry && Array.isArray(entry.supportedLevels) && entry.supportedLevels.length > 0) {
+        return [...entry.supportedLevels];
+      }
+      return ["off"];
+    }
+    return [...COPILOT_THINKING_LEVELS];
+  };
+
+  const syncThinkingUi = (level: string) => {
+    selectedThinkingLevel = level;
+    thinkingLabelEl.textContent = level;
+    btnThinking.setAttribute("data-thinking", level);
+    if (btnThinking.dataset) btnThinking.dataset.thinking = level;
+  };
+
+  const persistThinkingLevel = (level: string) => {
+    try {
+      const storage = getSafeLocalStorage();
+      storage?.setItem(COPILOT_THINKING_STORAGE_KEY, level);
+    } catch {
+    }
+  };
+
+  const clampThinkingLevel = (preferred?: string) => {
+    const supported = getSupportedThinkingLevels();
+    const candidate = preferred ?? selectedThinkingLevel;
+    if (supported.includes(candidate)) {
+      syncThinkingUi(candidate);
+      return;
+    }
+    if (supported.includes("medium")) {
+      syncThinkingUi("medium");
+      return;
+    }
+    syncThinkingUi(supported[0] ?? "off");
+  };
+
+  const applyCatalogModel = (entry: ModelCatalogEntry, persist = false) => {
+    selectedModel = { provider: entry.provider, id: entry.id };
+    modelLabelEl.textContent = entry.id;
+    btnModel.title = entry.name || entry.id;
+    btnModel.setAttribute("data-model", entry.id);
+    if (btnModel.dataset) btnModel.dataset.model = entry.id;
+    if (persist) {
+      try {
+        const storage = getSafeLocalStorage();
+        storage?.setItem(
+          COPILOT_MODEL_STORAGE_KEY,
+          JSON.stringify({ provider: entry.provider, id: entry.id })
+        );
+      } catch {
+      }
+    }
+    clampThinkingLevel();
+  };
+
+  if (options.loadCatalog) {
+    options
+      .loadCatalog()
+      .then((catalog: AiCatalogResponse) => {
+        if (isDestroyed || !catalog) return;
+        const providers = Array.isArray(catalog.providers) ? catalog.providers : [];
+        const activeProviders = new Set(providers.filter((p) => p.keyPresent).map((p) => p.id));
+        const availableModels =
+          providers.length > 0
+            ? catalog.models.filter((m) => activeProviders.has(m.provider))
+            : [...catalog.models];
+        catalogModels = availableModels;
+
+        if (availableModels.length === 0) {
+          return;
+        }
+
+        let storedModel: { provider?: string; id?: string } | null = null;
+        let storedThinking: string | null = null;
+        try {
+          const storage = getSafeLocalStorage();
+          const rawModel = storage?.getItem(COPILOT_MODEL_STORAGE_KEY);
+          if (rawModel) {
+            storedModel = JSON.parse(rawModel) as { provider?: string; id?: string };
+          }
+          storedThinking = storage?.getItem(COPILOT_THINKING_STORAGE_KEY) ?? null;
+        } catch {
+        }
+
+        const matchedStored =
+          storedModel && storedModel.provider && storedModel.id
+            ? availableModels.find((m) => m.provider === storedModel!.provider && m.id === storedModel!.id)
+            : undefined;
+        const defaultSpec = catalog.defaultModel ?? catalog.defaults?.model ?? null;
+        const matchedDefault = defaultSpec
+          ? availableModels.find((m) => m.provider === defaultSpec.provider && m.id === defaultSpec.id)
+          : undefined;
+
+        const chosenModel = matchedStored ?? matchedDefault ?? availableModels[0]!;
+        applyCatalogModel(chosenModel, false);
+
+        const preferredThinking =
+          storedThinking ??
+          catalog.defaultModel?.thinkingLevel ??
+          catalog.defaults?.thinkingLevel ??
+          "medium";
+        clampThinkingLevel(preferredThinking);
+      })
+      .catch(() => {
+      });
+  }
+
+  const formatProviderName = (providerId: string): string => {
+    const normalized = providerId.trim().toLowerCase();
+    const known: Record<string, string> = {
+      openai: "OpenAI",
+      anthropic: "Anthropic",
+      google: "Google",
+      "google-antigravity": "Google Antigravity",
+      antigravity: "Antigravity",
+      "openai-codex": "OpenAI Codex",
+      openrouter: "OpenRouter",
+      xai: "xAI",
+      groq: "Groq",
+      mistral: "Mistral",
+      deepseek: "DeepSeek",
+      ollama: "Ollama"
+    };
+    if (known[normalized]) return known[normalized]!;
+    if (!providerId) return "Altro";
+    return providerId
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
+  const openModelPopover = () => {
+    if (closeModelPopoverFn) {
+      closeModelPopover(false);
+      return;
+    }
+
+    const popoverEl = document.createElement("div");
+    popoverEl.className = "copilot-model-popover lh-no-drag";
+    popoverEl.setAttribute("role", "dialog");
+    popoverEl.setAttribute("aria-label", "Seleziona modello");
+
+    const searchRow = document.createElement("div");
+    searchRow.className = "copilot-model-search";
+
+    const searchIcon = createIcon("search", "size-3.5 copilot-model-search-icon");
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.className = "copilot-model-search-input font-sans";
+    searchInput.placeholder = "Cerca modello o provider...";
+    searchInput.setAttribute("aria-label", "Cerca modello");
+
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "copilot-model-search-clear";
+    clearBtn.title = "Cancella ricerca";
+    clearBtn.setAttribute("aria-label", "Cancella ricerca");
+    clearBtn.appendChild(createIcon("x", "size-3"));
+    if (clearBtn.style) {
+      clearBtn.style.display = "none";
+    }
+
+    searchRow.append(searchIcon, searchInput, clearBtn);
+
+    const listEl = document.createElement("div");
+    listEl.className = "copilot-model-list";
+    listEl.setAttribute("role", "listbox");
+
+    popoverEl.append(searchRow, listEl);
+
+    let highlightedIdx = -1;
+    let visibleItems: Array<{ entry: ModelCatalogEntry; el: HTMLButtonElement }> = [];
+
+    const updateHighlight = (nextIdx: number) => {
+      if (visibleItems.length === 0) {
+        highlightedIdx = -1;
+        return;
+      }
+      const clamped = ((nextIdx % visibleItems.length) + visibleItems.length) % visibleItems.length;
+      highlightedIdx = clamped;
+      visibleItems.forEach((item, idx) => {
+        if (idx === clamped) {
+          item.el.classList.add("is-highlighted");
+        } else {
+          item.el.classList.remove("is-highlighted");
+        }
+      });
+      const activeEl = visibleItems[clamped]?.el as (HTMLButtonElement & { scrollIntoView?: (opts?: ScrollIntoViewOptions) => void }) | undefined;
+      if (activeEl && typeof activeEl.scrollIntoView === "function") {
+        activeEl.scrollIntoView({ block: "nearest" });
+      }
+    };
+
+    const renderList = (query: string) => {
+      listEl.innerHTML = "";
+      visibleItems = [];
+      highlightedIdx = -1;
+
+      const normalizedQuery = query.trim().toLowerCase();
+      if (clearBtn.style) {
+        clearBtn.style.display = normalizedQuery.length > 0 ? "inline-flex" : "none";
+      }
+
+      const grouped = new Map<string, ModelCatalogEntry[]>();
+      for (const model of catalogModels) {
+        const providerLabel = formatProviderName(model.provider);
+        const matchesQuery =
+          normalizedQuery.length === 0 ||
+          model.id.toLowerCase().includes(normalizedQuery) ||
+          (model.name && model.name.toLowerCase().includes(normalizedQuery)) ||
+          model.provider.toLowerCase().includes(normalizedQuery) ||
+          providerLabel.toLowerCase().includes(normalizedQuery);
+        if (!matchesQuery) continue;
+
+        const key = model.provider;
+        const bucket = grouped.get(key);
+        if (bucket) {
+          bucket.push(model);
+        } else {
+          grouped.set(key, [model]);
+        }
+      }
+
+      const sortedProviders = Array.from(grouped.keys()).sort((a, b) =>
+        formatProviderName(a).localeCompare(formatProviderName(b), "it", { sensitivity: "base" })
+      );
+
+      if (sortedProviders.length === 0) {
+        const emptyEl = document.createElement("div");
+        emptyEl.className = "copilot-model-empty text-muted-foreground";
+        emptyEl.textContent = "Nessun modello trovato";
+        listEl.appendChild(emptyEl);
+        return;
+      }
+
+      for (const providerKey of sortedProviders) {
+        const models = grouped.get(providerKey) ?? [];
+        models.sort((a, b) =>
+          (a.name || a.id).localeCompare(b.name || b.id, "it", { sensitivity: "base" })
+        );
+
+        const groupEl = document.createElement("div");
+        groupEl.className = "copilot-model-group";
+
+        const headerEl = document.createElement("div");
+        headerEl.className = "copilot-model-group-header";
+        headerEl.textContent = formatProviderName(providerKey);
+        groupEl.appendChild(headerEl);
+
+        for (const m of models) {
+          const isSelected =
+            selectedModel?.provider === m.provider && selectedModel?.id === m.id;
+          const itemBtn = document.createElement("button");
+          itemBtn.type = "button";
+          itemBtn.className = isSelected
+            ? "copilot-model-item is-selected"
+            : "copilot-model-item";
+          itemBtn.setAttribute("role", "option");
+          itemBtn.setAttribute("aria-selected", isSelected ? "true" : "false");
+          itemBtn.setAttribute("data-provider", m.provider);
+          itemBtn.setAttribute("data-model-id", m.id);
+          itemBtn.title = m.id;
+
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "copilot-model-item-label";
+          nameSpan.textContent = m.name || m.id;
+          itemBtn.appendChild(nameSpan);
+
+          if (isSelected) {
+            itemBtn.appendChild(createIcon("check", "size-3.5 copilot-model-item-check"));
+          }
+
+          itemBtn.addEventListener("click", () => {
+            applyCatalogModel(m, true);
+            closeModelPopover(true);
+          });
+
+          const itemIdx = visibleItems.length;
+          itemBtn.addEventListener("mouseenter", () => {
+            updateHighlight(itemIdx);
+          });
+
+          visibleItems.push({ entry: m, el: itemBtn });
+          groupEl.appendChild(itemBtn);
+        }
+
+        listEl.appendChild(groupEl);
+      }
+
+      const selectedIdx = visibleItems.findIndex(
+        (item) => selectedModel?.provider === item.entry.provider && selectedModel?.id === item.entry.id
+      );
+      if (selectedIdx >= 0) {
+        updateHighlight(selectedIdx);
+      } else if (visibleItems.length > 0) {
+        updateHighlight(0);
+      }
+    };
+
+    renderList("");
+
+    searchInput.addEventListener("input", () => {
+      renderList(searchInput.value);
+    });
+
+    searchInput.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        updateHighlight(highlightedIdx + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        updateHighlight(highlightedIdx - 1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const chosen = visibleItems[highlightedIdx]?.entry ?? visibleItems[0]?.entry;
+        if (chosen) {
+          applyCatalogModel(chosen, true);
+          closeModelPopover(true);
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation?.();
+        closeModelPopover(true);
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      renderList("");
+      searchInput.focus();
+    });
+
+    const onOutsidePointerDown = (e: Event) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      const inPopover =
+        typeof popoverEl.contains === "function" ? popoverEl.contains(target) : target === (popoverEl as unknown as Node);
+      const inBtn =
+        typeof btnModel.contains === "function" ? btnModel.contains(target) : target === (btnModel as unknown as Node);
+      if (!inPopover && !inBtn) {
+        closeModelPopover(false);
+      }
+    };
+
+    const doc = typeof document !== "undefined" ? document : null;
+    if (doc && typeof doc.addEventListener === "function") {
+      doc.addEventListener("pointerdown", onOutsidePointerDown);
+    }
+
+    surfaceEl.appendChild(popoverEl);
+    btnModel.setAttribute("aria-expanded", "true");
+    btnModel.classList.add("is-active");
+
+    if (popoverEl.style) {
+      const surfaceRect = surfaceEl.getBoundingClientRect?.();
+      const btnRect = btnModel.getBoundingClientRect?.();
+      if (surfaceRect && btnRect && surfaceRect.width > 0 && btnRect.width > 0) {
+        const popoverWidth = Math.min(320, Math.max(220, surfaceRect.width - 24));
+        const maxLeft = Math.max(12, surfaceRect.width - popoverWidth - 12);
+        const targetLeft = Math.max(12, Math.min(btnRect.left - surfaceRect.left, maxLeft));
+        const targetBottom = Math.max(40, surfaceRect.bottom - btnRect.top + 6);
+        popoverEl.style.width = `${popoverWidth}px`;
+        popoverEl.style.left = `${targetLeft}px`;
+        popoverEl.style.bottom = `${targetBottom}px`;
+      }
+    }
+
+    closeModelPopoverFn = (restoreFocus = false) => {
+      if (doc && typeof doc.removeEventListener === "function") {
+        doc.removeEventListener("pointerdown", onOutsidePointerDown);
+      }
+      popoverEl.remove();
+      btnModel.setAttribute("aria-expanded", "false");
+      btnModel.classList.remove("is-active");
+      closeModelPopoverFn = null;
+      if (restoreFocus && !isDestroyed) {
+        btnModel.focus();
+      }
+    };
+
+    searchInput.focus();
+  };
+
+  btnModel.setAttribute("aria-haspopup", "listbox");
+  btnModel.setAttribute("aria-expanded", "false");
+
+  btnModel.addEventListener("click", () => {
+    if (catalogModels.length > 0) {
+      openModelPopover();
+      return;
+    }
+
+    if (options.ui?.openMenu) {
+      const items = COPILOT_MODELS.map((m, idx) => ({
+        key: m,
+        label: idx === selectedModelIdx ? `✓ ${m}` : m,
+        onSelect: () => {
+          selectedModelIdx = idx;
+          modelLabelEl.textContent = m;
+          btnModel.setAttribute("data-model", m);
+          if (btnModel.dataset) btnModel.dataset.model = m;
+        }
+      }));
+
+      options.ui.openMenu(
+        btnModel,
+        {
+          items,
+          label: "Modello",
+          preferredSide: "up"
+        },
+        { signal: drawerSignal }
+      );
+      return;
+    }
+
+    selectedModelIdx = (selectedModelIdx + 1) % COPILOT_MODELS.length;
+    const nextModel = COPILOT_MODELS[selectedModelIdx] ?? "gemini-4-hydrogen";
+    modelLabelEl.textContent = nextModel;
+    btnModel.setAttribute("data-model", nextModel);
+    if (btnModel.dataset) btnModel.dataset.model = nextModel;
+  });
+
   btnThinking.addEventListener("click", () => {
+    closeModelPopover();
+    const levels = getSupportedThinkingLevels();
+    if (options.ui?.openMenu) {
+      const items = levels.map((lvl) => ({
+        key: lvl,
+        label: lvl === selectedThinkingLevel ? `✓ ${lvl}` : lvl,
+        onSelect: () => {
+          syncThinkingUi(lvl);
+          persistThinkingLevel(lvl);
+        }
+      }));
+      options.ui.openMenu(
+        btnThinking,
+        {
+          items,
+          label: "Livello di ragionamento",
+          preferredSide: "up"
+        },
+        { signal: drawerSignal }
+      );
+      return;
+    }
+
+    if (catalogModels.length > 0) {
+      const curIdx = levels.indexOf(selectedThinkingLevel);
+      const nextLevel = levels[(curIdx + 1) % levels.length] ?? "off";
+      syncThinkingUi(nextLevel);
+      persistThinkingLevel(nextLevel);
+      return;
+    }
+
     selectedThinkingIdx = (selectedThinkingIdx + 1) % COPILOT_THINKING_LEVELS.length;
     const nextLevel = COPILOT_THINKING_LEVELS[selectedThinkingIdx] ?? "medium";
-    thinkingLabelEl.textContent = nextLevel;
-    btnThinking.setAttribute("data-thinking", nextLevel);
+    syncThinkingUi(nextLevel);
   });
 
   composerFooter.append(btnDictate, btnModel, btnThinking);
@@ -1332,6 +1973,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
 
     for (const msg of messages) {
+      if (msg === activeStreamingMessage && msg.text.length === 0) {
+        continue;
+      }
       const msgRow = document.createElement("div");
       msgRow.className = `copilot-message-row copilot-message-${msg.role}`;
 
@@ -1402,7 +2046,7 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
       chatBodyEl.appendChild(msgRow);
     }
 
-    if (isThinking) {
+    if (isThinking && (!activeStreamingMessage || activeStreamingMessage.text.length === 0)) {
       const thinkingRow = document.createElement("div");
       thinkingRow.className = "copilot-message-row copilot-message-assistant";
 
@@ -1439,11 +2083,36 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
     }
   }
 
+  let unsubscribeNotification: (() => void) | null = null;
+  if (options.onNotification) {
+    unsubscribeNotification = options.onNotification((event) => {
+      if (event.topic !== "ai-stream" || isDestroyed) return;
+      const data = event.data as { requestId?: unknown; type?: unknown; delta?: unknown } | null | undefined;
+      if (!data || !activeRequestId || data.requestId !== activeRequestId) return;
+      if (data.type === "text_delta" && typeof data.delta === "string" && activeStreamingMessage) {
+        activeStreamingMessage.text += data.delta;
+        renderChatBody();
+      }
+    });
+  }
+
   render();
 
   const destroy = () => {
     isDestroyed = true;
+    activeRequestId = null;
+    activeStreamingMessage = null;
+    unsubscribeNotification?.();
+    unsubscribeNotification = null;
+    if (dictationHandle) {
+      dictationHandle.cancel();
+      dictationHandle.dispose();
+      dictationHandle = null;
+    }
+    stopHostDictationMeter();
     stopPillDictation();
+    closeModelPopover();
+    drawerAbortController.abort();
     stopDragging();
     cancelCloseAnimation?.();
     cancelMorphAnimation?.();
@@ -1477,6 +2146,9 @@ export function createCopilotDrawer(options: CopilotDrawerOptions): CopilotDrawe
 
   if (options.signal) {
     options.signal.addEventListener("abort", destroy, { once: true });
+    if (options.signal.aborted) {
+      destroy();
+    }
   }
 
   return {

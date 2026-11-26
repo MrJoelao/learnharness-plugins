@@ -753,6 +753,17 @@ test("CopilotDrawer: smooth morph animation between pill and sheet with carried 
     assert.equal(container.querySelector(".copilot-composer-input"), composerInput, "Textarea must be persistent");
     assert.equal(composerInput.value, "Cos'è la paginazione?\nSeconda riga");
     assert.equal(composerInput.style.height, "88px", "autoGrow runs synchronously on pill -> sheet");
+    assert.equal(composerInput.style.overflowY, "hidden", "No scrollbar when content fits within max-height");
+
+    // Exceeding max-height (160px) enables vertical scrolling
+    composerInput.scrollHeight = 200;
+    (composerInput as unknown as MockDOMElement).dispatchEvent({ type: "input" });
+    assert.equal(composerInput.style.overflowY, "auto", "Enables vertical scrollbar when exceeding max-height");
+
+    // Shrinking back hides the scrollbar again
+    composerInput.scrollHeight = 40;
+    (composerInput as unknown as MockDOMElement).dispatchEvent({ type: "input" });
+    assert.equal(composerInput.style.overflowY, "hidden", "Hides scrollbar when shrinking back to single line");
 
     // User edits in composer
     composerInput.value = "Spiega il working set in dettaglio\nCon esempio";

@@ -29,7 +29,7 @@ import { openCustomInputModal } from "./custom-input-modal.js";
 import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
 import { ensureAbortSignal, openToolbarMenu, showErrorBanner } from "../toolbar-helpers.js";
-import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
+import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction, AiCatalogResponse } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
 
@@ -238,8 +238,79 @@ export function createMemoryLabView(
   }
 
   function executeControlAction(action: ControlAction) {
-    if (action.action === "set_subsystem" && typeof (action.payload as Record<string, unknown>)?.subsystem === "string") {
-      handleSubsystemChange((action.payload as { subsystem: MemoryLabSubsystem }).subsystem);
+    const payload =
+      action.payload && typeof action.payload === "object"
+        ? (action.payload as Record<string, unknown>)
+        : {};
+
+    if (action.action === "set_subsystem" && typeof payload.subsystem === "string") {
+      const normalized =
+        payload.subsystem === "two-level-paging"
+          ? "multi-level"
+          : payload.subsystem === "swapping"
+          ? "replacement"
+          : payload.subsystem;
+      if (["segmentation", "linear-paging", "multi-level", "tlb", "replacement"].includes(normalized)) {
+        handleSubsystemChange(normalized as MemoryLabSubsystem);
+      }
+    } else if (action.action === "load_preset" && typeof payload.presetId === "string") {
+      loadPreset(payload.presetId);
+    } else if (action.action === "set_va") {
+      const rawVa = payload.va !== undefined ? payload.va : payload.virtualAddress;
+      if (typeof rawVa === "number" && Number.isFinite(rawVa) && rawVa >= 0) {
+        const va = Math.floor(rawVa);
+        update({ currentVa: va, vaInputString: String(va) });
+      } else if (typeof rawVa === "string") {
+        const parsed = parseAddressInput(rawVa);
+        if (parsed.success && parsed.data !== undefined) {
+          update({ currentVa: parsed.data, vaInputString: String(parsed.data) });
+        }
+      }
+    } else if (action.action === "step_trace") {
+      const traceLen =
+        state.subsystem === "replacement"
+          ? state.replacementConfig.referenceString.length
+          : state.trace.length;
+      const maxIdx = Math.max(0, traceLen - 1);
+      const rawSteps =
+        typeof payload.steps === "number" && Number.isFinite(payload.steps)
+          ? Math.trunc(payload.steps)
+          : 1;
+      const nextIdx = Math.max(0, Math.min(maxIdx, state.currentTraceIndex + rawSteps));
+      if (state.subsystem === "replacement") {
+        update({ currentTraceIndex: nextIdx });
+      } else {
+        const nextVa = state.trace[nextIdx] ?? state.currentVa;
+        update({ currentTraceIndex: nextIdx, currentVa: nextVa, vaInputString: String(nextVa) });
+      }
+    } else if (action.action === "execute_translation") {
+      const rawVa = payload.virtualAddress !== undefined ? payload.virtualAddress : payload.va;
+      let va: number | undefined;
+      if (typeof rawVa === "number" && Number.isInteger(rawVa) && rawVa >= 0) {
+        va = rawVa;
+      } else if (typeof rawVa === "string") {
+        const parsed = parseAddressInput(rawVa);
+        if (parsed.success && parsed.data !== undefined) {
+          va = parsed.data;
+        }
+      }
+      if (va !== undefined) {
+        const updates: Partial<MemoryLabState> = { currentVa: va, vaInputString: String(va) };
+        if (typeof payload.asid === "number" && Number.isInteger(payload.asid) && payload.asid >= 0) {
+          updates.tlbConfig = {
+            ...state.tlbConfig,
+            ...({ asid: payload.asid } as Partial<TlbConfig>)
+          };
+        }
+        update(updates);
+      }
+    } else if (action.action === "reset") {
+      if (state.subsystem === "replacement") {
+        update({ currentTraceIndex: 0 });
+      } else {
+        const firstVa = state.trace[0] ?? state.currentVa;
+        update({ currentTraceIndex: 0, currentVa: firstVa, vaInputString: String(firstVa) });
+      }
     }
   }
 
@@ -304,7 +375,8 @@ export function createMemoryLabView(
       case "tlb": {
         const pagingCfg = state.linearPagingConfig;
         const tlbCfg = state.tlbConfig;
-        const res = translateWithTlb(va, 1, tlbCfg, pagingCfg, state.currentTraceIndex + 1);
+        const activeAsid = (tlbCfg as TlbConfig & { asid?: number }).asid ?? 1;
+        const res = translateWithTlb(va, activeAsid, tlbCfg, pagingCfg, state.currentTraceIndex + 1);
         const offsetBits = Math.round(Math.log2(pagingCfg.pageSize));
         const vpnBits = pagingCfg.addressSpaceBits - offsetBits;
         const vpn = res.extractedComponents.vpn ?? Math.floor(va / pagingCfg.pageSize);
@@ -697,6 +769,14 @@ export function createMemoryLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
+    onNotification:
+      typeof ctx?.onNotification === "function"
+        ? (listener) => ctx.onNotification(listener)
+        : undefined,
+    loadCatalog:
+      ctx && typeof ctx.call === "function"
+        ? () => ctx.call<AiCatalogResponse>("ai-catalog")
+        : undefined,
     signal: viewSignal,
     ui: ctx?.ui
   });

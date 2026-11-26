@@ -1,3 +1,4 @@
+import type { ModelCatalogResponse } from "learnharness-plugin-api";
 import type { BoundaryParser } from "./common.js";
 
 export type LabMode = "memory-lab" | "cpu-lab" | "concurrency-lab";
@@ -23,12 +24,17 @@ export interface AiModelConfig {
   thinkingLevel?: string;
 }
 
+export interface AiCatalogResponse extends ModelCatalogResponse {
+  defaultModel: AiModelConfig | null;
+}
+
 export interface AiTurnRequest {
   mode: LabMode;
   userMessage: string;
   stateSnapshot: unknown;
   conversationHistory: ConversationTurn[];
   model?: AiModelConfig;
+  requestId?: string;
 }
 
 export interface ControlAction {
@@ -47,9 +53,9 @@ export interface AiTurnResponse {
 export type MemorySubsystem =
   | "segmentation"
   | "linear-paging"
-  | "two-level-paging"
+  | "multi-level"
   | "tlb"
-  | "swapping";
+  | "replacement";
 
 export interface InspectMemoryParams {
   subsystem?: MemorySubsystem;
@@ -138,7 +144,7 @@ export const MEMORY_TOOL_SCHEMAS: readonly AiToolSchema[] = [
       properties: {
         subsystem: {
           type: "string",
-          enum: ["segmentation", "linear-paging", "two-level-paging", "tlb", "swapping"],
+          enum: ["segmentation", "linear-paging", "multi-level", "tlb", "replacement"],
           description: "Optional memory subsystem to inspect."
         }
       }
@@ -146,18 +152,158 @@ export const MEMORY_TOOL_SCHEMAS: readonly AiToolSchema[] = [
   },
   {
     name: "generate_memory_preset",
-    description: "Generate a memory lab exercise preset with segmentation or paging parameters.",
+    description: "Generate a memory lab exercise preset with segmentation, paging, TLB, or page replacement parameters.",
     parameters: {
       type: "object",
       properties: {
         subsystem: {
           type: "string",
-          enum: ["segmentation", "linear-paging", "two-level-paging", "tlb", "swapping"],
+          enum: ["segmentation", "linear-paging", "multi-level", "tlb", "replacement"],
           description: "Target memory subsystem."
         },
         title: { type: "string", description: "Exercise title." },
         consegna: { type: "string", description: "Pedagogical prompt and objectives." },
-        config: { type: "object", description: "MemoryLabPreset configuration." }
+        config: {
+          type: "object",
+          description: "MemoryLabPreset configuration matching the target subsystem.",
+          properties: {
+            id: { type: "string", description: "Unique preset ID." },
+            name: { type: "string", description: "Display name." },
+            description: { type: "string", description: "Short description." },
+            subsystem: {
+              type: "string",
+              enum: ["segmentation", "linear-paging", "multi-level", "tlb", "replacement"],
+              description: "Target memory subsystem."
+            },
+            trace: {
+              type: "array",
+              description: "Array of non-negative integer virtual addresses (or page numbers for replacement).",
+              items: { type: "number" }
+            },
+            segmentationConfig: {
+              type: "object",
+              description: "Required when subsystem is 'segmentation'.",
+              properties: {
+                addressSpaceBits: { type: "number" },
+                segmentBits: { type: "number" },
+                physicalMemorySize: { type: "number" },
+                segments: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      name: { type: "string" },
+                      base: { type: "number" },
+                      limit: { type: "number" },
+                      growth: { type: "string", enum: ["positive", "negative"] }
+                    },
+                    required: ["id", "name", "base", "limit", "growth"]
+                  }
+                }
+              },
+              required: ["addressSpaceBits", "segmentBits", "physicalMemorySize", "segments"]
+            },
+            linearPagingConfig: {
+              type: "object",
+              description: "Required when subsystem is 'linear-paging'.",
+              properties: {
+                addressSpaceBits: { type: "number" },
+                pageSize: { type: "number" },
+                physicalMemorySize: { type: "number" },
+                pageTable: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      vpn: { type: "number" },
+                      valid: { type: "boolean" },
+                      pfn: { type: "number" },
+                      rawEntry: { type: "number" }
+                    },
+                    required: ["vpn", "valid", "pfn"]
+                  }
+                }
+              },
+              required: ["addressSpaceBits", "pageSize", "physicalMemorySize", "pageTable"]
+            },
+            multiLevelPagingConfig: {
+              type: "object",
+              description: "Required when subsystem is 'multi-level'.",
+              properties: {
+                addressSpaceBits: { type: "number" },
+                pageSize: { type: "number" },
+                pdeBits: { type: "number" },
+                pteBits: { type: "number" },
+                pageDirectory: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      pdIndex: { type: "number" },
+                      valid: { type: "boolean" },
+                      ptPfn: { type: "number" },
+                      table: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            ptIndex: { type: "number" },
+                            valid: { type: "boolean" },
+                            pfn: { type: "number" }
+                          },
+                          required: ["ptIndex", "valid", "pfn"]
+                        }
+                      }
+                    },
+                    required: ["pdIndex", "valid", "ptPfn"]
+                  }
+                }
+              },
+              required: ["addressSpaceBits", "pageSize", "pdeBits", "pteBits", "pageDirectory"]
+            },
+            tlbConfig: {
+              type: "object",
+              description: "Required when subsystem is 'tlb'.",
+              properties: {
+                capacity: { type: "number" },
+                asidSupport: { type: "boolean" },
+                replacementPolicy: { type: "string", enum: ["lru", "fifo"] },
+                entries: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      vpn: { type: "number" },
+                      pfn: { type: "number" },
+                      valid: { type: "boolean" },
+                      asid: { type: "number" },
+                      dirty: { type: "boolean" },
+                      lastUsedCycle: { type: "number" },
+                      insertedCycle: { type: "number" }
+                    },
+                    required: ["vpn", "pfn", "valid", "asid", "dirty", "lastUsedCycle"]
+                  }
+                }
+              },
+              required: ["capacity", "asidSupport", "replacementPolicy", "entries"]
+            },
+            replacementConfig: {
+              type: "object",
+              description: "Required when subsystem is 'replacement'.",
+              properties: {
+                frameCount: { type: "number" },
+                policy: { type: "string", enum: ["fifo", "opt", "lru", "clock", "modified-clock"] },
+                referenceString: {
+                  type: "array",
+                  items: { type: "number" }
+                }
+              },
+              required: ["frameCount", "policy", "referenceString"]
+            }
+          },
+          required: ["trace"]
+        }
       },
       required: ["subsystem", "title", "consegna", "config"]
     }
@@ -172,6 +318,71 @@ export const MEMORY_TOOL_SCHEMAS: readonly AiToolSchema[] = [
         asid: { type: "number", description: "Address Space ID (for TLB lookup)." }
       },
       required: ["virtualAddress"]
+    }
+  },
+  {
+    name: "set_subsystem",
+    description: "Switch the active Memory Lab subsystem tab.",
+    parameters: {
+      type: "object",
+      properties: {
+        subsystem: {
+          type: "string",
+          enum: ["segmentation", "linear-paging", "multi-level", "tlb", "replacement"],
+          description: "Target memory subsystem."
+        }
+      },
+      required: ["subsystem"]
+    }
+  },
+  {
+    name: "load_preset",
+    description: "Load a built-in Memory Lab preset by ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        presetId: {
+          type: "string",
+          enum: [
+            "segmentation-unimi-seed-0",
+            "paging-unimi-seed-0",
+            "multilevel-sparse-space",
+            "tlb-cached-translation",
+            "belady-anomaly-reference"
+          ],
+          description: "Built-in Memory Lab preset ID."
+        }
+      },
+      required: ["presetId"]
+    }
+  },
+  {
+    name: "set_va",
+    description: "Set the current virtual address input in Memory Lab.",
+    parameters: {
+      type: "object",
+      properties: {
+        virtualAddress: { type: "number", description: "Non-negative integer virtual address." }
+      },
+      required: ["virtualAddress"]
+    }
+  },
+  {
+    name: "step_trace",
+    description: "Advance the Memory Lab address/reference trace by one or more steps.",
+    parameters: {
+      type: "object",
+      properties: {
+        steps: { type: "number", description: "Optional number of steps to advance (default 1)." }
+      }
+    }
+  },
+  {
+    name: "reset",
+    description: "Reset the Memory Lab trace and simulation state.",
+    parameters: {
+      type: "object",
+      properties: {}
     }
   }
 ] as const;
@@ -198,12 +409,56 @@ export const CPU_TOOL_SCHEMAS: readonly AiToolSchema[] = [
         consegna: { type: "string", description: "Pedagogical prompt and objectives." },
         algorithm: {
           type: "string",
-          enum: ["fifo", "sjf", "stcf", "rr", "mlfq"],
+          enum: ["fifo", "sjf", "stcf", "rr", "mlfq", "FIFO", "SJF", "STCF", "RR", "MLFQ", "LDE"],
           description: "Scheduling algorithm."
         },
-        workload: { type: "array", description: "List of ProcessWorkload objects." },
-        quantum: { type: "number", description: "Time quantum for Round Robin." },
-        mlfqConfig: { type: "object", description: "MLFQ 5-rules configuration parameters." }
+        workload: {
+          type: "array",
+          description: "List of ProcessWorkload objects.",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Unique process ID (e.g. 'P0', 'P1')." },
+              arrivalTime: { type: "number", description: "Non-negative integer arrival tick." },
+              priority: { type: "number", description: "Optional non-negative integer priority." },
+              bursts: {
+                type: "array",
+                description: "Non-empty list of CPU and I/O bursts.",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", enum: ["cpu", "io"] },
+                    duration: { type: "number", description: "Positive integer tick duration > 0." }
+                  },
+                  required: ["type", "duration"]
+                }
+              }
+            },
+            required: ["id", "arrivalTime", "bursts"]
+          }
+        },
+        quantum: { type: "number", description: "Positive integer time quantum for Round Robin." },
+        mlfqConfig: {
+          type: "object",
+          description: "MLFQ 5-rules configuration parameters.",
+          properties: {
+            priorityBoostInterval: { type: "number", description: "Positive integer boost period S > 0." },
+            queues: {
+              type: "array",
+              description: "Priority queues (0 is highest priority).",
+              items: {
+                type: "object",
+                properties: {
+                  priority: { type: "number", description: "Non-negative integer priority level." },
+                  timeSlice: { type: "number", description: "Positive integer RR time slice > 0." },
+                  allotment: { type: "number", description: "Positive integer cumulative allotment > 0." }
+                },
+                required: ["priority", "timeSlice", "allotment"]
+              }
+            }
+          },
+          required: ["priorityBoostInterval", "queues"]
+        }
       },
       required: ["title", "consegna", "workload"]
     }
@@ -222,6 +477,72 @@ export const CPU_TOOL_SCHEMAS: readonly AiToolSchema[] = [
         ticks: { type: "number", description: "Number of clock ticks to step." }
       },
       required: ["command"]
+    }
+  },
+  {
+    name: "set_algorithm",
+    description: "Switch the active CPU scheduling algorithm or LDE Hardware Inspector.",
+    parameters: {
+      type: "object",
+      properties: {
+        algorithm: {
+          type: "string",
+          enum: ["FIFO", "SJF", "STCF", "RR", "MLFQ", "LDE"],
+          description: "Target CPU scheduling algorithm or LDE mode."
+        }
+      },
+      required: ["algorithm"]
+    }
+  },
+  {
+    name: "load_preset",
+    description: "Load a built-in CPU Lab workload preset by ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        presetId: {
+          type: "string",
+          enum: [
+            "fifo-vs-sjf-convoy",
+            "stcf-preemption",
+            "rr-quantum-demo",
+            "mlfq-gaming-workload",
+            "mlfq-priority-boost",
+            "lde-hardware-transition"
+          ],
+          description: "Built-in CPU Lab preset ID."
+        }
+      },
+      required: ["presetId"]
+    }
+  },
+  {
+    name: "set_quantum",
+    description: "Set the Round Robin time quantum in CPU Lab.",
+    parameters: {
+      type: "object",
+      properties: {
+        quantum: { type: "number", description: "Positive integer time quantum > 0." }
+      },
+      required: ["quantum"]
+    }
+  },
+  {
+    name: "step_tick",
+    description: "Advance the CPU Lab simulation by one or more clock ticks.",
+    parameters: {
+      type: "object",
+      properties: {
+        ticks: { type: "number", description: "Optional number of clock ticks to step (default 1)." }
+      }
+    }
+  },
+  {
+    name: "reset",
+    description: "Reset the CPU Lab simulation tick to 0.",
+    parameters: {
+      type: "object",
+      properties: {}
     }
   }
 ] as const;
@@ -246,9 +567,89 @@ export const CONCURRENCY_TOOL_SCHEMAS: readonly AiToolSchema[] = [
       properties: {
         title: { type: "string", description: "Scenario title." },
         consegna: { type: "string", description: "Pedagogical prompt and objectives." },
-        scenario: { type: "object", description: "ConcurrencyScenarioState object." }
+        scenario: {
+          type: "object",
+          description: "ConcurrencyScenarioState object.",
+          properties: {
+            scenarioId: { type: "string", description: "Unique scenario identifier." },
+            name: { type: "string", description: "Scenario display name." },
+            description: { type: "string", description: "Scenario description." },
+            threads: {
+              type: "array",
+              description: "Non-empty list of ThreadContext objects.",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", description: "Unique thread ID (e.g. 'T1', 'P1')." },
+                  programCounter: { type: "number", description: "Initial PC (default 0)." },
+                  registers: { type: "object", description: "Initial register map." },
+                  state: { type: "string", enum: ["ready", "running", "blocked", "terminated"] },
+                  instructions: {
+                    type: "array",
+                    description: "List of ThreadInstruction objects.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        op: {
+                          type: "string",
+                          enum: ["read", "write", "add", "sub", "lock", "unlock", "wait", "signal", "sem_wait", "sem_post"]
+                        },
+                        targetVariable: { type: "string" },
+                        register: { type: "string" },
+                        literal: { type: "number" },
+                        syncObject: { type: "string" },
+                        label: { type: "string" }
+                      },
+                      required: ["op"]
+                    }
+                  }
+                },
+                required: ["id", "instructions"]
+              }
+            },
+            sharedMemory: { type: "object", description: "Initial shared memory variables (map of name to number)." },
+            locks: { type: "object", description: "Mutex or ticket lock definitions keyed by lock ID." },
+            semaphores: { type: "object", description: "Semaphore definitions keyed by semaphore ID." },
+            conditionVariables: { type: "object", description: "Condition variable definitions keyed by CV ID." },
+            boundedBuffer: {
+              type: "object",
+              description: "Optional bounded buffer state.",
+              properties: {
+                capacity: { type: "number" },
+                items: { type: "array", items: { type: "number" } },
+                inPtr: { type: "number" },
+                outPtr: { type: "number" }
+              },
+              required: ["capacity"]
+            }
+          },
+          required: ["scenarioId", "name", "description", "threads"]
+        }
       },
       required: ["title", "consegna", "scenario"]
+    }
+  },
+  {
+    name: "load_preset",
+    description: "Load a built-in Concurrency Lab scenario preset by ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        presetId: {
+          type: "string",
+          enum: [
+            "lost-update",
+            "ticket-lock",
+            "bounded-buffer-mesa",
+            "bounded-buffer-1cv-bug",
+            "semaphore-deadlock-order",
+            "dining-philosophers-deadlock",
+            "dining-philosophers-asymmetric"
+          ],
+          description: "Built-in Concurrency Lab preset ID."
+        }
+      },
+      required: ["presetId"]
     }
   },
   {
@@ -261,6 +662,14 @@ export const CONCURRENCY_TOOL_SCHEMAS: readonly AiToolSchema[] = [
         instructionIndex: { type: "number", description: "Optional explicit instruction index." }
       },
       required: ["threadId"]
+    }
+  },
+  {
+    name: "reset",
+    description: "Reset the active Concurrency Lab scenario to its initial state.",
+    parameters: {
+      type: "object",
+      properties: {}
     }
   }
 ] as const;
@@ -322,6 +731,14 @@ export const aiTurnRequestBoundaryParser: BoundaryParser<AiTurnRequest> = {
       };
     }
 
+    let requestId: string | undefined;
+    if (rec.requestId !== undefined && rec.requestId !== null) {
+      if (typeof rec.requestId !== "string" || rec.requestId.trim().length === 0) {
+        return { success: false, error: "requestId must be a non-empty string if provided." };
+      }
+      requestId = rec.requestId.trim();
+    }
+
     return {
       success: true,
       data: {
@@ -329,7 +746,8 @@ export const aiTurnRequestBoundaryParser: BoundaryParser<AiTurnRequest> = {
         userMessage,
         stateSnapshot: rec.stateSnapshot,
         conversationHistory,
-        model
+        model,
+        ...(requestId !== undefined ? { requestId } : {})
       }
     };
   }

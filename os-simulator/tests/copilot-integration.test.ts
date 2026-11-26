@@ -279,6 +279,129 @@ const createMockStorageAdapter = () => {
   };
 };
 
+import { SEGMENTATION_UNIMI_SEED_0 } from "../src/core/memory/presets.ts";
+import { BOUNDED_BUFFER_MESA } from "../src/core/concurrency/presets.ts";
+
+function createMockBackendContextForIntegration(): PluginBackendContext {
+  let callIdx = 0;
+  return {
+    signal: new AbortController().signal,
+    inference: {
+      catalog: async () => ({
+        models: [
+          {
+            id: "claude-3-7-sonnet",
+            name: "Claude 3.7 Sonnet",
+            provider: "anthropic",
+            reasoning: true,
+            input: ["text"],
+            supportedLevels: ["off", "low", "medium", "high"],
+            cost: null,
+            contextWindow: 200000,
+            maxTokens: 8192
+          }
+        ],
+        defaults: { model: { provider: "anthropic", id: "claude-3-7-sonnet" }, thinkingLevel: "medium" },
+        rolePins: { researcher: null, demoBuilder: null, visualMaker: null, extractor: null, auditor: null, sideQuestion: null },
+        slots: { strong: null, cheap: null, vision: null },
+        providers: [{ id: "anthropic", envVar: "ANTHROPIC_API_KEY", keyPresent: true }]
+      }),
+      stream: (req: { context: { systemPrompt?: string; messages: Array<{ role: string }> } }) => {
+        const hasToolResult = req.context.messages.some((m) => m.role === "toolResult");
+        const sys = req.context.systemPrompt ?? "";
+        const mkUsage = () => ({
+          input: 1,
+          output: 1,
+          cacheRead: 0,
+          cacheWrite: 0,
+          totalTokens: 2,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 }
+        });
+        async function* gen() {
+          if (hasToolResult) {
+            yield {
+              type: "done" as const,
+              reason: "stop" as const,
+              message: {
+                role: "assistant" as const,
+                content: [{ type: "text" as const, text: "Esercizio OSTEP generato." }],
+                api: "chat",
+                provider: "anthropic",
+                model: "claude-3-7-sonnet",
+                usage: mkUsage(),
+                stopReason: "stop" as const,
+                timestamp: Date.now()
+              }
+            };
+            return;
+          }
+          callIdx++;
+          let toolCall: any;
+          if (sys.includes("Memory Virtualization Lab")) {
+            toolCall = {
+              type: "toolCall",
+              id: `tc-${callIdx}`,
+              name: "generate_memory_preset",
+              arguments: {
+                subsystem: "segmentation",
+                title: "Esercizio OSTEP: Segmentazione",
+                consegna: "Analizza base e limit.",
+                config: { ...SEGMENTATION_UNIMI_SEED_0, id: `mem-ex-${callIdx}`, name: "Esercizio OSTEP: Segmentazione" }
+              }
+            };
+          } else if (sys.includes("CPU Scheduling")) {
+            toolCall = {
+              type: "toolCall",
+              id: `tc-${callIdx}`,
+              name: "generate_workload_preset",
+              arguments: {
+                title: "Esercizio OSTEP: STCF",
+                consegna: "Traccia STCF con 3 processi.",
+                algorithm: "stcf",
+                workload: [
+                  { id: "P0", arrivalTime: 0, bursts: [{ type: "cpu", duration: 2 }, { type: "io", duration: 2 }, { type: "cpu", duration: 4 }] },
+                  { id: "P1", arrivalTime: 2, bursts: [{ type: "cpu", duration: 4 }] },
+                  { id: "P2", arrivalTime: 4, bursts: [{ type: "cpu", duration: 2 }] }
+                ]
+              }
+            };
+          } else {
+            toolCall = {
+              type: "toolCall",
+              id: `tc-${callIdx}`,
+              name: "generate_concurrency_scenario",
+              arguments: {
+                title: "Esercizio OSTEP: Bounded Buffer Mesa 2 CV",
+                consegna: "Verifica Bounded Buffer con 2 CV.",
+                scenario: {
+                  ...BOUNDED_BUFFER_MESA,
+                  scenarioId: `conc-ex-${callIdx}`,
+                  name: "Esercizio OSTEP: Bounded Buffer Mesa 2 CV"
+                }
+              }
+            };
+          }
+          yield {
+            type: "done" as const,
+            reason: "toolUse" as const,
+            message: {
+              role: "assistant" as const,
+              content: [toolCall],
+              api: "chat",
+              provider: "anthropic",
+              model: "claude-3-7-sonnet",
+              usage: mkUsage(),
+              stopReason: "toolUse" as const,
+              timestamp: Date.now()
+            }
+          };
+        }
+        return gen();
+      }
+    }
+  } as unknown as PluginBackendContext;
+}
+
 function createMockFrontendContext(callHandler?: (op: string, input?: unknown) => Promise<unknown>): PluginFrontendContext {
   return {
     call: async <T = unknown>(operation: string, input?: unknown): Promise<T> => {
@@ -286,8 +409,7 @@ function createMockFrontendContext(callHandler?: (op: string, input?: unknown) =
         return (await callHandler(operation, input)) as T;
       }
       if (operation === "ai-turn") {
-        const dummyCtx = {} as PluginBackendContext;
-        return (await handleAiTurn(dummyCtx, input)) as T;
+        return (await handleAiTurn(createMockBackendContextForIntegration(), input)) as T;
       }
       throw new Error(`Unhandled op: ${operation}`);
     }
@@ -588,9 +710,8 @@ test("5. Copilot integration: exerciseHistory persistence on context.storage acr
           delete renderers[modeId];
         };
       },
-      call: async <T = unknown>(operation: string, input?: unknown): Promise<T> => {
-        const dummyCtx = {} as PluginBackendContext;
-        return (await handleAiTurn(dummyCtx, input)) as T;
+      call: async <T = unknown>(_operation: string, input?: unknown): Promise<T> => {
+        return (await handleAiTurn(createMockBackendContextForIntegration(), input)) as T;
       }
     } as unknown as PluginFrontendContext;
 
@@ -645,6 +766,292 @@ test("5. Copilot integration: exerciseHistory persistence on context.storage acr
     assert.equal(storedState2.exerciseHistory[0]!.id, exId);
 
     unmount2();
+  } finally {
+    env.restore();
+  }
+});
+
+test("6. Copilot integration: Memory Lab executeControlAction handles set_subsystem, load_preset, set_va, step_trace, and reset", async () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    let latestState = getInitialMemoryLabState("ws-mem-ctrl");
+    let queuedActions: Array<{ action: string; payload: unknown }> = [];
+
+    const frontendCtx = {
+      call: async <T = unknown>(op: string): Promise<T> => {
+        if (op === "ai-turn") {
+          return {
+            responseText: "Executing memory actions",
+            controlActions: queuedActions
+          } as T;
+        }
+        return {} as T;
+      }
+    } as unknown as PluginFrontendContext;
+
+    const cleanup = createMemoryLabView(
+      container as any,
+      latestState,
+      (s) => {
+        latestState = s;
+      },
+      frontendCtx
+    );
+
+    const sendActions = async (actions: Array<{ action: string; payload: unknown }>) => {
+      queuedActions = actions;
+      const pill = container.querySelector(".copilot-pill-input");
+      pill?.focus();
+      const comp = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
+      comp.value = "run action";
+      const sendBtn = container.querySelector(".copilot-btn-send");
+      sendBtn?.click();
+      await new Promise((r) => setTimeout(r, 20));
+    };
+
+    // set_subsystem with defensive normalization
+    await sendActions([{ action: "set_subsystem", payload: { subsystem: "two-level-paging" } }]);
+    assert.equal(latestState.subsystem, "multi-level");
+
+    await sendActions([{ action: "set_subsystem", payload: { subsystem: "swapping" } }]);
+    assert.equal(latestState.subsystem, "replacement");
+
+    // load_preset valid & unknown
+    await sendActions([{ action: "load_preset", payload: { presetId: "paging-unimi-seed-0" } }]);
+    assert.equal(latestState.subsystem, "linear-paging");
+    assert.equal(latestState.activePresetId, "paging-unimi-seed-0");
+
+    await sendActions([{ action: "load_preset", payload: { presetId: "non-existent-preset" } }]);
+    assert.equal(latestState.activePresetId, "paging-unimi-seed-0");
+
+    // set_va with hex string & number
+    await sendActions([{ action: "set_va", payload: { va: "0x100" } }]);
+    assert.equal(latestState.currentVa, 256);
+
+    await sendActions([{ action: "set_va", payload: { virtualAddress: 512 } }]);
+    assert.equal(latestState.currentVa, 512);
+
+    // execute_translation updates currentVa, vaInputString, and tlbConfig.asid
+    await sendActions([{ action: "execute_translation", payload: { virtualAddress: "0x200", asid: 3 } }]);
+    assert.equal(latestState.currentVa, 512);
+    assert.equal(latestState.vaInputString, "512");
+    assert.equal((latestState.tlbConfig as unknown as { asid?: number }).asid, 3);
+
+    await sendActions([{ action: "execute_translation", payload: { virtualAddress: 1024 } }]);
+    assert.equal(latestState.currentVa, 1024);
+    assert.equal(latestState.vaInputString, "1024");
+
+    // execute_translation ignores invalid virtualAddress
+    await sendActions([{ action: "execute_translation", payload: { virtualAddress: -5, asid: 9 } }]);
+    assert.equal(latestState.currentVa, 1024);
+    assert.equal((latestState.tlbConfig as unknown as { asid?: number }).asid, 3);
+
+    // step_trace and clamping
+    await sendActions([{ action: "step_trace", payload: { steps: 2 } }]);
+    assert.equal(latestState.currentTraceIndex, 2);
+    assert.equal(latestState.currentVa, latestState.trace[2]);
+
+    await sendActions([{ action: "step_trace", payload: { steps: 999 } }]);
+    assert.equal(latestState.currentTraceIndex, latestState.trace.length - 1);
+
+    // reset
+    await sendActions([{ action: "reset", payload: {} }]);
+    assert.equal(latestState.currentTraceIndex, 0);
+    assert.equal(latestState.currentVa, latestState.trace[0]);
+
+    cleanup();
+  } finally {
+    env.restore();
+  }
+});
+
+test("7. Copilot integration: CPU Lab executeControlAction and applyExercise accept quantum", async () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    let latestState = getInitialCpuLabState("ws-cpu-ctrl");
+    let queuedResponse: Record<string, unknown> = {};
+
+    const frontendCtx = {
+      call: async <T = unknown>(op: string): Promise<T> => {
+        if (op === "ai-turn") {
+          return queuedResponse as T;
+        }
+        return {} as T;
+      }
+    } as unknown as PluginFrontendContext;
+
+    const cleanup = createCpuLabView(
+      container as any,
+      latestState,
+      (s) => {
+        latestState = s;
+      },
+      frontendCtx
+    );
+
+    const sendTurn = async (response: Record<string, unknown>) => {
+      queuedResponse = response;
+      const pill = container.querySelector(".copilot-pill-input");
+      pill?.focus();
+      const comp = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
+      comp.value = "run cpu action";
+      const sendBtn = container.querySelector(".copilot-btn-send");
+      sendBtn?.click();
+      await new Promise((r) => setTimeout(r, 20));
+    };
+
+    // load_preset valid & unknown
+    await sendTurn({
+      responseText: "load preset",
+      controlActions: [{ action: "load_preset", payload: { presetId: "rr-quantum-demo" } }]
+    });
+    assert.equal(latestState.activePresetId, "rr-quantum-demo");
+    assert.equal(latestState.algorithm, "RR");
+
+    await sendTurn({
+      responseText: "unknown preset",
+      controlActions: [{ action: "load_preset", payload: { presetId: "unknown-cpu-preset" } }]
+    });
+    assert.equal(latestState.activePresetId, "rr-quantum-demo");
+
+    // set_quantum (positive & clamped)
+    await sendTurn({
+      responseText: "set quantum",
+      controlActions: [{ action: "set_quantum", payload: { quantum: 5 } }]
+    });
+    assert.equal(latestState.rrQuantum, 5);
+
+    await sendTurn({
+      responseText: "clamp quantum",
+      controlActions: [{ action: "set_quantum", payload: { quantum: -3 } }]
+    });
+    assert.equal(latestState.rrQuantum, 1);
+
+    // step_tick & reset
+    await sendTurn({
+      responseText: "step tick",
+      controlActions: [{ action: "step_tick", payload: { ticks: 3 } }]
+    });
+    assert.equal(latestState.currentTick, 3);
+
+    await sendTurn({
+      responseText: "reset",
+      controlActions: [{ action: "reset", payload: {} }]
+    });
+    assert.equal(latestState.currentTick, 0);
+
+    // control_scheduler: step, play, pause, reset
+    await sendTurn({
+      responseText: "control_scheduler step",
+      controlActions: [{ action: "control_scheduler", payload: { command: "step", ticks: 2 } }]
+    });
+    assert.equal(latestState.currentTick, 2);
+    assert.equal(latestState.isPlaying, false);
+
+    await sendTurn({
+      responseText: "control_scheduler play",
+      controlActions: [{ action: "control_scheduler", payload: { command: "play" } }]
+    });
+    assert.equal(latestState.isPlaying, true);
+
+    await sendTurn({
+      responseText: "control_scheduler pause",
+      controlActions: [{ action: "control_scheduler", payload: { command: "pause" } }]
+    });
+    assert.equal(latestState.isPlaying, false);
+
+    await sendTurn({
+      responseText: "control_scheduler reset",
+      controlActions: [{ action: "control_scheduler", payload: { command: "reset" } }]
+    });
+    assert.equal(latestState.currentTick, 0);
+    assert.equal(latestState.isPlaying, false);
+
+    // applyExercise accepting quantum
+    await sendTurn({
+      responseText: "exercise with quantum",
+      generatedExercise: {
+        id: "ex-cpu-quantum",
+        title: "RR Quantum Test",
+        date: new Date().toISOString(),
+        consegna: "Test quantum",
+        sourceTag: "ai",
+        mode: "cpu-lab",
+        config: {
+          algorithm: "RR",
+          quantum: 7,
+          workload: [{ id: "P1", arrivalTime: 0, bursts: [{ type: "cpu", duration: 10 }] }]
+        }
+      }
+    });
+    assert.equal(latestState.rrQuantum, 7);
+
+    cleanup();
+  } finally {
+    env.restore();
+  }
+});
+
+test("8. Copilot integration: Concurrency Lab executeControlAction handles load_preset, step_thread_instruction, and reset", async () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    let latestState = getInitialConcurrencyLabState("ws-conc-ctrl");
+    let queuedActions: Array<{ action: string; payload: unknown }> = [];
+
+    const frontendCtx = {
+      call: async <T = unknown>(op: string): Promise<T> => {
+        if (op === "ai-turn") {
+          return {
+            responseText: "Executing concurrency actions",
+            controlActions: queuedActions
+          } as T;
+        }
+        return {} as T;
+      }
+    } as unknown as PluginFrontendContext;
+
+    const cleanup = createConcurrencyLabView(
+      container as any,
+      latestState,
+      (s) => {
+        latestState = s;
+      },
+      frontendCtx
+    );
+
+    const sendActions = async (actions: Array<{ action: string; payload: unknown }>) => {
+      queuedActions = actions;
+      const pill = container.querySelector(".copilot-pill-input");
+      pill?.focus();
+      const comp = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
+      comp.value = "run conc action";
+      const sendBtn = container.querySelector(".copilot-btn-send");
+      sendBtn?.click();
+      await new Promise((r) => setTimeout(r, 20));
+    };
+
+    // load_preset valid & unknown
+    await sendActions([{ action: "load_preset", payload: { presetId: "ticket-lock" } }]);
+    assert.equal(latestState.activePresetId, "ticket-lock");
+    assert.equal(latestState.scenarioState.scenarioId, "ticket-lock");
+
+    await sendActions([{ action: "load_preset", payload: { presetId: "unknown-conc-preset" } }]);
+    assert.equal(latestState.activePresetId, "ticket-lock");
+
+    // step_thread_instruction
+    await sendActions([{ action: "step_thread_instruction", payload: { threadId: "T1" } }]);
+    const t1 = latestState.scenarioState.threads.find((t) => t.id === "T1");
+    assert.equal(t1?.programCounter, 1);
+
+    // reset
+    await sendActions([{ action: "reset", payload: {} }]);
+    const t1Reset = latestState.scenarioState.threads.find((t) => t.id === "T1");
+    assert.equal(t1Reset?.programCounter, 0);
+
+    cleanup();
   } finally {
     env.restore();
   }

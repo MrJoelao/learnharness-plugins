@@ -771,3 +771,411 @@ test("CopilotDrawer: dock mode styling and borders match LearnHarness Hub aesthe
     env.restore();
   }
 });
+
+
+test("CopilotDrawer: loadCatalog + openMenu model and thinking wiring with localStorage & turnRequest.model", async () => {
+  const env = setupMockDom({
+    "lh-os-copilot-model": JSON.stringify({ provider: "openai", id: "gpt-6-luna" }),
+    "lh-os-copilot-thinking": "high"
+  });
+  try {
+    const container = new MockDOMElement();
+    const openedMenus: Array<{ anchor: any; props: any; signal: AbortSignal }> = [];
+    const sentRequests: any[] = [];
+
+    const mockCatalog = {
+      models: [
+        {
+          id: "gemini-4-hydrogen",
+          name: "Gemini 4 Hydrogen",
+          provider: "google",
+          reasoning: true,
+          input: ["text"] as ("text" | "image")[],
+          supportedLevels: ["low", "medium", "high"] as any,
+          cost: null,
+          contextWindow: 128000,
+          maxTokens: 8192
+        },
+        {
+          id: "gpt-6-luna",
+          name: "GPT-6 Luna",
+          provider: "openai",
+          reasoning: true,
+          input: ["text"] as ("text" | "image")[],
+          supportedLevels: ["low", "high"] as any,
+          cost: null,
+          contextWindow: 128000,
+          maxTokens: 8192
+        },
+        {
+          id: "claude-disabled",
+          name: "Claude Disabled",
+          provider: "anthropic",
+          reasoning: false,
+          input: ["text"] as ("text" | "image")[],
+          supportedLevels: ["off"] as any,
+          cost: null,
+          contextWindow: 128000,
+          maxTokens: 8192
+        }
+      ],
+      defaults: { model: { provider: "google", id: "gemini-4-hydrogen" }, thinkingLevel: "medium" as any },
+      defaultModel: { provider: "google", id: "gemini-4-hydrogen", thinkingLevel: "medium" },
+      rolePins: { assistant: null, summarizer: null, title: null } as any,
+      slots: { strong: null, cheap: null, vision: null } as any,
+      providers: [
+        { id: "google", envVar: "GEMINI_API_KEY", keyPresent: true },
+        { id: "openai", envVar: "OPENAI_API_KEY", keyPresent: true },
+        { id: "anthropic", envVar: "ANTHROPIC_API_KEY", keyPresent: false }
+      ]
+    };
+
+    const drawer = createCopilotDrawer({
+      mode: "cpu-lab",
+      initialState: "sheet",
+      targetContainer: container as any,
+      loadCatalog: async () => mockCatalog as any,
+      ui: {
+        openMenu: (anchor: any, props: any, opts: any) => {
+          openedMenus.push({ anchor, props, signal: opts.signal });
+          return { update: () => {}, dispose: () => {} };
+        }
+      } as any,
+      backendCall: async (req) => {
+        sentRequests.push(req);
+        return { responseText: "OK" };
+      }
+    });
+
+    // Wait for async loadCatalog()
+    await new Promise((r) => setTimeout(r, 10));
+
+    const btnModel = container.querySelector(".copilot-btn-model") as unknown as MockDOMElement;
+    const btnThinking = container.querySelector(".copilot-btn-thinking") as unknown as MockDOMElement;
+    assert.equal(btnModel.getAttribute("data-model"), "gpt-6-luna");
+    assert.equal(btnModel.title, "GPT-6 Luna");
+    assert.equal(btnThinking.getAttribute("data-thinking"), "high");
+
+    // Open model popover -> excludes anthropic (keyPresent: false), groups & orders by provider
+    btnModel.click();
+    const popover = container.querySelector(".copilot-model-popover") as unknown as MockDOMElement;
+    assert.ok(popover, "Model popover must open on click");
+    assert.equal(btnModel.getAttribute("aria-expanded"), "true");
+
+    const groupHeaders = popover.querySelectorAll(".copilot-model-group-header");
+    assert.deepEqual(
+      groupHeaders.map((h) => h.textContent),
+      ["Google", "OpenAI"],
+      "Providers must be sorted alphabetically and exclude inactive providers"
+    );
+
+    const modelItems = popover.querySelectorAll(".copilot-model-item");
+    assert.equal(modelItems.length, 2);
+    assert.equal(modelItems[0]!.getAttribute("data-model-id"), "gemini-4-hydrogen");
+    assert.equal(modelItems[1]!.getAttribute("data-model-id"), "gpt-6-luna");
+    assert.ok(modelItems[1]!.classList.contains("is-selected"), "Active model must be marked selected");
+
+    // Search filters by model name/provider and shows empty state when no match
+    const searchInput = popover.querySelector(".copilot-model-search-input") as unknown as MockDOMElement;
+    assert.ok(searchInput, "Search input must be present inside model popover");
+    searchInput.value = "gemini";
+    searchInput.dispatchEvent({ type: "input" });
+    assert.equal(popover.querySelectorAll(".copilot-model-item").length, 1);
+    assert.equal(popover.querySelectorAll(".copilot-model-group-header").map((h) => h.textContent)[0], "Google");
+
+    searchInput.value = "nonexistent-xyz";
+    searchInput.dispatchEvent({ type: "input" });
+    assert.equal(popover.querySelectorAll(".copilot-model-item").length, 0);
+    assert.ok(popover.querySelector(".copilot-model-empty"), "Empty state must show when no models match");
+
+    // Clear search and select Gemini 4 Hydrogen -> persists & updates UI & closes popover
+    const clearBtn = popover.querySelector(".copilot-model-search-clear") as unknown as MockDOMElement;
+    clearBtn.click();
+    const restoredItems = popover.querySelectorAll(".copilot-model-item");
+    assert.equal(restoredItems.length, 2);
+    restoredItems[0]!.click();
+    assert.equal(container.querySelector(".copilot-model-popover"), null, "Popover must close after selection");
+    assert.equal(btnModel.getAttribute("data-model"), "gemini-4-hydrogen");
+    assert.equal(
+      (globalThis.window as any).localStorage.getItem("lh-os-copilot-model"),
+      JSON.stringify({ provider: "google", id: "gemini-4-hydrogen" })
+    );
+
+    // Open thinking menu -> select "low"
+    btnThinking.click();
+    assert.equal(openedMenus.length, 1);
+    const thinkingMenu = openedMenus[0]!.props;
+    assert.equal(thinkingMenu.label, "Livello di ragionamento");
+    assert.equal(thinkingMenu.items[2].label, "✓ high");
+    await thinkingMenu.items[0].onSelect();
+    assert.equal(btnThinking.getAttribute("data-thinking"), "low");
+    assert.equal((globalThis.window as any).localStorage.getItem("lh-os-copilot-thinking"), "low");
+
+    await drawer.sendPrompt("Test model payload");
+    assert.equal(sentRequests.length, 1);
+    assert.deepEqual(sentRequests[0].model, {
+      provider: "google",
+      id: "gemini-4-hydrogen",
+      thinkingLevel: "low"
+    });
+
+    const signal = openedMenus[0]!.signal;
+    drawer.destroy();
+    assert.equal(signal.aborted, true);
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: mountDictation onTranscript, onStateChange, getLevel, finish before submit, and destroy cleanup", async () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    let mountedProps: any = null;
+    let mountedSignal: any = null;
+    let toggleCalls = 0;
+    let finishCalls = 0;
+    let cancelCalls = 0;
+    let disposeCalls = 0;
+    let finishShouldReject = false;
+    let currentLevel = 0.75;
+    const sentPrompts: string[] = [];
+
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "sheet",
+      targetContainer: container as any,
+      ui: {
+        mountDictation: (_el: any, props: any, opts: any) => {
+          mountedProps = props;
+          mountedSignal = opts.signal;
+          return {
+            toggle: () => {
+              toggleCalls++;
+            },
+            finish: async () => {
+              finishCalls++;
+              if (finishShouldReject) {
+                throw new Error("Dictation flush failed");
+              }
+            },
+            cancel: () => {
+              cancelCalls++;
+            },
+            getLevel: () => currentLevel,
+            update: () => {},
+            dispose: () => {
+              disposeCalls++;
+            }
+          };
+        }
+      } as any,
+      backendCall: async (req) => {
+        sentPrompts.push(req.userMessage);
+        return { responseText: "Done" };
+      }
+    });
+
+    assert.ok(mountedProps, "mountDictation should be called on mount");
+    assert.equal(mountedSignal?.aborted, false);
+
+    const btnPillMic = container.querySelector(".copilot-btn-pill-mic") as unknown as MockDOMElement;
+    const btnDictate = container.querySelector(".copilot-btn-dictate") as unknown as MockDOMElement;
+    const surface = container.querySelector(".copilot-surface") as unknown as MockDOMElement;
+    const strip = container.querySelector(".copilot-dictation-strip") as unknown as MockDOMElement;
+    const input = container.querySelector(".copilot-composer-input") as unknown as MockDOMElement;
+    const sendBtn = container.querySelector(".copilot-btn-send") as unknown as MockDOMElement;
+
+    // Both buttons route to dictationHandle.toggle() across modes
+    btnPillMic.click();
+    assert.equal(toggleCalls, 1);
+    btnDictate.click();
+    assert.equal(toggleCalls, 2);
+    drawer.setState("drawer");
+    btnDictate.click();
+    assert.equal(toggleCalls, 3);
+
+    // onStateChange active=true syncs classes, aria-pressed, strip, and meter
+    mountedProps.onStateChange({ active: true, phase: "recording", error: null });
+    assert.ok(surface.classList.contains("is-dictating"));
+    assert.equal(strip.getAttribute("aria-hidden"), "false");
+    assert.equal(btnPillMic.getAttribute("aria-pressed"), "true");
+    assert.equal(btnDictate.getAttribute("aria-pressed"), "true");
+
+    await new Promise((r) => setTimeout(r, 80));
+    const bars = container.querySelectorAll(".copilot-dictation-bar") as unknown as MockDOMElement[];
+    assert.ok(bars.some((b) => b.style.height && b.style.height !== "2px"), "Meter bars should reflect getLevel()");
+
+    // Error state surfaces via title and aria-label
+    mountedProps.onStateChange({ active: false, phase: "idle", error: "Microfono negato" });
+    assert.equal(btnPillMic.title, "Microfono negato");
+    assert.equal(btnDictate.getAttribute("aria-label"), "Microfono negato");
+    assert.equal(surface.classList.contains("is-dictating"), false);
+
+    // onTranscript appends text
+    mountedProps.onTranscript("Spiega la");
+    mountedProps.onTranscript("paginazione");
+    assert.equal(input.value, "Spiega la paginazione");
+
+    // If finish() rejects, abort send without wiping typed text
+    finishShouldReject = true;
+    sendBtn.click();
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(finishCalls, 1);
+    assert.equal(sentPrompts.length, 0);
+    assert.equal(input.value, "Spiega la paginazione");
+
+    // If finish() resolves, send proceeds
+    finishShouldReject = false;
+    sendBtn.click();
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(finishCalls, 2);
+    assert.deepEqual(sentPrompts, ["Spiega la paginazione"]);
+
+    drawer.destroy();
+    assert.equal(cancelCalls, 1);
+    assert.equal(disposeCalls, 1);
+    assert.equal(mountedSignal?.aborted, true);
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: mountDictation compatibility fallback without onStateChange or getLevel (0.7.1 AppImage)", async () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    let mountedProps: any = null;
+    let toggleCalls = 0;
+    let finishCalls = 0;
+    const sentPrompts: string[] = [];
+
+    const drawer = createCopilotDrawer({
+      mode: "memory-lab",
+      initialState: "pill",
+      targetContainer: container as any,
+      ui: {
+        mountDictation: (_el: any, props: any) => {
+          mountedProps = props;
+          return {
+            toggle: () => {
+              toggleCalls++;
+            },
+            finish: async () => {
+              finishCalls++;
+            },
+            cancel: () => {},
+            update: () => {},
+            dispose: () => {}
+          };
+        }
+      } as any,
+      backendCall: async (req) => {
+        sentPrompts.push(req.userMessage);
+        return { responseText: "Done" };
+      }
+    });
+
+    const btnPillMic = container.querySelector(".copilot-btn-pill-mic") as unknown as MockDOMElement;
+    const btnDictate = container.querySelector(".copilot-btn-dictate") as unknown as MockDOMElement;
+    const surface = container.querySelector(".copilot-surface") as unknown as MockDOMElement;
+    const strip = container.querySelector(".copilot-dictation-strip") as unknown as MockDOMElement;
+    const sendBtn = container.querySelector(".copilot-btn-send") as unknown as MockDOMElement;
+
+    // Clicking btnPillMic optimistically activates dictation UI & organic meter when onStateChange/getLevel are absent
+    btnPillMic.click();
+    assert.equal(toggleCalls, 1);
+    assert.ok(surface.classList.contains("is-dictating"));
+    assert.ok(btnDictate.classList.contains("is-active"));
+    assert.equal(strip.getAttribute("aria-hidden"), "false");
+    assert.equal(btnPillMic.getAttribute("aria-pressed"), "true");
+    assert.equal(btnDictate.getAttribute("aria-pressed"), "true");
+
+    await new Promise((r) => setTimeout(r, 80));
+    const bars = container.querySelectorAll(".copilot-dictation-bar") as unknown as MockDOMElement[];
+    assert.ok(bars.some((b) => b.style.height && b.style.height !== "2px"), "Fallback organic meter should animate bars");
+
+    // Transcript arrives and submitComposerText() resets UI after finish()
+    mountedProps.onTranscript("Test dettatura");
+    sendBtn.click();
+    await new Promise((r) => setTimeout(r, 10));
+
+    assert.equal(finishCalls, 1);
+    assert.deepEqual(sentPrompts, ["Test dettatura"]);
+    assert.equal(surface.classList.contains("is-dictating"), false);
+    assert.equal(btnDictate.classList.contains("is-active"), false);
+    assert.equal(strip.getAttribute("aria-hidden"), "true");
+    assert.equal(btnPillMic.getAttribute("aria-pressed"), "false");
+    assert.equal(btnDictate.getAttribute("aria-pressed"), "false");
+
+    drawer.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
+test("CopilotDrawer: ai-stream notification streams text in-place across mode transitions and unsubscribes on destroy", async () => {
+  const env = setupMockDom();
+  try {
+    const container = new MockDOMElement();
+    let listener: ((event: { topic: string; data: unknown }) => void) | null = null;
+    let unsubscribeCalls = 0;
+    let capturedRequest: any = null;
+    let resolveBackend!: (res: any) => void;
+
+    const drawer = createCopilotDrawer({
+      mode: "concurrency-lab",
+      initialState: "sheet",
+      targetContainer: container as any,
+      onNotification: (cb: any) => {
+        listener = cb;
+        return () => {
+          unsubscribeCalls++;
+          listener = null;
+        };
+      },
+      backendCall: (req) => {
+        capturedRequest = req;
+        return new Promise((resolve) => {
+          resolveBackend = resolve;
+        });
+      }
+    });
+
+    assert.ok(listener, "onNotification should subscribe once");
+    const emitNotification = listener as (event: { topic: string; data: unknown }) => void;
+    const sendPromise = drawer.sendPrompt("Cos'è un deadlock?");
+    assert.ok(capturedRequest?.requestId, "requestId should be set on turnRequest");
+    assert.deepEqual(capturedRequest.conversationHistory, []);
+
+    // Unrelated requestId or topic should be ignored
+    emitNotification({ topic: "other-topic", data: { requestId: capturedRequest.requestId, type: "text_delta", delta: "NO" } });
+    emitNotification({ topic: "ai-stream", data: { requestId: "other-req", type: "text_delta", delta: "NO" } });
+
+    // Matching text_delta updates placeholder in-place
+    emitNotification({ topic: "ai-stream", data: { requestId: capturedRequest.requestId, type: "text_delta", delta: "Un deadlock " } });
+    let assistantBubbles = container.querySelectorAll(".copilot-bubble-assistant");
+    assert.equal(assistantBubbles.length, 1);
+    assert.ok(assistantBubbles[0]!.textContent.includes("Un deadlock "));
+
+    // Mode transition sheet -> drawer preserves streamed text
+    drawer.setState("drawer");
+    emitNotification({ topic: "ai-stream", data: { requestId: capturedRequest.requestId, type: "text_delta", delta: "è uno stallo." } });
+    assistantBubbles = container.querySelectorAll(".copilot-bubble-assistant");
+    assert.equal(assistantBubbles.length, 1);
+    assert.ok(assistantBubbles[0]!.textContent.includes("Un deadlock è uno stallo."));
+
+    // Finalizing response replaces placeholder in-place (no duplicate bubbles)
+    resolveBackend({ responseText: "Un deadlock è uno stallo permanente." });
+    await sendPromise;
+
+    assistantBubbles = container.querySelectorAll(".copilot-bubble-assistant");
+    assert.equal(assistantBubbles.length, 1);
+    assert.ok(assistantBubbles[0]!.textContent.includes("Un deadlock è uno stallo permanente."));
+
+    drawer.destroy();
+    assert.equal(unsubscribeCalls, 1);
+  } finally {
+    env.restore();
+  }
+});
