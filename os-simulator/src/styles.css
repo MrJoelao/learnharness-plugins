@@ -2400,7 +2400,7 @@
 @keyframes copilot-drawer-slide {
   from {
     transform: translateX(100%);
-    opacity: 0;
+    opacity: 1;
   }
   to {
     transform: translateX(0);
@@ -2415,7 +2415,7 @@
   }
   to {
     transform: translateX(100%);
-    opacity: 0;
+    opacity: 1;
   }
 }
 
@@ -2927,7 +2927,6 @@
 .cpu-lab-root.has-copilot-drawer,
 .concurrency-lab-root.has-copilot-drawer {
   padding-right: var(--copilot-drawer-width, 410px);
-  transition: padding-right calc(0.25s * var(--copilot-anim-scale, 1)) ease;
 }
 
 .memory-lab-root.has-copilot-drawer.is-resizing,
