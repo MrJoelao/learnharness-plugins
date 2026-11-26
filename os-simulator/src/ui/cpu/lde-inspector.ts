@@ -22,10 +22,17 @@ export function renderLdeInspector(container: HTMLElement, props: LdeInspectorPr
 
   const statusGroup = document.createElement("div");
   statusGroup.className = "cpu-lde-status-group";
+  if (statusGroup.style) {
+    statusGroup.style.flexWrap = "wrap";
+    statusGroup.style.minWidth = "0";
+  }
 
   const cplBadge = document.createElement("div");
   const isRing0 = currentStep.cpl === 0;
   cplBadge.className = `cpu-cpl-badge ${isRing0 ? "cpl-ring0" : "cpl-ring3"}`;
+  if (cplBadge.style) {
+    cplBadge.style.maxWidth = "100%";
+  }
   cplBadge.appendChild(createIcon("shield", "size-4"));
   const cplText = document.createElement("span");
   cplText.textContent = isRing0 ? "CPL = 0 (Ring 0 - Kernel Mode)" : "CPL = 3 (Ring 3 - User Mode)";

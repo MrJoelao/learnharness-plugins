@@ -28,6 +28,7 @@ import { renderReplacementView } from "./replacement-view.js";
 import { openCustomInputModal } from "./custom-input-modal.js";
 import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
+import { ensureAbortSignal, openToolbarMenu, showErrorBanner } from "../toolbar-helpers.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
@@ -63,7 +64,7 @@ export function createMemoryLabView(
     ...initialState,
     exerciseHistory: [...(initialState.exerciseHistory ?? [])]
   };
-  let isPresetMenuOpen = false;
+  const { signal: viewSignal, cleanup: cleanupSignal } = ensureAbortSignal(signal);
   let activeModalCleanup: (() => void) | null = null;
   let previousStateForUndo: MemoryLabState | null = null;
   let activeExercise: SavedExercise | null =
@@ -144,7 +145,6 @@ export function createMemoryLabView(
     const preset = MEMORY_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
 
-    isPresetMenuOpen = false;
     const updates: Partial<MemoryLabState> = {
       subsystem: preset.subsystem,
       trace: preset.trace,
@@ -233,7 +233,7 @@ export function createMemoryLabView(
         }
       },
       targetContainer: rootEl,
-      signal
+      signal: viewSignal
     });
   }
 
@@ -345,7 +345,7 @@ export function createMemoryLabView(
 
     // Subsystem Tabs
     const tabs = document.createElement("div");
-    tabs.className = "subsystem-tabs";
+    tabs.className = "subsystem-tabs lh-no-drag";
 
     const subsystems: Array<{ id: MemoryLabSubsystem; label: string; iconName: string }> = [
       { id: "segmentation", label: "Segmentazione", iconName: "layers" },
@@ -357,7 +357,7 @@ export function createMemoryLabView(
 
     for (const sub of subsystems) {
       const btn = document.createElement("button");
-      btn.className = `tab-button ${state.subsystem === sub.id ? "tab-active" : ""}`;
+      btn.className = `tab-button lh-no-drag ${state.subsystem === sub.id ? "tab-active" : ""}`;
       btn.appendChild(createIcon(sub.iconName, "size-4"));
       const label = document.createElement("span");
       label.textContent = sub.label;
@@ -367,13 +367,13 @@ export function createMemoryLabView(
     }
     toolbar.appendChild(tabs);
 
-    // Right Actions: Presets and Custom Input
+    // Right Actions: Exercises, Presets, and More Menu
     const actions = document.createElement("div");
-    actions.className = "toolbar-actions";
+    actions.className = "toolbar-actions lh-no-drag";
 
-    // Esercizi Button (Discreet History Trigger)
+    // Esercizi Button (Discreet History Trigger - must remain FIRST .btn-outline in .memory-lab-toolbar)
     const exercisesBtn = document.createElement("button");
-    exercisesBtn.className = "btn btn-outline btn-sm";
+    exercisesBtn.className = "btn btn-outline btn-sm lh-no-drag";
     exercisesBtn.title = "Cronologia Esercizi";
     const exSpan = document.createElement("span");
     exSpan.textContent = "Esercizi";
@@ -383,126 +383,132 @@ export function createMemoryLabView(
     });
     actions.appendChild(exercisesBtn);
 
-    // Presets dropdown container
+    // Presets menu trigger
     const presetDropdown = document.createElement("div");
-    presetDropdown.className = "preset-dropdown-container";
+    presetDropdown.className = "preset-dropdown-container lh-no-drag";
 
     const presetBtn = document.createElement("button");
-    presetBtn.className = "btn btn-outline";
-    presetBtn.innerHTML = `<span>Carica Preset</span>`;
-    presetBtn.appendChild(createIcon("chevron-right", "size-3"));
+    presetBtn.className = "btn btn-secondary btn-sm lh-no-drag";
+    const presetSpan = document.createElement("span");
+    presetSpan.textContent = "Preset";
+    presetBtn.append(presetSpan, createIcon("chevron-right", "size-3"));
     presetBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      isPresetMenuOpen = !isPresetMenuOpen;
-      render();
+      openToolbarMenu({
+        anchor: presetBtn,
+        label: "Preset",
+        ui: ctx?.ui,
+        signal: viewSignal,
+        items: MEMORY_PRESETS.map((preset) => ({
+          key: preset.id,
+          label: state.activePresetId === preset.id ? `${preset.name} (attivo)` : preset.name,
+          onSelect: () => loadPreset(preset.id)
+        }))
+      });
     });
     presetDropdown.appendChild(presetBtn);
-
-    if (isPresetMenuOpen) {
-      const menu = document.createElement("div");
-      menu.className = "preset-menu-popover";
-      for (const preset of MEMORY_PRESETS) {
-        const item = document.createElement("button");
-        item.className = `preset-menu-item ${state.activePresetId === preset.id ? "active" : ""}`;
-        item.innerHTML = `
-          <div class="preset-name">${preset.name}</div>
-          <div class="preset-desc">${preset.description}</div>
-        `;
-        item.addEventListener("click", () => loadPreset(preset.id));
-        menu.appendChild(item);
-      }
-      presetDropdown.appendChild(menu);
-    }
     actions.appendChild(presetDropdown);
 
-    // Custom Config Button
-    const customBtn = document.createElement("button");
-    customBtn.className = "btn btn-outline";
-    customBtn.appendChild(createIcon("sliders", "size-4"));
-    const customLabel = document.createElement("span");
-    customLabel.textContent = "Parametri Esercizio";
-    customBtn.appendChild(customLabel);
-    customBtn.addEventListener("click", () => {
-      if (activeModalCleanup) {
-        activeModalCleanup();
-      }
-      activeModalCleanup = openCustomInputModal(
-        state,
-        (updates) => {
-          markActiveExerciseManual();
-          update(updates);
-        },
-        rootEl,
-        signal,
-        ctx?.ui
-      );
-    });
-    actions.appendChild(customBtn);
+    // Altro menu trigger (Parametri Esercizio, Importa JSON, Esporta JSON)
+    const moreDropdown = document.createElement("div");
+    moreDropdown.className = "preset-dropdown-container lh-no-drag";
 
-    // Import JSON Button
-    const importBtn = document.createElement("button");
-    importBtn.className = "btn btn-outline";
-    importBtn.appendChild(createIcon("upload", "size-4"));
-    const importLabel = document.createElement("span");
-    importLabel.textContent = "Importa JSON";
-    importBtn.appendChild(importLabel);
-    importBtn.addEventListener("click", () => {
-      triggerJsonImport(
-        (data) => {
-          const parsed = parseMemoryPreset(data);
-          if (parsed.success) {
-            const p = parsed.data;
-            const updates: Partial<MemoryLabState> = {
-              subsystem: p.subsystem,
-              trace: p.trace,
-              currentTraceIndex: 0,
-              currentVa: p.trace[0] ?? 0,
-              vaInputString: String(p.trace[0] ?? 0),
-              activePresetId: p.id
-            };
-            if (p.segmentationConfig) updates.segmentationConfig = p.segmentationConfig;
-            if (p.linearPagingConfig) updates.linearPagingConfig = p.linearPagingConfig;
-            if (p.multiLevelPagingConfig) updates.multiLevelPagingConfig = p.multiLevelPagingConfig;
-            if (p.tlbConfig) updates.tlbConfig = p.tlbConfig;
-            if (p.replacementConfig) updates.replacementConfig = p.replacementConfig;
-            update(updates);
-          } else {
-            alert(`Errore validazione preset memoria: ${parsed.error}`);
+    const moreBtn = document.createElement("button");
+    moreBtn.className = "btn btn-ghost btn-sm lh-no-drag";
+    const moreSpan = document.createElement("span");
+    moreSpan.textContent = "Altro";
+    moreBtn.append(createIcon("sliders", "size-4"), moreSpan);
+    moreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openToolbarMenu({
+        anchor: moreBtn,
+        label: "Altro",
+        ui: ctx?.ui,
+        signal: viewSignal,
+        items: [
+          {
+            key: "custom-config",
+            label: "Parametri Esercizio",
+            onSelect: () => {
+              if (activeModalCleanup) {
+                activeModalCleanup();
+              }
+              activeModalCleanup = openCustomInputModal(
+                state,
+                (updates) => {
+                  markActiveExerciseManual();
+                  update(updates);
+                },
+                rootEl,
+                viewSignal,
+                ctx?.ui
+              );
+            }
+          },
+          {
+            key: "import-json",
+            label: "Importa JSON",
+            onSelect: () => {
+              triggerJsonImport(
+                (data) => {
+                  const parsed = parseMemoryPreset(data);
+                  if (parsed.success) {
+                    const p = parsed.data;
+                    const updates: Partial<MemoryLabState> = {
+                      subsystem: p.subsystem,
+                      trace: p.trace,
+                      currentTraceIndex: 0,
+                      currentVa: p.trace[0] ?? 0,
+                      vaInputString: String(p.trace[0] ?? 0),
+                      activePresetId: p.id
+                    };
+                    if (p.segmentationConfig) updates.segmentationConfig = p.segmentationConfig;
+                    if (p.linearPagingConfig) updates.linearPagingConfig = p.linearPagingConfig;
+                    if (p.multiLevelPagingConfig) updates.multiLevelPagingConfig = p.multiLevelPagingConfig;
+                    if (p.tlbConfig) updates.tlbConfig = p.tlbConfig;
+                    if (p.replacementConfig) updates.replacementConfig = p.replacementConfig;
+                    update(updates);
+                  } else {
+                    showErrorBanner(
+                      labContent,
+                      `Errore validazione preset memoria: ${parsed.error}`,
+                      viewSignal
+                    );
+                  }
+                },
+                (err) => showErrorBanner(labContent, err, viewSignal)
+              );
+            }
+          },
+          {
+            key: "export-json",
+            label: "Esporta JSON",
+            onSelect: () => {
+              const exportData: Record<string, unknown> = {
+                id: state.activePresetId ?? "custom-memory-preset",
+                name: `Memory Configuration (${state.subsystem})`,
+                description: "Configurazione esportata da Memory Virtualization Lab",
+                subsystem: state.subsystem,
+                trace: state.trace
+              };
+              if (state.subsystem === "segmentation") {
+                exportData.segmentationConfig = state.segmentationConfig;
+              } else if (state.subsystem === "linear-paging" || state.subsystem === "tlb") {
+                exportData.linearPagingConfig = state.linearPagingConfig;
+                if (state.subsystem === "tlb") exportData.tlbConfig = state.tlbConfig;
+              } else if (state.subsystem === "multi-level") {
+                exportData.multiLevelPagingConfig = state.multiLevelPagingConfig;
+              } else if (state.subsystem === "replacement") {
+                exportData.replacementConfig = state.replacementConfig;
+              }
+              exportJsonFile(`memory-preset-${state.subsystem}.json`, exportData);
+            }
           }
-        },
-        (err) => alert(err)
-      );
+        ]
+      });
     });
-    actions.appendChild(importBtn);
-
-    // Export JSON Button
-    const exportBtn = document.createElement("button");
-    exportBtn.className = "btn btn-outline";
-    exportBtn.appendChild(createIcon("download", "size-4"));
-    const exportLabel = document.createElement("span");
-    exportLabel.textContent = "Esporta JSON";
-    exportBtn.appendChild(exportLabel);
-    exportBtn.addEventListener("click", () => {
-      const exportData: Record<string, unknown> = {
-        id: state.activePresetId ?? "custom-memory-preset",
-        name: `Memory Configuration (${state.subsystem})`,
-        description: "Configurazione esportata da Memory Virtualization Lab",
-        subsystem: state.subsystem,
-        trace: state.trace
-      };
-      if (state.subsystem === "segmentation") {
-        exportData.segmentationConfig = state.segmentationConfig;
-      } else if (state.subsystem === "linear-paging" || state.subsystem === "tlb") {
-        exportData.linearPagingConfig = state.linearPagingConfig;
-        if (state.subsystem === "tlb") exportData.tlbConfig = state.tlbConfig;
-      } else if (state.subsystem === "multi-level") {
-        exportData.multiLevelPagingConfig = state.multiLevelPagingConfig;
-      } else if (state.subsystem === "replacement") {
-        exportData.replacementConfig = state.replacementConfig;
-      }
-      exportJsonFile(`memory-preset-${state.subsystem}.json`, exportData);
-    });
-    actions.appendChild(exportBtn);
+    moreDropdown.appendChild(moreBtn);
+    actions.appendChild(moreDropdown);
 
     toolbar.appendChild(actions);
     labContent.appendChild(toolbar);
@@ -576,6 +582,11 @@ export function createMemoryLabView(
     const input = document.createElement("input");
     input.type = "text";
     input.className = "input-text font-mono";
+    if (input.style) {
+      input.style.minWidth = "0";
+      input.style.flex = "1 1 140px";
+      input.style.maxWidth = "100%";
+    }
     input.value = state.vaInputString;
     input.placeholder = "es. 12841 o 0x3229";
     input.addEventListener("input", (e) => {
@@ -686,23 +697,14 @@ export function createMemoryLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
-    signal,
+    signal: viewSignal,
     ui: ctx?.ui
   });
-
-  // Close preset popover when clicking outside
-  const onWindowClick = () => {
-    if (isPresetMenuOpen) {
-      isPresetMenuOpen = false;
-      render();
-    }
-  };
-  window.addEventListener("click", onWindowClick);
 
   render();
 
   return () => {
-    window.removeEventListener("click", onWindowClick);
+    cleanupSignal();
     if (activeModalCleanup) {
       activeModalCleanup();
       activeModalCleanup = null;

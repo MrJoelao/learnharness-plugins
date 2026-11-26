@@ -209,7 +209,7 @@ export function renderRagGraph(
     text.setAttribute("y", String(pos.y + 4));
     text.setAttribute("text-anchor", "middle");
     text.setAttribute("font-family", "var(--font-mono, monospace)");
-    text.setAttribute("font-size", "10");
+    text.setAttribute("font-size", "11");
     text.setAttribute("font-weight", "600");
     text.setAttribute("fill", "var(--foreground)");
     text.textContent = id;

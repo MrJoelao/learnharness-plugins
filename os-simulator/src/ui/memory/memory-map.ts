@@ -7,6 +7,13 @@ import type {
   MemoryLabSubsystem
 } from "../../core/memory/types.js";
 
+function appendTableWithScrollWrap(card: HTMLElement, table: HTMLElement): void {
+  const scrollWrap = document.createElement("div");
+  scrollWrap.className = "table-scroll-wrap";
+  scrollWrap.appendChild(table);
+  card.appendChild(scrollWrap);
+}
+
 export function renderMemoryMap(
   subsystem: MemoryLabSubsystem,
   config: {
@@ -69,7 +76,7 @@ export function renderMemoryMap(
           .join("")}
       </tbody>
     `;
-    segmentsCard.appendChild(table);
+    appendTableWithScrollWrap(segmentsCard, table);
     container.appendChild(segmentsCard);
   } else if (subsystem === "linear-paging" && config.linearPagingConfig) {
     const paging = config.linearPagingConfig;
@@ -115,7 +122,7 @@ export function renderMemoryMap(
           .join("")}
       </tbody>
     `;
-    tableCard.appendChild(table);
+    appendTableWithScrollWrap(tableCard, table);
     container.appendChild(tableCard);
 
     // Frame Grid
@@ -180,7 +187,7 @@ export function renderMemoryMap(
           .join("")}
       </tbody>
     `;
-    card.appendChild(table);
+    appendTableWithScrollWrap(card, table);
     container.appendChild(card);
   } else if (subsystem === "tlb" && config.tlbConfig) {
     const tlb = config.tlbConfig;
@@ -221,7 +228,7 @@ export function renderMemoryMap(
           .join("")}
       </tbody>
     `;
-    card.appendChild(table);
+    appendTableWithScrollWrap(card, table);
     container.appendChild(card);
   }
 

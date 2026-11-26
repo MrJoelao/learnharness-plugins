@@ -19,10 +19,18 @@ export function renderReplacementView(
   // Policy selector
   const policyGroup = document.createElement("div");
   policyGroup.className = "policy-selector-group";
+  if (policyGroup.style) {
+    policyGroup.style.flexWrap = "wrap";
+    policyGroup.style.minWidth = "0";
+  }
   policyGroup.innerHTML = `<span class="control-label">Algoritmo:</span>`;
 
   const select = document.createElement("select");
   select.className = "input-select font-mono";
+  if (select.style) {
+    select.style.minWidth = "0";
+    select.style.maxWidth = "100%";
+  }
   const policies: Array<{ id: PageReplacementConfig["policy"]; label: string }> = [
     { id: "fifo", label: "FIFO (First In First Out)" },
     { id: "opt", label: "Optimal (MIN / Belàdy Optimal)" },
@@ -46,6 +54,9 @@ export function renderReplacementView(
   // Frame count input
   const frameGroup = document.createElement("div");
   frameGroup.className = "frame-count-group";
+  if (frameGroup.style) {
+    frameGroup.style.flexWrap = "wrap";
+  }
   frameGroup.innerHTML = `<span class="control-label">Frame Fisici:</span>`;
 
   const frameInput = document.createElement("input");
@@ -66,6 +77,9 @@ export function renderReplacementView(
   // Stepping buttons
   const stepControls = document.createElement("div");
   stepControls.className = "step-buttons-group";
+  if (stepControls.style) {
+    stepControls.style.flexWrap = "wrap";
+  }
 
   const btnPrev = document.createElement("button");
   btnPrev.className = "btn btn-outline";

@@ -79,7 +79,7 @@ export function renderCircularBuffer(
     idxText.setAttribute("y", String(idxY));
     idxText.setAttribute("text-anchor", "middle");
     idxText.setAttribute("font-family", "var(--font-mono, monospace)");
-    idxText.setAttribute("font-size", "10");
+    idxText.setAttribute("font-size", "11");
     idxText.setAttribute("fill", "var(--muted-foreground)");
     idxText.textContent = `[${i}]`;
     slotGroup.appendChild(idxText);
@@ -91,7 +91,7 @@ export function renderCircularBuffer(
       inBadge.setAttribute("y", String(center + inR * Math.sin(angle) + 3));
       inBadge.setAttribute("text-anchor", "middle");
       inBadge.setAttribute("font-family", "var(--font-mono, monospace)");
-      inBadge.setAttribute("font-size", "9");
+      inBadge.setAttribute("font-size", "11");
       inBadge.setAttribute("font-weight", "bold");
       inBadge.setAttribute("fill", "var(--primary)");
       inBadge.textContent = "in";

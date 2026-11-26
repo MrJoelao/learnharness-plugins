@@ -15,6 +15,7 @@ import type { ConcurrencyLabState, ConcurrencyScenarioState } from "../../core/c
 import { parseScenarioConfig, concurrencyScenarioBoundaryParser } from "../../core/concurrency/types.js";
 import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
+import { ensureAbortSignal, openToolbarMenu, showErrorBanner } from "../toolbar-helpers.js";
 import { renderCircularBuffer } from "./circular-buffer.js";
 import { openCustomScenarioModal } from "./custom-scenario-modal.js";
 import { renderRagGraph } from "./rag-graph.js";
@@ -52,7 +53,7 @@ export function createConcurrencyLabView(
   };
   let timerId: ReturnType<typeof setInterval> | null = null;
   let activeModalCleanup: (() => void) | null = null;
-  let isPresetDropdownOpen = false;
+  const { signal: viewSignal, cleanup: cleanupViewSignal } = ensureAbortSignal(signal);
   let previousStateForUndo: ConcurrencyLabState | null = null;
   let activeExercise: SavedExercise | null =
     state.activeExerciseId && state.exerciseHistory
@@ -186,7 +187,7 @@ export function createConcurrencyLabView(
         }
       },
       targetContainer: rootEl,
-      signal
+      signal: viewSignal
     });
   }
 
@@ -257,11 +258,11 @@ export function createConcurrencyLabView(
     toolbar.className = "lh-toolbar concurrency-toolbar";
 
     const leftToolbar = document.createElement("div");
-    leftToolbar.className = "toolbar-group-left";
+    leftToolbar.className = "toolbar-group-left lh-no-drag";
 
-    // Esercizi Button (Discreet History Trigger)
+    // Esercizi Button (Discreet History Trigger - must remain first .btn-outline)
     const exercisesBtn = document.createElement("button");
-    exercisesBtn.className = "btn btn-outline btn-sm";
+    exercisesBtn.className = "btn btn-outline btn-sm lh-no-drag";
     exercisesBtn.title = "Cronologia Esercizi";
     const exSpan = document.createElement("span");
     exSpan.textContent = "Esercizi";
@@ -271,99 +272,49 @@ export function createConcurrencyLabView(
     });
     leftToolbar.appendChild(exercisesBtn);
 
-    const presetDropdownWrap = document.createElement("div");
-    presetDropdownWrap.className = "preset-dropdown-container";
+    const presetList = [
+      { id: LOST_UPDATE_DEMO.scenarioId, title: "1. Lost Update (Race Condition)", preset: LOST_UPDATE_DEMO },
+      { id: TICKET_LOCK_DEMO.scenarioId, title: "2. Ticket Lock (Hardware Sync)", preset: TICKET_LOCK_DEMO },
+      { id: BOUNDED_BUFFER_MESA.scenarioId, title: "3. Bounded Buffer (Mesa 2 CV)", preset: BOUNDED_BUFFER_MESA },
+      { id: BOUNDED_BUFFER_1CV_BUG.scenarioId, title: "4. Bounded Buffer (Baco 1 CV)", preset: BOUNDED_BUFFER_1CV_BUG },
+      { id: SEMAPHORE_DEADLOCK_ORDER.scenarioId, title: "5. Semafori: Deadlock Mutex Order", preset: SEMAPHORE_DEADLOCK_ORDER },
+      { id: DINING_PHILOSOPHERS_DEADLOCK.scenarioId, title: "6. 5 Filosofi a Cena (Deadlock)", preset: DINING_PHILOSOPHERS_DEADLOCK },
+      { id: DINING_PHILOSOPHERS_ASYMMETRIC.scenarioId, title: "7. 5 Filosofi (Soluzione Asimmetrica)", preset: DINING_PHILOSOPHERS_ASYMMETRIC }
+    ];
+
+    const presetDropdown = document.createElement("div");
+    presetDropdown.className = "preset-dropdown-container lh-no-drag";
 
     const presetBtn = document.createElement("button");
-    presetBtn.className = "btn btn-outline btn-sm";
+    presetBtn.className = "btn btn-secondary btn-sm lh-no-drag";
     const presetIcon = createIcon("layers", "size-4");
     const presetLabel = document.createElement("span");
     presetLabel.textContent = `Preset: ${state.scenarioState.name}`;
-    const chevronIcon = createIcon("chevron-right", "size-3.5");
+    const chevronIcon = createIcon("chevron-down", "size-3.5");
     presetBtn.append(presetIcon, presetLabel, chevronIcon);
 
     presetBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      isPresetDropdownOpen = !isPresetDropdownOpen;
-      render();
-    });
-    presetDropdownWrap.appendChild(presetBtn);
-
-    if (isPresetDropdownOpen) {
-      const menu = document.createElement("div");
-      menu.className = "preset-menu-popover";
-
-      const presetList = [
-        { id: LOST_UPDATE_DEMO.scenarioId, title: "1. Lost Update (Race Condition)", preset: LOST_UPDATE_DEMO },
-        { id: TICKET_LOCK_DEMO.scenarioId, title: "2. Ticket Lock (Hardware Sync)", preset: TICKET_LOCK_DEMO },
-        { id: BOUNDED_BUFFER_MESA.scenarioId, title: "3. Bounded Buffer (Mesa 2 CV)", preset: BOUNDED_BUFFER_MESA },
-        { id: BOUNDED_BUFFER_1CV_BUG.scenarioId, title: "4. Bounded Buffer (Baco 1 CV)", preset: BOUNDED_BUFFER_1CV_BUG },
-        { id: SEMAPHORE_DEADLOCK_ORDER.scenarioId, title: "5. Semafori: Deadlock Mutex Order", preset: SEMAPHORE_DEADLOCK_ORDER },
-        { id: DINING_PHILOSOPHERS_DEADLOCK.scenarioId, title: "6. 5 Filosofi a Cena (Deadlock)", preset: DINING_PHILOSOPHERS_DEADLOCK },
-        { id: DINING_PHILOSOPHERS_ASYMMETRIC.scenarioId, title: "7. 5 Filosofi (Soluzione Asimmetrica)", preset: DINING_PHILOSOPHERS_ASYMMETRIC }
-      ];
-
-      for (const item of presetList) {
-        const itemBtn = document.createElement("button");
-        itemBtn.className = `preset-item ${state.activePresetId === item.id ? "preset-item-active" : ""}`;
-        itemBtn.textContent = item.title;
-        itemBtn.addEventListener("click", () => {
-          isPresetDropdownOpen = false;
-          applyScenario(item.preset, item.id);
-        });
-        menu.appendChild(itemBtn);
-      }
-      presetDropdownWrap.appendChild(menu);
-    }
-    leftToolbar.appendChild(presetDropdownWrap);
-
-    const customBtn = document.createElement("button");
-    customBtn.className = "btn btn-outline btn-sm";
-    customBtn.append(createIcon("edit", "size-3.5"), document.createTextNode("Custom Scenario"));
-    customBtn.addEventListener("click", () => {
-      if (activeModalCleanup) activeModalCleanup();
-      activeModalCleanup = openCustomScenarioModal(
-        state.scenarioState,
-        (newScenario) => {
-          markActiveExerciseManual();
-          applyScenario(newScenario, "custom");
-        },
-        container,
-        signal,
-        ctx?.ui
-      );
-    });
-    leftToolbar.appendChild(customBtn);
-
-    const importBtn = document.createElement("button");
-    importBtn.className = "btn btn-outline btn-sm";
-    importBtn.append(createIcon("upload", "size-3.5"), document.createTextNode("Importa JSON"));
-    importBtn.addEventListener("click", () => {
-      triggerJsonImport(
-        (data) => {
-          const parsed = parseScenarioConfig(data);
-          if (parsed.success) {
-            applyScenario(parsed.data, parsed.data.scenarioId);
-          } else {
-            alert(`Errore validazione scenario concorrenza: ${parsed.error}`);
+      openToolbarMenu({
+        anchor: presetBtn,
+        label: "Seleziona Preset Concorrenza",
+        ui: ctx?.ui,
+        signal: viewSignal,
+        items: presetList.map((item) => ({
+          key: item.id,
+          label: item.title,
+          onSelect: () => {
+            applyScenario(item.preset, item.id);
           }
-        },
-        (err) => alert(err)
-      );
+        }))
+      });
     });
-    leftToolbar.appendChild(importBtn);
-
-    const exportBtn = document.createElement("button");
-    exportBtn.className = "btn btn-outline btn-sm";
-    exportBtn.append(createIcon("download", "size-3.5"), document.createTextNode("Esporta JSON"));
-    exportBtn.addEventListener("click", () => {
-      exportJsonFile(`concurrency-scenario-${state.scenarioState.scenarioId}.json`, state.scenarioState);
-    });
-    leftToolbar.appendChild(exportBtn);
+    presetDropdown.appendChild(presetBtn);
+    leftToolbar.appendChild(presetDropdown);
 
     if (state.scenarioState.asymmetricThreads && state.scenarioState.asymmetricThreads.length > 0) {
       const toggleAsymBtn = document.createElement("button");
-      toggleAsymBtn.className = "btn btn-outline btn-sm";
+      toggleAsymBtn.className = "btn btn-secondary btn-sm lh-no-drag";
       const isAsym = state.scenarioState.name.includes("Asimmetrica");
       toggleAsymBtn.append(
         createIcon("refresh-cw", "size-3.5"),
@@ -402,24 +353,78 @@ export function createConcurrencyLabView(
       leftToolbar.appendChild(toggleAsymBtn);
     }
 
+    const altroDropdown = document.createElement("div");
+    altroDropdown.className = "preset-dropdown-container lh-no-drag";
+
+    const altroBtn = document.createElement("button");
+    altroBtn.className = "btn btn-ghost btn-sm lh-no-drag";
+    altroBtn.append(
+      createIcon("sliders", "size-3.5"),
+      document.createTextNode("Altro"),
+      createIcon("chevron-down", "size-3.5")
+    );
+    altroBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openToolbarMenu({
+        anchor: altroBtn,
+        label: "Altre azioni",
+        ui: ctx?.ui,
+        signal: viewSignal,
+        items: [
+          {
+            key: "custom-scenario",
+            label: "Custom Scenario",
+            onSelect: () => {
+              if (activeModalCleanup) activeModalCleanup();
+              activeModalCleanup = openCustomScenarioModal(
+                state.scenarioState,
+                (newScenario) => {
+                  markActiveExerciseManual();
+                  applyScenario(newScenario, "custom");
+                },
+                container,
+                viewSignal,
+                ctx?.ui
+              );
+            }
+          },
+          {
+            key: "import-json",
+            label: "Importa JSON",
+            onSelect: () => {
+              triggerJsonImport(
+                (data) => {
+                  const parsed = parseScenarioConfig(data);
+                  if (parsed.success) {
+                    applyScenario(parsed.data, parsed.data.scenarioId);
+                  } else {
+                    showErrorBanner(labContent, `Errore validazione scenario concorrenza: ${parsed.error}`, viewSignal);
+                  }
+                },
+                (err) => showErrorBanner(labContent, err, viewSignal)
+              );
+            }
+          },
+          {
+            key: "export-json",
+            label: "Esporta JSON",
+            onSelect: () => {
+              exportJsonFile(`concurrency-scenario-${state.scenarioState.scenarioId}.json`, state.scenarioState);
+            }
+          }
+        ]
+      });
+    });
+    altroDropdown.appendChild(altroBtn);
+    leftToolbar.appendChild(altroDropdown);
+
     toolbar.appendChild(leftToolbar);
 
     const rightToolbar = document.createElement("div");
-    rightToolbar.className = "toolbar-group-right";
-
-    for (const thread of state.scenarioState.threads) {
-      const stepBtn = document.createElement("button");
-      stepBtn.className = "btn btn-outline btn-sm font-mono tabular-nums";
-      stepBtn.textContent = `Step ${thread.id}`;
-      stepBtn.disabled = !canThreadStep(state.scenarioState, thread.id);
-      stepBtn.addEventListener("click", () => {
-        stepSpecificThread(thread.id);
-      });
-      rightToolbar.appendChild(stepBtn);
-    }
+    rightToolbar.className = "toolbar-group-right lh-no-drag";
 
     const runStepBtn = document.createElement("button");
-    runStepBtn.className = "btn btn-primary btn-sm font-mono tabular-nums";
+    runStepBtn.className = "btn btn-primary btn-sm font-mono tabular-nums lh-no-drag";
     runStepBtn.append(createIcon("skip-forward", "size-3.5"), document.createTextNode("Run Step"));
     const anyCanStep = state.scenarioState.threads.some((t) => canThreadStep(state.scenarioState, t.id));
     runStepBtn.disabled = !anyCanStep;
@@ -429,7 +434,7 @@ export function createConcurrencyLabView(
     rightToolbar.appendChild(runStepBtn);
 
     const playBtn = document.createElement("button");
-    playBtn.className = `btn btn-sm ${state.isPlaying ? "btn-primary" : "btn-outline"}`;
+    playBtn.className = `btn btn-sm ${state.isPlaying ? "btn-primary" : "btn-secondary"} lh-no-drag`;
     playBtn.append(
       createIcon(state.isPlaying ? "pause" : "play", "size-3.5"),
       document.createTextNode(state.isPlaying ? "Pausa" : "Auto Play")
@@ -450,7 +455,7 @@ export function createConcurrencyLabView(
     rightToolbar.appendChild(playBtn);
 
     const resetBtn = document.createElement("button");
-    resetBtn.className = "btn btn-outline btn-sm";
+    resetBtn.className = "btn btn-secondary btn-sm lh-no-drag";
     resetBtn.title = "Ripristina Scenario";
     resetBtn.append(createIcon("rotate-ccw", "size-3.5"), document.createTextNode("Reset"));
     resetBtn.addEventListener("click", () => {
@@ -560,23 +565,15 @@ export function createConcurrencyLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
-    signal,
+    signal: viewSignal,
     ui: ctx?.ui
   });
-
-  const onWindowClick = () => {
-    if (isPresetDropdownOpen) {
-      isPresetDropdownOpen = false;
-      render();
-    }
-  };
-  window.addEventListener("click", onWindowClick);
 
   render();
 
   return () => {
     stopTimer();
-    window.removeEventListener("click", onWindowClick);
+    cleanupViewSignal();
     if (activeModalCleanup) {
       activeModalCleanup();
       activeModalCleanup = null;

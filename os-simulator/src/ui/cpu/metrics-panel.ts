@@ -44,13 +44,13 @@ export function renderMetricsPanel(container: HTMLElement, props: MetricsPanelPr
   for (const m of props.metrics) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td style="font-weight: 600;">${m.processId}</td>
-      <td>${m.arrivalTime}</td>
-      <td>${m.firstRunTime}</td>
-      <td>${m.completionTime}</td>
-      <td style="font-weight: 600; color: var(--primary);">${m.turnaroundTime}</td>
-      <td>${m.responseTime}</td>
-      <td>${m.waitTime}</td>
+      <td class="cpu-metrics-cell-label">${m.processId}</td>
+      <td class="cpu-metrics-cell-num">${m.arrivalTime}</td>
+      <td class="cpu-metrics-cell-num">${m.firstRunTime}</td>
+      <td class="cpu-metrics-cell-num">${m.completionTime}</td>
+      <td class="cpu-metrics-cell-num cpu-metrics-cell-primary">${m.turnaroundTime}</td>
+      <td class="cpu-metrics-cell-num">${m.responseTime}</td>
+      <td class="cpu-metrics-cell-num">${m.waitTime}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -59,14 +59,14 @@ export function renderMetricsPanel(container: HTMLElement, props: MetricsPanelPr
   const tfoot = document.createElement("tfoot");
   tfoot.className = "cpu-metrics-averages-row";
   tfoot.innerHTML = `
-    <tr style="border-top: 2px solid var(--border); font-weight: 700; background-color: var(--muted);">
-      <td>Media Generale</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td style="color: var(--primary);">${props.averages.turnaround}</td>
-      <td>${props.averages.response}</td>
-      <td>${props.averages.wait}</td>
+    <tr class="cpu-metrics-row-avg">
+      <td class="cpu-metrics-cell-label">Media Generale</td>
+      <td class="cpu-metrics-cell-num">-</td>
+      <td class="cpu-metrics-cell-num">-</td>
+      <td class="cpu-metrics-cell-num">-</td>
+      <td class="cpu-metrics-cell-num cpu-metrics-cell-primary">${props.averages.turnaround}</td>
+      <td class="cpu-metrics-cell-num">${props.averages.response}</td>
+      <td class="cpu-metrics-cell-num">${props.averages.wait}</td>
     </tr>
   `;
   table.appendChild(tfoot);

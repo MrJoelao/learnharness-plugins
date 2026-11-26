@@ -178,7 +178,7 @@ function setupCustomScenarioForm(
   body.appendChild(textarea);
 
   const errorEl = document.createElement("div");
-  errorEl.className = "modal-error-message hidden text-destructive text-xs font-mono mt-2";
+  errorEl.className = "modal-error hidden text-destructive text-xs font-mono mt-2";
   body.appendChild(errorEl);
 
   container.appendChild(body);

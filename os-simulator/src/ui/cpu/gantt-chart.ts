@@ -48,6 +48,9 @@ export function renderGanttChart(container: HTMLElement, props: GanttChartProps)
 
   const buttonsGroup = document.createElement("div");
   buttonsGroup.className = "playback-buttons-group";
+  if (buttonsGroup.style) {
+    buttonsGroup.style.flexWrap = "wrap";
+  }
 
   // Reset
   const resetBtn = document.createElement("button");
@@ -96,10 +99,17 @@ export function renderGanttChart(container: HTMLElement, props: GanttChartProps)
   // Scrubber slider
   const scrubberGroup = document.createElement("div");
   scrubberGroup.className = "playback-scrubber-group";
+  if (scrubberGroup.style) {
+    scrubberGroup.style.minWidth = "0";
+    scrubberGroup.style.flexWrap = "wrap";
+  }
 
   const scrubber = document.createElement("input");
   scrubber.type = "range";
   scrubber.className = "cpu-scrubber-slider";
+  if (scrubber.style) {
+    scrubber.style.minWidth = "120px";
+  }
   scrubber.min = "0";
   scrubber.max = String(maxTick);
   scrubber.value = String(props.currentTick);

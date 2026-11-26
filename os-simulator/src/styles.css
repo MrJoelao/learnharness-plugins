@@ -2,7 +2,7 @@
 
 /* OS Simulator: Phase 1 Memory Virtualization Lab Styles */
 
-.os-simulator-stub {
+.lh-root .os-simulator-stub {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,7 @@
   font-size: 0.875rem;
 }
 
-.memory-lab-root {
+.lh-root.memory-lab-root {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -25,21 +25,21 @@
   min-height: 100%;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner) .font-mono {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner) .font-mono {
   font-family: var(--font-mono, monospace);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner) .font-title {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner) .font-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner) .tabular-nums {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner) .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
 /* Toolbar */
-.memory-lab-toolbar {
+.lh-root .memory-lab-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -49,13 +49,13 @@
   border-bottom: 1px solid var(--border);
 }
 
-.subsystem-tabs {
+.lh-root .subsystem-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.tab-button {
+.lh-root .tab-button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -70,27 +70,28 @@
   transition: all 0.15s ease;
 }
 
-.tab-button:hover {
+.lh-root .tab-button:hover {
   background-color: var(--muted);
   color: var(--foreground);
 }
 
-.tab-button.tab-active {
+.lh-root .tab-button.tab-active {
   background-color: var(--muted);
   border-color: var(--primary);
   color: var(--foreground);
   font-weight: 600;
 }
 
-.toolbar-actions {
+.lh-root .toolbar-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   position: relative;
 }
 
 /* Buttons */
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -102,27 +103,47 @@
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-primary {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-primary {
   background-color: var(--primary);
   color: var(--primary-foreground);
   border: 1px solid var(--primary);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-primary:hover {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-primary:hover {
   opacity: 0.9;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-outline {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-outline {
   background-color: var(--card);
   color: var(--foreground);
   border: 1px solid var(--border);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-outline:hover {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-outline:hover {
   background-color: var(--muted);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-icon {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-secondary:hover:not(:disabled) {
+  background-color: var(--muted);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-ghost {
+  background-color: transparent;
+  color: var(--foreground);
+  border: 1px solid transparent;
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-ghost:hover:not(:disabled) {
+  background-color: var(--accent);
+}
+
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -134,26 +155,27 @@
   cursor: pointer;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-icon:disabled {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-icon:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .copilot-undo-banner, .modal-dialog) .btn-icon:not(:disabled):hover {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .copilot-undo-banner, .lh-root .modal-dialog) .btn-icon:not(:disabled):hover {
   background-color: var(--muted);
 }
 
 /* Preset Popover */
-.preset-dropdown-container {
+.lh-root .preset-dropdown-container {
   position: relative;
 }
 
-.preset-menu-popover {
+.lh-root .preset-menu-popover {
   position: absolute;
   top: calc(100% + 0.25rem);
   right: 0;
   z-index: 50;
-  min-width: 280px;
+  min-width: min(280px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius, 8px);
@@ -164,7 +186,12 @@
   gap: 0.25rem;
 }
 
-.preset-menu-item {
+.lh-root .toolbar-group-left .preset-menu-popover {
+  left: 0;
+  right: auto;
+}
+
+.lh-root .preset-menu-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -177,25 +204,25 @@
   transition: background-color 0.12s ease;
 }
 
-.preset-menu-item:hover,
-.preset-menu-item.active {
+.lh-root .preset-menu-item:hover,
+.lh-root .preset-menu-item.active {
   background-color: var(--muted);
 }
 
-.preset-name {
+.lh-root .preset-name {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--foreground);
 }
 
-.preset-desc {
-  font-size: 0.6875rem;
+.lh-root .preset-desc {
+  font-size: var(--text-xs, 11px);
   color: var(--muted-foreground);
   margin-top: 0.25rem;
 }
 
 /* Address Control Bar */
-.address-control-bar {
+.lh-root .address-control-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -206,32 +233,33 @@
   border-radius: var(--radius, 8px);
 }
 
-.trace-nav-group {
+.lh-root .trace-nav-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.trace-counter {
+.lh-root .trace-counter {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
 }
 
-.direct-address-group {
+.lh-root .direct-address-group {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
 
-.control-label {
+.lh-root .control-label {
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--foreground);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .input-text,
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .input-number,
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .input-select {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-text,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-number,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-select {
   padding: 0.5rem 0.75rem;
   font-size: 0.8125rem;
   border: 1px solid var(--border);
@@ -241,13 +269,13 @@
   outline: none;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .input-text:focus,
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .input-number:focus,
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .input-select:focus {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-text:focus,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-number:focus,
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .input-select:focus {
   border-color: var(--primary);
 }
 
-.trace-pills-strip {
+.lh-root .trace-pills-strip {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -255,7 +283,7 @@
   max-width: 100%;
 }
 
-.trace-pill {
+.lh-root .trace-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -269,7 +297,7 @@
   white-space: nowrap;
 }
 
-.trace-pill.active {
+.lh-root .trace-pill.active {
   border-color: var(--primary);
   background-color: var(--muted);
   color: var(--foreground);
@@ -277,7 +305,7 @@
 }
 
 /* Bit Visualizer (One Bright Element) */
-.bit-visualizer-container {
+.lh-root .bit-visualizer-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -287,13 +315,13 @@
   border-radius: var(--radius, 8px);
 }
 
-.bit-visualizer-header {
+.lh-root .bit-visualizer-header {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.bit-badge {
+.lh-root .bit-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -302,62 +330,62 @@
   font-size: 0.75rem;
 }
 
-.bit-badge-primary {
+.lh-root .bit-badge-primary {
   background-color: var(--muted);
   border: 1px solid var(--primary);
   color: var(--foreground);
 }
 
-.bit-badge-secondary {
+.lh-root .bit-badge-secondary {
   background-color: var(--muted);
   border: 1px solid var(--border);
   color: var(--muted-foreground);
 }
 
-.bit-badge-accent {
+.lh-root .bit-badge-accent {
   background-color: var(--muted);
   border: 1px solid var(--border);
   color: var(--foreground);
 }
 
-.badge-label {
+.lh-root .badge-label {
   font-weight: 600;
 }
 
-.badge-range {
+.lh-root .badge-range {
   opacity: 0.8;
 }
 
-.bit-strip {
+.lh-root .bit-strip {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
   padding: 0.25rem 0;
 }
 
-.bit-group {
+.lh-root .bit-group {
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
   border-radius: var(--radius, 8px);
 }
 
-.bit-group-primary {
+.lh-root .bit-group-primary {
   border: 1px solid var(--primary);
   background-color: color-mix(in srgb, var(--primary) 4%, transparent);
 }
 
-.bit-group-secondary {
+.lh-root .bit-group-secondary {
   border: 1px dashed var(--border);
   background-color: var(--background);
 }
 
-.bit-group-accent {
+.lh-root .bit-group-accent {
   border: 1px solid var(--border);
   background-color: var(--muted);
 }
 
-.bit-cell {
+.lh-root .bit-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -369,35 +397,35 @@
   border-radius: 4px;
 }
 
-.bit-cell-one {
+.lh-root .bit-cell-one {
   font-weight: 700;
   color: var(--foreground);
   border-color: var(--primary);
 }
 
-.bit-cell-zero {
+.lh-root .bit-cell-zero {
   color: var(--muted-foreground);
 }
 
-.bit-index {
+.lh-root .bit-index {
   font-size: var(--lh-text-xs, 11px);
   color: var(--muted-foreground);
   line-height: 1;
 }
 
-.bit-value {
+.lh-root .bit-value {
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
-.bit-visualizer-footer {
+.lh-root .bit-visualizer-footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
   margin-top: 0.25rem;
 }
 
-.conversion-card {
+.lh-root .conversion-card {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -407,40 +435,44 @@
   border-radius: var(--radius, 8px);
 }
 
-.conversion-label {
-  font-size: 0.6875rem;
+.lh-root .conversion-label {
+  font-size: var(--text-xs, 11px);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted-foreground);
 }
 
-.conversion-value {
+.lh-root .conversion-value {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--foreground);
 }
 
 /* Two-Column Grid */
-.memory-lab-grid {
+.lh-root .memory-lab-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
 }
 
-@media (max-width: 900px) {
-  .memory-lab-grid {
-    grid-template-columns: 1fr;
+.lh-root .memory-lab-grid > * {
+  min-width: 0;
+}
+
+@container lab-workspace (max-width: 840px) {
+  .lh-root .memory-lab-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.grid-col {
+.lh-root .grid-col {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 /* Step Panel */
-.step-panel-container {
+.lh-root .step-panel-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -450,7 +482,7 @@
   border-radius: var(--radius, 8px);
 }
 
-.step-banner {
+.lh-root .step-banner {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
@@ -459,32 +491,32 @@
   border: 1px solid transparent;
 }
 
-.step-banner-valid {
+.lh-root .step-banner-valid {
   background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 8%, transparent));
   border-color: color-mix(in srgb, var(--success, var(--lh-success)) 30%, transparent);
   color: var(--success, var(--lh-success));
 }
 
-.step-banner-invalid {
+.lh-root .step-banner-invalid {
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 8%, transparent));
   border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
   color: var(--destructive, var(--lh-error));
 }
 
-.banner-title {
+.lh-root .banner-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   font-size: 0.875rem;
   font-weight: 600;
 }
 
-.banner-subtitle {
+.lh-root .banner-subtitle {
   font-size: 0.75rem;
   margin-top: 0.25rem;
   opacity: 0.85;
 }
 
-.savings-badge {
+.lh-root .savings-badge {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -495,27 +527,27 @@
   font-size: 0.8125rem;
 }
 
-.savings-label {
+.lh-root .savings-label {
   font-weight: 500;
 }
 
-.savings-amount {
+.lh-root .savings-amount {
   font-weight: 700;
   color: var(--primary);
 }
 
-.savings-note {
+.lh-root .savings-note {
   color: var(--muted-foreground);
   font-size: 0.75rem;
 }
 
-.steps-list {
+.lh-root .steps-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.steps-header {
+.lh-root .steps-header {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   margin: 0;
@@ -524,7 +556,7 @@
   color: var(--foreground);
 }
 
-.steps-ol {
+.lh-root .steps-ol {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -533,7 +565,7 @@
   gap: 0.5rem;
 }
 
-.step-item {
+.lh-root .step-item {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
@@ -543,7 +575,7 @@
   border-radius: var(--radius, 4px);
 }
 
-.step-number {
+.lh-root .step-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -551,12 +583,12 @@
   height: 20px;
   background-color: var(--muted);
   border-radius: 4px;
-  font-size: 0.6875rem;
+  font-size: var(--text-xs, 11px);
   font-weight: 600;
   flex-shrink: 0;
 }
 
-.step-text {
+.lh-root .step-text {
   font-size: 0.75rem;
   line-height: 1.4;
   color: var(--foreground);
@@ -564,7 +596,7 @@
 }
 
 /* Memory Map & Tables */
-.memory-map-container {
+.lh-root .memory-map-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -574,7 +606,7 @@
   border-radius: var(--radius, 8px);
 }
 
-.memory-map-header {
+.lh-root .memory-map-header {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   margin: 0;
@@ -583,14 +615,14 @@
   color: var(--foreground);
 }
 
-.structure-table-card,
-.frame-grid-card {
+.lh-root .structure-table-card,
+.lh-root .frame-grid-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.structure-table-title {
+.lh-root .structure-table-title {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--muted-foreground);
@@ -598,130 +630,129 @@
   letter-spacing: 0.04em;
 }
 
-.structure-table {
+.lh-root .structure-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
 }
 
-.structure-table th,
-.structure-table td {
+.lh-root .structure-table th,
+.lh-root .structure-table td {
   padding: 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
 
-.structure-table th {
+.lh-root .structure-table th {
   background-color: var(--background);
   color: var(--muted-foreground);
   font-weight: 600;
 }
 
-.row-highlighted {
+.lh-root .row-highlighted {
   background-color: color-mix(in srgb, var(--primary) 8%, transparent);
   font-weight: 600;
 }
 
-.valid-tag {
+.lh-root .valid-tag {
   color: var(--success, var(--lh-success));
   font-weight: 600;
 }
 
-.invalid-tag {
+.lh-root .invalid-tag {
   color: var(--destructive, var(--lh-error));
   font-weight: 600;
 }
 
-.status-badge {
+.lh-root .status-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.6875rem;
+  font-size: var(--text-xs, 11px);
 }
 
-.status-badge.valid {
+.lh-root .status-badge.valid {
   background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 10%, transparent));
   color: var(--success, var(--lh-success));
 }
 
-.status-badge.violation {
+.lh-root .status-badge.violation {
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 10%, transparent));
   color: var(--destructive, var(--lh-error));
 }
 
-.growth-tag {
+.lh-root .growth-tag {
   padding: 0.25rem;
   border-radius: var(--radius-sm, 4px);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs, 11px);
 }
 
-.growth-positive {
+.lh-root .growth-positive {
   background-color: var(--muted);
   color: var(--foreground);
 }
 
-.growth-negative {
+.lh-root .growth-negative {
   background-color: var(--muted);
   color: var(--muted-foreground);
 }
 
 /* Frame Grid */
-.frame-grid {
+.lh-root .frame-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 0.5rem;
 }
 
-.frame-box {
+.lh-root .frame-box {
   display: flex;
   flex-direction: column;
   padding: 0.5rem;
   border-radius: var(--radius, 4px);
   border: 1px solid var(--border);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs, 11px);
   transition: transform 0.1s ease;
 }
 
-.frame-free {
+.lh-root .frame-free {
   background-color: var(--background);
   color: var(--muted-foreground);
 }
 
-.frame-allocated {
+.lh-root .frame-allocated {
   background-color: var(--muted);
   color: var(--foreground);
 }
 
-.frame-target-highlight {
+.lh-root .frame-target-highlight {
   border-color: var(--primary);
-  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+  background-color: color-mix(in srgb, var(--primary) 14%, transparent);
   font-weight: 700;
   color: var(--foreground);
-  box-shadow: 0 0 0 1px var(--primary);
 }
 
-.frame-pfn {
+.lh-root .frame-pfn {
   font-weight: 600;
 }
 
-.frame-base {
+.lh-root .frame-base {
   font-size: var(--lh-text-xs, 11px);
   color: var(--muted-foreground);
 }
 
-.frame-status {
+.lh-root .frame-status {
   margin-top: 0.25rem;
   font-size: var(--lh-text-xs, 11px);
 }
 
 /* Replacement View */
-.replacement-view-container {
+.lh-root .replacement-view-container {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.replacement-controls-bar {
+.lh-root .replacement-controls-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -733,22 +764,22 @@
   border-radius: var(--radius, 8px);
 }
 
-.policy-selector-group,
-.frame-count-group,
-.step-buttons-group {
+.lh-root .policy-selector-group,
+.lh-root .frame-count-group,
+.lh-root .step-buttons-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.step-counter {
+.lh-root .step-counter {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
   min-width: 96px;
   text-align: center;
 }
 
-.belady-alert-card {
+.lh-root .belady-alert-card {
   padding: 0.75rem 1rem;
   border-radius: var(--radius, 8px);
   background-color: var(--warning-surface, color-mix(in srgb, var(--warning, var(--lh-warning)) 8%, transparent));
@@ -756,7 +787,7 @@
   color: var(--warning, var(--lh-warning));
 }
 
-.belady-alert-title {
+.lh-root .belady-alert-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   font-size: 0.875rem;
@@ -764,13 +795,13 @@
   margin-bottom: 0.25rem;
 }
 
-.belady-alert-body {
+.lh-root .belady-alert-body {
   font-size: 0.8125rem;
   line-height: 1.4;
 }
 
-.reference-string-card,
-.replacement-matrix-card {
+.lh-root .reference-string-card,
+.lh-root .replacement-matrix-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -780,7 +811,7 @@
   border-radius: var(--radius, 8px);
 }
 
-.card-section-title {
+.lh-root .card-section-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   font-size: 0.75rem;
@@ -790,14 +821,14 @@
   letter-spacing: 0.04em;
 }
 
-.ref-string-strip {
+.lh-root .ref-string-strip {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
   padding-bottom: 0.25rem;
 }
 
-.ref-page-cell {
+.lh-root .ref-page-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -812,48 +843,47 @@
   transition: all 0.12s ease;
 }
 
-.ref-page-cell.current {
+.lh-root .ref-page-cell.current {
   border-color: var(--primary);
-  background-color: var(--muted);
-  box-shadow: 0 0 0 1px var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--muted));
 }
 
-.ref-page-cell.past.was-fault {
+.lh-root .ref-page-cell.past.was-fault {
   border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 40%, transparent);
 }
 
-.ref-page-cell.past.was-hit {
+.lh-root .ref-page-cell.past.was-hit {
   border-color: color-mix(in srgb, var(--success, var(--lh-success)) 40%, transparent);
 }
 
-.ref-page-num {
+.lh-root .ref-page-num {
   font-size: 1rem;
   font-weight: 700;
 }
 
-.ref-page-step {
+.lh-root .ref-page-step {
   font-size: var(--lh-text-xs, 11px);
   color: var(--muted-foreground);
 }
 
-.matrix-table-wrapper {
+.lh-root .matrix-table-wrapper {
   overflow-x: auto;
 }
 
-.replacement-matrix-table {
+.lh-root .replacement-matrix-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8125rem;
 }
 
-.replacement-matrix-table th,
-.replacement-matrix-table td {
+.lh-root .replacement-matrix-table th,
+.lh-root .replacement-matrix-table td {
   padding: 0.5rem 0.75rem;
   text-align: center;
   border: 1px solid var(--border);
 }
 
-.matrix-sticky-col {
+.lh-root .matrix-sticky-col {
   position: sticky;
   left: 0;
   background-color: var(--card);
@@ -863,30 +893,30 @@
   white-space: nowrap;
 }
 
-.col-current {
+.lh-root .col-current {
   background-color: color-mix(in srgb, var(--primary) 10%, transparent);
   font-weight: 700;
 }
 
-.cell-victim {
+.lh-root .cell-victim {
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 15%, transparent));
   color: var(--destructive, var(--lh-error));
   font-weight: 700;
 }
 
-.outcome-hit {
+.lh-root .outcome-hit {
   color: var(--success, var(--lh-success));
   font-weight: 700;
   background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 8%, transparent));
 }
 
-.outcome-fault {
+.lh-root .outcome-fault {
   color: var(--destructive, var(--lh-error));
   font-weight: 700;
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 8%, transparent));
 }
 
-.step-callout {
+.lh-root .step-callout {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -896,68 +926,68 @@
   font-size: 0.8125rem;
 }
 
-.callout-hit {
+.lh-root .callout-hit {
   background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 6%, transparent));
   border-color: color-mix(in srgb, var(--success, var(--lh-success)) 30%, transparent);
 }
 
-.callout-fault {
+.lh-root .callout-fault {
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 6%, transparent));
   border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
 }
 
-.callout-badge {
+.lh-root .callout-badge {
   font-weight: 700;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
 }
 
-.callout-hit .callout-badge {
+.lh-root .callout-hit .callout-badge {
   background-color: var(--success, var(--lh-success));
   color: var(--primary-foreground);
 }
 
-.callout-fault .callout-badge {
+.lh-root .callout-fault .callout-badge {
   background-color: var(--destructive, var(--lh-error));
   color: var(--primary-foreground);
 }
 
-.replacement-metrics-grid {
+.lh-root .replacement-metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
 }
 
-.metric-card {
+.lh-root .metric-card {
   padding: 0.75rem 1rem;
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius, 8px);
 }
 
-.metric-label {
-  font-size: 0.6875rem;
+.lh-root .metric-label {
+  font-size: var(--text-xs, 11px);
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
-.metric-value {
+.lh-root .metric-value {
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--foreground);
   margin-top: 0.25rem;
 }
 
-.metric-fault {
+.lh-root .metric-fault {
   color: var(--destructive, var(--lh-error));
 }
 
-.metric-hit {
+.lh-root .metric-hit {
   color: var(--success, var(--lh-success));
 }
 
 /* Modals */
-:is(.lh-root, body) .modal-overlay {
+:is(.lh-root, .lh-root body) .modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -980,7 +1010,7 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-:is(.modal-dialog, .modal-overlay) .modal-header {
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -988,7 +1018,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-:is(.modal-dialog, .modal-overlay) .modal-title {
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   margin: 0;
@@ -997,7 +1027,7 @@
   color: var(--foreground);
 }
 
-:is(.modal-dialog, .modal-overlay) .modal-body {
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-body {
   padding: 1rem;
   overflow-y: auto;
   display: flex;
@@ -1005,7 +1035,7 @@
   gap: 0.75rem;
 }
 
-:is(.modal-dialog, .modal-overlay) .modal-footer {
+:is(.modal-dialog, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .modal-overlay) .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
@@ -1013,25 +1043,26 @@
   border-top: 1px solid var(--border);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .form-group {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .form-label {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .form-label {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--muted-foreground);
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .grid-2 {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.5rem;
 }
 
-:is(.modal-dialog, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content) .modal-error {
+:is(.lh-root, .lh-root .lh-dialog-overlay, .lh-root [role="dialog"], :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .modal-dialog, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content) .modal-error,
+:is(.lh-root, .lh-root .lh-dialog-overlay, .lh-root [role="dialog"], :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .modal-dialog, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content) .modal-error-message {
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius, 8px);
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 10%, transparent));
@@ -1040,13 +1071,13 @@
   font-size: 0.75rem;
 }
 
-:is(.lh-root, .custom-input-modal, .workload-editor-modal, .custom-scenario-modal, .copilot-history-dialog, .copilot-history-dialog-content, .modal-dialog) .hidden {
+:is(.lh-root, .lh-root .custom-input-modal, .lh-root .workload-editor-modal, :is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal, .lh-root .copilot-history-dialog, .lh-root .copilot-history-dialog-content, .lh-root .modal-dialog) .hidden {
   display: none !important;
 }
 
 /* OS Simulator: Phase 2 CPU Virtualization & Hardware Mechanisms Lab Styles */
 
-.cpu-lab-root {
+.lh-root.cpu-lab-root {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1058,7 +1089,7 @@
   min-height: 100%;
 }
 
-.cpu-lab-toolbar {
+.lh-root .cpu-lab-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1068,20 +1099,20 @@
   border-bottom: 1px solid var(--border);
 }
 
-.cpu-param-input-group {
+.lh-root .cpu-param-input-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 /* Gantt Timeline & Controls */
-.cpu-gantt-container {
+.lh-root .cpu-gantt-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.cpu-playback-bar {
+.lh-root .cpu-playback-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1093,13 +1124,13 @@
   border-radius: var(--radius, 8px);
 }
 
-.playback-buttons-group {
+.lh-root .playback-buttons-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.playback-scrubber-group {
+.lh-root .playback-scrubber-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -1107,20 +1138,20 @@
   max-width: 500px;
 }
 
-.cpu-scrubber-slider {
+.lh-root .cpu-scrubber-slider {
   flex: 1;
   accent-color: var(--primary);
   cursor: pointer;
 }
 
-.cpu-tick-badge {
+.lh-root .cpu-tick-badge {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
   min-width: 112px;
   text-align: right;
 }
 
-.cpu-event-banner {
+.lh-root .cpu-event-banner {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1130,18 +1161,18 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-event-title {
+.lh-root .cpu-event-title {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--foreground);
 }
 
-.cpu-event-details {
+.lh-root .cpu-event-details {
   font-size: 0.75rem;
   color: var(--muted-foreground);
 }
 
-.cpu-gantt-matrix-card {
+.lh-root .cpu-gantt-matrix-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1151,18 +1182,18 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-gantt-scroll-wrapper {
+.lh-root .cpu-gantt-scroll-wrapper {
   overflow-x: auto;
   padding-bottom: 0.5rem;
 }
 
-.cpu-gantt-table {
+.lh-root .cpu-gantt-table {
   border-collapse: collapse;
   font-size: 0.75rem;
   min-width: 100%;
 }
 
-.cpu-gantt-corner-header {
+.lh-root .cpu-gantt-corner-header {
   position: sticky;
   left: 0;
   background-color: var(--card);
@@ -1174,7 +1205,7 @@
   min-width: 100px;
 }
 
-.cpu-gantt-tick-header {
+.lh-root .cpu-gantt-tick-header {
   padding: 0.5rem 0.25rem;
   min-width: 32px;
   text-align: center;
@@ -1184,14 +1215,14 @@
   user-select: none;
 }
 
-.cpu-gantt-tick-header:hover,
-.cpu-gantt-tick-header.tick-current {
+.lh-root .cpu-gantt-tick-header:hover,
+.lh-root .cpu-gantt-tick-header.tick-current {
   background-color: var(--muted);
   color: var(--foreground);
   font-weight: 700;
 }
 
-.cpu-gantt-row-label {
+.lh-root .cpu-gantt-row-label {
   position: sticky;
   left: 0;
   background-color: var(--card);
@@ -1204,14 +1235,14 @@
   gap: 0.5rem;
 }
 
-.process-color-dot {
+.lh-root .process-color-dot {
   width: 8px;
   height: 8px;
   border-radius: 9999px;
   flex-shrink: 0;
 }
 
-.cpu-gantt-cell {
+.lh-root .cpu-gantt-cell {
   padding: 0.25rem;
   border: 1px solid var(--border);
   text-align: center;
@@ -1220,51 +1251,51 @@
   cursor: pointer;
 }
 
-.cell-current-scrubber {
-  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
-  box-shadow: inset 0 0 0 1px var(--primary);
+.lh-root .cell-current-scrubber {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 14%, transparent);
 }
 
-.cpu-gantt-block {
+.lh-root .cpu-gantt-block {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
   border-radius: var(--radius-sm, 4px);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs, 11px);
   font-weight: 600;
 }
 
-.cpu-gantt-block.cpu-running {
+.lh-root .cpu-gantt-block.cpu-running {
   color: var(--primary-foreground);
 }
 
-.cpu-gantt-block.cpu-blocked {
+.lh-root .cpu-gantt-block.cpu-blocked {
   background-color: var(--muted);
   color: var(--muted-foreground);
   border: 1px dashed var(--border);
 }
 
-.cpu-gantt-block.cpu-ready {
+.lh-root .cpu-gantt-block.cpu-ready {
   background-color: var(--background);
   color: var(--muted-foreground);
   font-weight: 400;
   font-size: var(--lh-text-xs, 11px);
 }
 
-.cpu-gantt-block.cpu-idle {
+.lh-root .cpu-gantt-block.cpu-idle {
   background-color: var(--background);
   color: var(--muted-foreground);
   font-size: var(--lh-text-xs, 11px);
 }
 
-.cpu-gantt-summary-row {
+.lh-root .cpu-gantt-summary-row {
   border-bottom: 2px solid var(--border);
 }
 
 /* Metrics Table */
-.cpu-metrics-container {
+.lh-root .cpu-metrics-container {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1274,12 +1305,12 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-table-responsive {
+.lh-root .cpu-table-responsive {
   overflow-x: auto;
 }
 
 /* MLFQ Inspector */
-.cpu-mlfq-container {
+.lh-root .cpu-mlfq-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -1289,7 +1320,7 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-mlfq-header {
+.lh-root .cpu-mlfq-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1297,7 +1328,7 @@
   gap: 0.5rem;
 }
 
-.cpu-boost-badge {
+.lh-root .cpu-boost-badge {
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius, 8px);
   background-color: var(--muted);
@@ -1306,13 +1337,13 @@
   color: var(--foreground);
 }
 
-.cpu-mlfq-queues-grid {
+.lh-root .cpu-mlfq-queues-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.75rem;
 }
 
-.cpu-mlfq-queue-card {
+.lh-root .cpu-mlfq-queue-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1322,24 +1353,24 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-mlfq-queue-header {
+.lh-root .cpu-mlfq-queue-header {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.cpu-mlfq-queue-name {
+.lh-root .cpu-mlfq-queue-name {
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--foreground);
 }
 
-.cpu-mlfq-queue-params {
-  font-size: 0.6875rem;
+.lh-root .cpu-mlfq-queue-params {
+  font-size: var(--text-xs, 11px);
   color: var(--muted-foreground);
 }
 
-.cpu-mlfq-proc-strip {
+.lh-root .cpu-mlfq-proc-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -1347,7 +1378,7 @@
   align-items: center;
 }
 
-.cpu-mlfq-proc-pill {
+.lh-root .cpu-mlfq-proc-pill {
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   border: 1px solid var(--border);
@@ -1355,21 +1386,21 @@
   font-size: 0.75rem;
 }
 
-.cpu-mlfq-proc-pill.proc-running {
+.lh-root .cpu-mlfq-proc-pill.proc-running {
   border-color: var(--primary);
   background-color: var(--primary);
   color: var(--primary-foreground);
   font-weight: 700;
 }
 
-.cpu-mlfq-empty {
-  font-size: 0.6875rem;
+.lh-root .cpu-mlfq-empty {
+  font-size: var(--text-xs, 11px);
   color: var(--muted-foreground);
   font-style: italic;
 }
 
 /* Workload Modal */
-.cpu-modal-backdrop {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], body) .cpu-modal-backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -1380,7 +1411,7 @@
   padding: 1rem;
 }
 
-.cpu-modal-dialog {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-dialog {
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius, 8px);
@@ -1392,7 +1423,7 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-.cpu-modal-header {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1400,7 +1431,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.cpu-modal-title {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   margin: 0;
@@ -1409,14 +1440,14 @@
   color: var(--foreground);
 }
 
-.cpu-modal-nav {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-nav {
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
 }
 
-.cpu-modal-error {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-error {
   padding: 0.5rem 0.75rem;
   margin: 0.5rem 1rem 0;
   border-radius: var(--radius, 8px);
@@ -1426,7 +1457,7 @@
   font-size: 0.75rem;
 }
 
-.cpu-modal-body {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-body {
   padding: 1rem;
   overflow-y: auto;
   display: flex;
@@ -1434,7 +1465,7 @@
   gap: 0.75rem;
 }
 
-.cpu-modal-footer {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
@@ -1442,19 +1473,19 @@
   border-top: 1px solid var(--border);
 }
 
-.cpu-workload-edit-table {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-workload-edit-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
 }
 
-.cpu-workload-edit-table th,
-.cpu-workload-edit-table td {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-workload-edit-table th,
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-workload-edit-table td {
   padding: 0.5rem;
   border-bottom: 1px solid var(--border);
 }
 
-.cpu-json-editor {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .cpu-json-editor {
   width: 100%;
   min-height: 240px;
   padding: 0.5rem;
@@ -1467,13 +1498,13 @@
 }
 
 /* LDE Hardware Inspector */
-.cpu-lde-container {
+.lh-root .cpu-lde-container {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.cpu-lde-top-bar {
+.lh-root .cpu-lde-top-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1485,13 +1516,13 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-lde-status-group {
+.lh-root .cpu-lde-status-group {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.cpu-cpl-badge {
+.lh-root .cpu-cpl-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -1501,30 +1532,30 @@
   font-weight: 700;
 }
 
-.cpl-ring0 {
+.lh-root .cpl-ring0 {
   background-color: var(--destructive-surface, color-mix(in srgb, var(--destructive, var(--lh-error)) 12%, transparent));
   border: 1px solid color-mix(in srgb, var(--destructive, var(--lh-error)) 35%, transparent);
   color: var(--destructive, var(--lh-error));
 }
 
-.cpl-ring3 {
+.lh-root .cpl-ring3 {
   background-color: var(--success-surface, color-mix(in srgb, var(--success, var(--lh-success)) 12%, transparent));
   border: 1px solid color-mix(in srgb, var(--success, var(--lh-success)) 35%, transparent);
   color: var(--success, var(--lh-success));
 }
 
-.cpu-lde-step-counter {
+.lh-root .cpu-lde-step-counter {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
 }
 
-.cpu-lde-nav-buttons {
+.lh-root .cpu-lde-nav-buttons {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.cpu-lde-desc-card {
+.lh-root .cpu-lde-desc-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1534,7 +1565,7 @@
   border-radius: var(--radius, 8px);
 }
 
-.cpu-lde-stage-title {
+.lh-root .cpu-lde-stage-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   margin: 0;
@@ -1543,14 +1574,14 @@
   color: var(--foreground);
 }
 
-.cpu-lde-desc-text {
+.lh-root .cpu-lde-desc-text {
   margin: 0;
   font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--foreground);
 }
 
-.cpu-lde-asm-box {
+.lh-root .cpu-lde-asm-box {
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius, 4px);
   background-color: var(--background);
@@ -1560,19 +1591,23 @@
   font-weight: 600;
 }
 
-.cpu-lde-stacks-grid {
+.lh-root .cpu-lde-stacks-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
 }
 
-@media (max-width: 900px) {
-  .cpu-lde-stacks-grid {
-    grid-template-columns: 1fr;
+.lh-root .cpu-lde-stacks-grid > * {
+  min-width: 0;
+}
+
+@container lab-workspace (max-width: 840px) {
+  .lh-root .cpu-lde-stacks-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.cpu-stack-card {
+.lh-root .cpu-stack-card {
   display: flex;
   flex-direction: column;
   background-color: var(--card);
@@ -1581,12 +1616,12 @@
   overflow: hidden;
 }
 
-.cpu-stack-card.stack-active {
+.lh-root .cpu-stack-card.stack-active {
   border-color: var(--primary);
-  box-shadow: 0 0 0 1px var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 4%, var(--card));
 }
 
-.cpu-stack-header {
+.lh-root .cpu-stack-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1595,14 +1630,14 @@
   border-bottom: 1px solid var(--border);
 }
 
-.cpu-stack-title {
+.lh-root .cpu-stack-title {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--foreground);
 }
 
-.cpu-stack-badge {
-  font-size: 0.6875rem;
+.lh-root .cpu-stack-badge {
+  font-size: var(--text-xs, 11px);
   font-weight: 700;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -1610,12 +1645,12 @@
   border: 1px solid var(--border);
 }
 
-.kernel-badge {
+.lh-root .kernel-badge {
   color: var(--destructive, var(--lh-error));
   border-color: color-mix(in srgb, var(--destructive, var(--lh-error)) 30%, transparent);
 }
 
-.cpu-stack-body {
+.lh-root .cpu-stack-body {
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -1623,7 +1658,7 @@
   min-height: 200px;
 }
 
-.cpu-stack-empty {
+.lh-root .cpu-stack-empty {
   color: var(--muted-foreground);
   font-style: italic;
   font-size: 0.75rem;
@@ -1631,7 +1666,7 @@
   padding-top: 2rem;
 }
 
-.cpu-stack-entry {
+.lh-root .cpu-stack-entry {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1642,12 +1677,12 @@
   font-size: 0.75rem;
 }
 
-.trap-frame-entry {
+.lh-root .trap-frame-entry {
   border-color: var(--primary);
   background-color: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
-.trap-tag {
+.lh-root .trap-tag {
   font-size: var(--lh-text-xs, 11px);
   font-weight: 700;
   color: var(--primary);
@@ -1662,7 +1697,7 @@
    Phase 3: Concurrency, Synchronization & Deadlock Lab Styles ($unslop)
    ========================================================================= */
 
-.concurrency-lab-root {
+.lh-root.concurrency-lab-root {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1674,7 +1709,7 @@
   min-height: 100%;
 }
 
-.concurrency-toolbar {
+.lh-root .concurrency-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1684,15 +1719,15 @@
   border-bottom: 1px solid var(--border);
 }
 
-.toolbar-group-left,
-.toolbar-group-right {
+.lh-root .toolbar-group-left,
+.lh-root .toolbar-group-right {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
 
-.scenario-info-banner {
+.lh-root .scenario-info-banner {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1702,7 +1737,7 @@
   border: 1px solid var(--border);
 }
 
-.scenario-banner-title {
+.lh-root .scenario-banner-title {
   font-family: var(--font-title, serif);
   letter-spacing: -0.01em;
   font-size: 0.9375rem;
@@ -1710,46 +1745,50 @@
   color: var(--foreground);
 }
 
-.scenario-banner-desc {
+.lh-root .scenario-banner-desc {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
   line-height: 1.4;
 }
 
-.concurrency-main-grid {
+.lh-root .concurrency-main-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
 
-@media (max-width: 960px) {
-  .concurrency-main-grid {
-    grid-template-columns: 1fr;
+.lh-root .concurrency-main-grid > * {
+  min-width: 0;
+}
+
+@container lab-workspace (max-width: 840px) {
+  .lh-root .concurrency-main-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.concurrency-left-col,
-.concurrency-right-col {
+.lh-root .concurrency-left-col,
+.lh-root .concurrency-right-col {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
 /* Thread Inspector & Side-by-side Columns */
-.thread-inspector-root {
+.lh-root .thread-inspector-root {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.threads-grid {
+.lh-root .threads-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
 }
 
-.thread-column-card {
+.lh-root .thread-column-card {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius, 8px);
@@ -1758,11 +1797,11 @@
   overflow: hidden;
 }
 
-.thread-state-blocked {
+.lh-root .thread-state-blocked {
   border-color: color-mix(in srgb, var(--destructive) 40%, var(--border));
 }
 
-.thread-header {
+.lh-root .thread-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1771,51 +1810,51 @@
   border-bottom: 1px solid var(--border);
 }
 
-.thread-title-group {
+.lh-root .thread-title-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.thread-title {
+.lh-root .thread-title {
   font-size: 0.875rem;
   font-weight: 700;
   margin: 0;
   color: var(--foreground);
 }
 
-.thread-state-badge {
-  font-size: 0.6875rem;
+.lh-root .thread-state-badge {
+  font-size: var(--text-xs, 11px);
   font-weight: 600;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
 }
 
-.badge-ready {
+.lh-root .badge-ready {
   background-color: color-mix(in srgb, var(--primary) 15%, transparent);
   color: var(--primary);
   border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
-.badge-running {
+.lh-root .badge-running {
   background-color: var(--primary);
   color: var(--primary-foreground);
   border: 1px solid var(--primary);
 }
 
-.badge-blocked {
+.lh-root .badge-blocked {
   background-color: color-mix(in srgb, var(--destructive) 15%, transparent);
   color: var(--destructive);
   border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
 }
 
-.badge-terminated {
+.lh-root .badge-terminated {
   background-color: var(--muted);
   color: var(--muted-foreground);
   border: 1px solid var(--border);
 }
 
-.thread-registers-bar {
+.lh-root .thread-registers-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -1825,21 +1864,21 @@
   font-size: 0.75rem;
 }
 
-.register-item {
+.lh-root .register-item {
   display: inline-flex;
   gap: 0.25rem;
 }
 
-.reg-name {
+.lh-root .reg-name {
   color: var(--muted-foreground);
 }
 
-.reg-val {
+.lh-root .reg-val {
   font-weight: 600;
   color: var(--foreground);
 }
 
-.instructions-list {
+.lh-root .instructions-list {
   display: flex;
   flex-direction: column;
   padding: 0.25rem 0;
@@ -1848,7 +1887,7 @@
   overflow-y: auto;
 }
 
-.instruction-row {
+.lh-root .instruction-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1856,41 +1895,41 @@
   transition: background-color 0.1s ease;
 }
 
-.instruction-active {
+.lh-root .instruction-active {
   background-color: var(--muted);
   border-left: 3px solid var(--primary);
   font-weight: 600;
   color: var(--foreground);
 }
 
-.instruction-past {
+.lh-root .instruction-past {
   color: var(--muted-foreground);
   opacity: 0.7;
 }
 
-.instruction-future {
+.lh-root .instruction-future {
   color: var(--foreground);
 }
 
-.inst-line-num {
-  font-size: 0.6875rem;
+.lh-root .inst-line-num {
+  font-size: var(--text-xs, 11px);
   color: var(--muted-foreground);
   user-select: none;
   min-width: 1.25rem;
 }
 
-.inst-code {
+.lh-root .inst-code {
   flex: 1;
 }
 
-.pc-indicator {
-  font-size: 0.6875rem;
+.lh-root .pc-indicator {
+  font-size: var(--text-xs, 11px);
   font-weight: 700;
   color: var(--primary);
 }
 
 /* Shared Memory & Objects Panel */
-.shared-state-panel {
+.lh-root .shared-state-panel {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius, 8px);
@@ -1899,20 +1938,20 @@
   overflow: hidden;
 }
 
-.shared-state-content {
+.lh-root .shared-state-content {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   padding: 0.75rem 1rem;
 }
 
-.shared-box {
+.lh-root .shared-box {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.shared-box-title {
+.lh-root .shared-box-title {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -1920,14 +1959,14 @@
   letter-spacing: 0.04em;
 }
 
-.shared-kv-list {
+.lh-root .shared-kv-list {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.8125rem;
 }
 
-.shared-kv-row {
+.lh-root .shared-kv-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1937,23 +1976,23 @@
   border: 1px solid var(--border);
 }
 
-.kv-key {
+.lh-root .kv-key {
   color: var(--muted-foreground);
 }
 
-.kv-val {
+.lh-root .kv-val {
   font-weight: 600;
   color: var(--foreground);
 }
 
 /* Visualizer Cards (Circular Buffer & RAG) */
-.visualizer-box {
+.lh-root .visualizer-box {
   display: flex;
   flex-direction: column;
 }
 
-.circular-buffer-card,
-.rag-card {
+.lh-root .circular-buffer-card,
+.lh-root .rag-card {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius, 8px);
@@ -1962,7 +2001,7 @@
   overflow: hidden;
 }
 
-.circular-buffer-content {
+.lh-root .circular-buffer-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1970,13 +2009,13 @@
   gap: 1rem;
 }
 
-.circular-buffer-svg {
+.lh-root .circular-buffer-svg {
   width: 100%;
   max-width: 260px;
   height: auto;
 }
 
-.buffer-queues-container {
+.lh-root .buffer-queues-container {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1986,28 +2025,28 @@
   border-top: 1px solid var(--border);
 }
 
-.queue-row {
+.lh-root .queue-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.queue-label {
+.lh-root .queue-label {
   font-weight: 600;
   color: var(--foreground);
 }
 
-.queue-val {
+.lh-root .queue-val {
   color: var(--muted-foreground);
 }
 
-.queue-waiting {
+.lh-root .queue-waiting {
   color: var(--primary);
   font-size: 0.75rem;
 }
 
 /* RAG Graph & Coffman Conditions */
-.deadlock-alert-banner {
+.lh-root .deadlock-alert-banner {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -2018,7 +2057,7 @@
   font-size: 0.8125rem;
 }
 
-.rag-svg {
+.lh-root .rag-svg {
   width: 100%;
   max-width: 380px;
   margin: 0 auto;
@@ -2026,7 +2065,7 @@
   padding: 0.5rem;
 }
 
-.rag-legend {
+.lh-root .rag-legend {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2039,47 +2078,47 @@
   background-color: var(--background);
 }
 
-.legend-item {
+.lh-root .legend-item {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.legend-badge {
+.lh-root .legend-badge {
   display: inline-block;
   width: 12px;
   height: 12px;
   border: 1px solid var(--border);
 }
 
-.legend-proc {
+.lh-root .legend-proc {
   border-radius: 50%;
   background-color: var(--card);
 }
 
-.legend-res {
+.lh-root .legend-res {
   border-radius: var(--radius-sm, 4px);
   background-color: var(--muted);
 }
 
-.legend-line {
+.lh-root .legend-line {
   display: inline-block;
   width: 16px;
   height: 2px;
   background-color: var(--foreground);
 }
 
-.legend-alloc {
+.lh-root .legend-alloc {
   background-color: var(--foreground);
 }
 
-.legend-req {
+.lh-root .legend-req {
   background-color: var(--muted-foreground);
   border-top: 1px dashed var(--muted-foreground);
   height: 0;
 }
 
-.coffman-panel {
+.lh-root .coffman-panel {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -2087,7 +2126,7 @@
   border-top: 1px solid var(--border);
 }
 
-.coffman-card {
+.lh-root .coffman-card {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -2097,49 +2136,49 @@
   border: 1px solid var(--border);
 }
 
-.coffman-met {
+.lh-root .coffman-met {
   border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
 }
 
-.coffman-card-header {
+.lh-root .coffman-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.coffman-cond-name {
+.lh-root .coffman-cond-name {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--foreground);
 }
 
-.coffman-status-badge {
-  font-size: 0.6875rem;
+.lh-root .coffman-status-badge {
+  font-size: var(--text-xs, 11px);
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm, 4px);
 }
 
-.status-met {
+.lh-root .status-met {
   background-color: color-mix(in srgb, var(--destructive) 15%, transparent);
   color: var(--destructive);
   border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
 }
 
-.status-unmet {
+.lh-root .status-unmet {
   background-color: var(--muted);
   color: var(--muted-foreground);
   border: 1px solid var(--border);
 }
 
-.coffman-explanation {
+.lh-root .coffman-explanation {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: var(--text-xs, 11px);
   color: var(--muted-foreground);
   line-height: 1.35;
 }
 
 /* History Log */
-.history-section-card {
+.lh-root .history-section-card {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius, 8px);
@@ -2148,7 +2187,7 @@
   overflow: hidden;
 }
 
-.execution-history-list {
+.lh-root .execution-history-list {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -2158,23 +2197,23 @@
   font-size: 0.75rem;
 }
 
-.history-item {
+.lh-root .history-item {
   color: var(--muted-foreground);
   line-height: 1.4;
 }
 
-.history-item:last-child {
+.lh-root .history-item:last-child {
   color: var(--foreground);
   font-weight: 600;
 }
 
 /* Custom Scenario Modal */
-.custom-scenario-modal {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-modal {
   max-width: 640px;
   width: 90%;
 }
 
-.custom-scenario-textarea {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 0.75rem;
@@ -2187,9 +2226,107 @@
   resize: vertical;
 }
 
-.custom-scenario-textarea:focus {
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .custom-scenario-textarea:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+
+/* Overflow, Section Headers, Metrics Table, Error Banner, Window Drag, & Icon Utilities */
+.lh-root .table-scroll-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.lh-root .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lh-root .section-title {
+  font-family: var(--font-title, serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: var(--text-sm, 12.5px);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.lh-root .lh-toolbar .lh-no-drag,
+.lh-root .memory-lab-toolbar button,
+.lh-root .cpu-lab-toolbar button,
+.lh-root .concurrency-toolbar button {
+  -webkit-app-region: no-drag;
+}
+
+.lh-root .cpu-metrics-row-avg {
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+  background-color: var(--muted);
+}
+
+.lh-root .cpu-metrics-cell-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.lh-root .cpu-metrics-cell-label {
+  font-weight: 600;
+}
+
+.lh-root .cpu-metrics-cell-primary {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .lh-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid color-mix(in srgb, var(--destructive, #ef4444) 30%, transparent);
+  background: color-mix(in srgb, var(--destructive, #ef4444) 10%, transparent);
+  color: var(--destructive, #ef4444);
+  font-size: var(--text-sm, 12.5px);
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .size-4 {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .size-3\.5 {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@keyframes lh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+:is(.lh-root, .lh-dialog-overlay, [role="dialog"], .modal-overlay, .cpu-modal-backdrop) .animate-spin {
+  animation: lh-spin 1s linear infinite;
+}
+
+@container lab-workspace (max-width: 560px) {
+  .lh-root .cpu-playback-bar,
+  .lh-root .replacement-controls-bar,
+  .lh-root .cpu-lde-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lh-root .playback-scrubber-group {
+    max-width: 100%;
+  }
 }
 
 /* ==========================================================================
@@ -3711,13 +3848,17 @@
 }
 
 /* Lab View Content Containers */
-.memory-lab-content,
-.cpu-lab-content,
-.concurrency-lab-content {
+.lh-root .memory-lab-content,
+.lh-root .cpu-lab-content,
+.lh-root .concurrency-lab-content {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+  container-name: lab-workspace;
+  padding-bottom: 96px;
 }
 
 /* Copilot Undo Toast Banner */

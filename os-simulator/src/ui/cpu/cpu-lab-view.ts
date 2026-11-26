@@ -14,6 +14,7 @@ import { renderLdeInspector } from "./lde-inspector.js";
 import { openWorkloadEditorModal } from "./workload-editor-modal.js";
 import { createIcon } from "../icons.js";
 import { exportJsonFile, triggerJsonImport } from "../import-export.js";
+import { ensureAbortSignal, openToolbarMenu, showErrorBanner } from "../toolbar-helpers.js";
 import type { SavedExercise, AiTurnRequest, AiTurnResponse, ControlAction } from "../../types/ai.js";
 import { createCopilotDrawer, type CopilotDrawerHandle, showUndoBanner } from "../ai/index.js";
 import { markExerciseAsModified } from "../../core/exercise-manager.js";
@@ -47,10 +48,9 @@ export function createCpuLabView(
     ...initialState,
     exerciseHistory: [...(initialState.exerciseHistory ?? [])]
   };
-  let isPresetMenuOpen = false;
   let activeModalCleanup: (() => void) | null = null;
   let timerId: ReturnType<typeof setInterval> | null = null;
-  const abortController = new AbortController();
+  const { signal: viewSignal, cleanup: cleanupSignal } = ensureAbortSignal(signal);
   let previousStateForUndo: CpuLabState | null = null;
   let activeExercise: SavedExercise | null =
     state.activeExerciseId && state.exerciseHistory
@@ -179,7 +179,7 @@ export function createCpuLabView(
         }
       },
       targetContainer: rootEl,
-      signal
+      signal: viewSignal
     });
   }
 
@@ -205,7 +205,7 @@ export function createCpuLabView(
 
     // Subsystems / Algorithms Tabs
     const tabsContainer = document.createElement("div");
-    tabsContainer.className = "subsystem-tabs";
+    tabsContainer.className = "subsystem-tabs lh-no-drag";
 
     const algorithms: Array<{ id: CpuAlgorithm; label: string; iconName: string }> = [
       { id: "FIFO", label: "FIFO", iconName: "layers" },
@@ -238,11 +238,11 @@ export function createCpuLabView(
 
     // Toolbar Actions
     const actionsContainer = document.createElement("div");
-    actionsContainer.className = "toolbar-actions";
+    actionsContainer.className = "toolbar-actions lh-no-drag";
 
     // Esercizi Button (Discreet History Trigger)
     const exercisesBtn = document.createElement("button");
-    exercisesBtn.className = "btn btn-outline btn-sm";
+    exercisesBtn.className = "btn btn-outline btn-sm lh-no-drag";
     exercisesBtn.title = "Cronologia Esercizi";
     const exSpan = document.createElement("span");
     exSpan.textContent = "Esercizi";
@@ -255,7 +255,7 @@ export function createCpuLabView(
     // RR Quantum input
     if (state.algorithm === "RR") {
       const qGroup = document.createElement("div");
-      qGroup.className = "cpu-param-input-group";
+      qGroup.className = "cpu-param-input-group lh-no-drag";
       const qLabel = document.createElement("span");
       qLabel.className = "control-label";
       qLabel.textContent = "Quantum:";
@@ -279,7 +279,7 @@ export function createCpuLabView(
     // MLFQ Boost S interval input
     if (state.algorithm === "MLFQ") {
       const sGroup = document.createElement("div");
-      sGroup.className = "cpu-param-input-group";
+      sGroup.className = "cpu-param-input-group lh-no-drag";
       const sLabel = document.createElement("span");
       sLabel.className = "control-label";
       sLabel.textContent = "Boost S:";
@@ -306,153 +306,153 @@ export function createCpuLabView(
       actionsContainer.appendChild(sGroup);
     }
 
-    // Edit Workload Button
-    if (state.algorithm !== "LDE") {
-      const editBtn = document.createElement("button");
-      editBtn.className = "btn btn-outline";
-      editBtn.appendChild(createIcon("edit", "size-4"));
-      const editLabel = document.createElement("span");
-      editLabel.textContent = "Edit Workload";
-      editBtn.appendChild(editLabel);
-      editBtn.addEventListener("click", () => {
-        if (activeModalCleanup) activeModalCleanup();
-        activeModalCleanup = openWorkloadEditorModal(
-          state.workload,
-          (newWorkload) => {
-            markActiveExerciseManual();
-            stopTimer();
-            update({ workload: newWorkload, currentTick: 0, isPlaying: false });
-          },
-          () => {
-            activeModalCleanup = null;
-          },
-          rootEl,
-          abortController.signal,
-          ctx?.ui
-        );
-      });
-      actionsContainer.appendChild(editBtn);
-    }
-
-    // Presets Dropdown
+    // Preset Menu Button
     const presetDropdown = document.createElement("div");
-    presetDropdown.className = "preset-dropdown-container";
+    presetDropdown.className = "preset-dropdown-container lh-no-drag";
 
     const presetBtn = document.createElement("button");
-    presetBtn.className = "btn btn-outline";
+    presetBtn.type = "button";
+    presetBtn.className = "btn btn-secondary btn-sm lh-no-drag";
     presetBtn.appendChild(createIcon("sliders", "size-4"));
     const presetBtnLabel = document.createElement("span");
-    presetBtnLabel.textContent = "Carica Preset";
+    presetBtnLabel.textContent = "Preset";
     presetBtn.appendChild(presetBtnLabel);
+    presetBtn.appendChild(createIcon("chevron-down", "size-3.5"));
     presetBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      isPresetMenuOpen = !isPresetMenuOpen;
-      render();
-    });
-    presetDropdown.appendChild(presetBtn);
-
-    if (isPresetMenuOpen) {
-      const popover = document.createElement("div");
-      popover.className = "preset-menu-popover";
-
-      for (const preset of CPU_PRESETS) {
-        const item = document.createElement("button");
-        item.className = `preset-menu-item ${state.activePresetId === preset.id ? "active" : ""}`;
-        item.addEventListener("click", () => {
-          stopTimer();
-          isPresetMenuOpen = false;
-          update({
-            algorithm: preset.algorithm,
-            workload: preset.workload,
-            rrQuantum: preset.rrQuantum ?? state.rrQuantum,
-            mlfqConfig: preset.mlfqConfig ?? state.mlfqConfig,
-            activePresetId: preset.id,
-            currentTick: 0,
-            isPlaying: false,
-            ldeStepIndex: 0
-          });
-        });
-
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "preset-name";
-        nameSpan.textContent = preset.name;
-
-        const descSpan = document.createElement("span");
-        descSpan.className = "preset-desc";
-        descSpan.textContent = preset.description;
-
-        item.append(nameSpan, descSpan);
-        popover.appendChild(item);
-      }
-      presetDropdown.appendChild(popover);
-    }
-
-    actionsContainer.appendChild(presetDropdown);
-
-    // Import JSON Button
-    const importBtn = document.createElement("button");
-    importBtn.className = "btn btn-outline";
-    importBtn.appendChild(createIcon("upload", "size-4"));
-    const importLabel = document.createElement("span");
-    importLabel.textContent = "Importa JSON";
-    importBtn.appendChild(importLabel);
-    importBtn.addEventListener("click", () => {
-      triggerJsonImport(
-        (data) => {
-          const parsedPreset = parseCpuPreset(data);
-          if (parsedPreset.success) {
-            const p = parsedPreset.data;
+      openToolbarMenu({
+        anchor: presetBtn,
+        label: "Carica Preset",
+        ui: ctx?.ui,
+        signal: viewSignal,
+        items: CPU_PRESETS.map((preset) => ({
+          key: preset.id,
+          label: preset.name,
+          onSelect: () => {
             stopTimer();
             update({
-              algorithm: p.algorithm,
-              workload: p.workload,
-              rrQuantum: p.rrQuantum ?? state.rrQuantum,
-              mlfqConfig: p.mlfqConfig ?? state.mlfqConfig,
-              activePresetId: p.id,
+              algorithm: preset.algorithm,
+              workload: preset.workload,
+              rrQuantum: preset.rrQuantum ?? state.rrQuantum,
+              mlfqConfig: preset.mlfqConfig ?? state.mlfqConfig,
+              activePresetId: preset.id,
               currentTick: 0,
               isPlaying: false,
               ldeStepIndex: 0
             });
-            return;
           }
-          const parsedWorkload = parseWorkloadInput(data);
-          if (parsedWorkload.success) {
-            stopTimer();
-            update({
-              workload: parsedWorkload.data,
-              currentTick: 0,
-              isPlaying: false,
-              activePresetId: null
-            });
-            return;
-          }
-          alert(`Errore validazione preset CPU: ${parsedPreset.error}`);
-        },
-        (err) => alert(err)
-      );
+        }))
+      });
     });
-    actionsContainer.appendChild(importBtn);
+    presetDropdown.appendChild(presetBtn);
+    actionsContainer.appendChild(presetDropdown);
 
-    // Export JSON Button
-    const exportBtn = document.createElement("button");
-    exportBtn.className = "btn btn-outline";
-    exportBtn.appendChild(createIcon("download", "size-4"));
-    const exportLabel = document.createElement("span");
-    exportLabel.textContent = "Esporta JSON";
-    exportBtn.appendChild(exportLabel);
-    exportBtn.addEventListener("click", () => {
-      const exportData = {
-        id: state.activePresetId ?? "custom-cpu-preset",
-        name: `CPU Preset (${state.algorithm})`,
-        description: "Configurazione esportata da CPU Scheduling Lab",
-        algorithm: state.algorithm,
-        workload: state.workload,
-        rrQuantum: state.algorithm === "RR" ? state.rrQuantum : undefined,
-        mlfqConfig: state.algorithm === "MLFQ" ? state.mlfqConfig : undefined
-      };
-      exportJsonFile(`cpu-preset-${state.algorithm.toLowerCase()}.json`, exportData);
+    // Secondary Actions Menu Button ("Altro")
+    const moreDropdown = document.createElement("div");
+    moreDropdown.className = "preset-dropdown-container lh-no-drag";
+
+    const moreBtn = document.createElement("button");
+    moreBtn.type = "button";
+    moreBtn.className = "btn btn-ghost btn-sm lh-no-drag";
+    const moreBtnLabel = document.createElement("span");
+    moreBtnLabel.textContent = "Altro";
+    moreBtn.appendChild(moreBtnLabel);
+    moreBtn.appendChild(createIcon("chevron-down", "size-3.5"));
+    moreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const menuItems = [
+        ...(state.algorithm !== "LDE"
+          ? [
+              {
+                key: "edit-workload",
+                label: "Modifica Workload",
+                onSelect: () => {
+                  if (activeModalCleanup) activeModalCleanup();
+                  activeModalCleanup = openWorkloadEditorModal(
+                    state.workload,
+                    (newWorkload) => {
+                      markActiveExerciseManual();
+                      stopTimer();
+                      update({ workload: newWorkload, currentTick: 0, isPlaying: false });
+                    },
+                    () => {
+                      activeModalCleanup = null;
+                    },
+                    rootEl,
+                    viewSignal,
+                    ctx?.ui
+                  );
+                }
+              }
+            ]
+          : []),
+        {
+          key: "import-json",
+          label: "Importa JSON",
+          onSelect: () => {
+            triggerJsonImport(
+              (data) => {
+                const parsedPreset = parseCpuPreset(data);
+                if (parsedPreset.success) {
+                  const p = parsedPreset.data;
+                  stopTimer();
+                  update({
+                    algorithm: p.algorithm,
+                    workload: p.workload,
+                    rrQuantum: p.rrQuantum ?? state.rrQuantum,
+                    mlfqConfig: p.mlfqConfig ?? state.mlfqConfig,
+                    activePresetId: p.id,
+                    currentTick: 0,
+                    isPlaying: false,
+                    ldeStepIndex: 0
+                  });
+                  return;
+                }
+                const parsedWorkload = parseWorkloadInput(data);
+                if (parsedWorkload.success) {
+                  stopTimer();
+                  update({
+                    workload: parsedWorkload.data,
+                    currentTick: 0,
+                    isPlaying: false,
+                    activePresetId: null
+                  });
+                  return;
+                }
+                showErrorBanner(labContent, `Errore validazione preset CPU: ${parsedPreset.error}`, viewSignal);
+              },
+              (err) => showErrorBanner(labContent, err, viewSignal)
+            );
+          }
+        },
+        {
+          key: "export-json",
+          label: "Esporta JSON",
+          onSelect: () => {
+            const exportData = {
+              id: state.activePresetId ?? "custom-cpu-preset",
+              name: `CPU Preset (${state.algorithm})`,
+              description: "Configurazione esportata da CPU Scheduling Lab",
+              algorithm: state.algorithm,
+              workload: state.workload,
+              rrQuantum: state.algorithm === "RR" ? state.rrQuantum : undefined,
+              mlfqConfig: state.algorithm === "MLFQ" ? state.mlfqConfig : undefined
+            };
+            exportJsonFile(`cpu-preset-${state.algorithm.toLowerCase()}.json`, exportData);
+          }
+        }
+      ];
+
+      openToolbarMenu({
+        anchor: moreBtn,
+        label: "Altre azioni",
+        ui: ctx?.ui,
+        signal: viewSignal,
+        items: menuItems
+      });
     });
-    actionsContainer.appendChild(exportBtn);
+    moreDropdown.appendChild(moreBtn);
+    actionsContainer.appendChild(moreDropdown);
 
     toolbar.appendChild(actionsContainer);
     labContent.appendChild(toolbar);
@@ -568,24 +568,15 @@ export function createCpuLabView(
       }
       throw new Error("Backend IPC (ctx.call) not available");
     },
-    signal,
+    signal: viewSignal,
     ui: ctx?.ui
   });
-
-  const documentClickHandler = () => {
-    if (isPresetMenuOpen) {
-      isPresetMenuOpen = false;
-      render();
-    }
-  };
-  document.addEventListener("click", documentClickHandler);
 
   render();
 
   return () => {
     stopTimer();
-    document.removeEventListener("click", documentClickHandler);
-    abortController.abort();
+    cleanupSignal();
     if (activeModalCleanup) {
       activeModalCleanup();
       activeModalCleanup = null;

@@ -39,7 +39,7 @@ export function openWorkloadEditorModal(
 
     handle = ui.openDialog(
       {
-        title: "Editor Workload Processi (Zero Constant Cablate)",
+        title: "Configura Workload Processi",
         content(container: HTMLElement, dialogSignal: AbortSignal) {
           const wrapper = document.createElement("div");
           wrapper.className = "cpu-workload-modal-form";
@@ -116,7 +116,7 @@ export function openWorkloadEditorModal(
 
   const title = document.createElement("h3");
   title.className = "cpu-modal-title font-title";
-  title.textContent = "Editor Workload Processi (Zero Constant Cablate)";
+  title.textContent = "Configura Workload Processi";
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "btn-icon";
